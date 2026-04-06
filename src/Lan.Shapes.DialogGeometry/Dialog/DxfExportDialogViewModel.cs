@@ -4,7 +4,6 @@ namespace Lan.Shapes.DialogGeometry.Dialog
     {
         private double _topLeftX;
         private double _topLeftY;
-        private double _pixelToMmFactor = 1.0;
 
         public double TopLeftX
         {
@@ -18,10 +17,13 @@ namespace Lan.Shapes.DialogGeometry.Dialog
             set => SetField(ref _topLeftY, value);
         }
 
-        public double PixelToMmFactor
+        private bool _reverseYAxis;
+
+        public bool ReverseYAxis
         {
-            get => _pixelToMmFactor;
-            set => SetField(ref _pixelToMmFactor, value);
+            get => _reverseYAxis;
+            set { SetField(ref _reverseYAxis, value); }
         }
+
     }
 }
