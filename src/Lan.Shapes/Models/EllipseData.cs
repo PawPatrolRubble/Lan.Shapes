@@ -1,6 +1,7 @@
-﻿using System.Windows;
+using System.Windows;
+using Lan.Shapes.Interfaces;
 
-namespace Lan.Shapes.Interfaces
+namespace Lan.Shapes.Models
 {
     public class EllipseData : IGeometryMetaData
     {

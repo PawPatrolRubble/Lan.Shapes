@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Collections;
@@ -10,7 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Lan.Shapes.Handle;
 using Lan.Shapes.Interfaces;
-using Lan.Shapes.Shapes;
+using Lan.Shapes.Models;
 
 #endregion
 
@@ -30,7 +30,7 @@ namespace Lan.Shapes.Custom
 
         #endregion
 
-        #region Propeties
+        #region Properties
 
         public Point BottomRight
         {

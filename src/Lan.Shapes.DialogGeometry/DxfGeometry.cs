@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
@@ -6,7 +6,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Lan.Shapes.DialogGeometry.Dialog;
 using Lan.Shapes.Handle;
-using Lan.Shapes.Shapes;
 using netDxf;
 using netDxf.Entities;
 using Point = System.Windows.Point;
@@ -194,15 +193,9 @@ namespace Lan.Shapes.DialogGeometry
             }
         }
 
-        public override void OnDeselected()
-        {
-            throw new NotImplementedException();
-        }
+        public override void OnDeselected() { }
 
-        public override void OnSelected()
-        {
-            throw new NotImplementedException();
-        }
+        public override void OnSelected() { }
 
         public override void OnMouseRightButtonUp(Point mousePosition)
         {

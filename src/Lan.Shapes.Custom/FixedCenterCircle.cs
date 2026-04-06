@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Windows;
@@ -6,12 +6,15 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Lan.Shapes.Handle;
 using Lan.Shapes.Interfaces;
+using Lan.Shapes.Models;
+using Lan.Shapes.Enums;
+
 
 #endregion
 
 namespace Lan.Shapes.Custom
 {
-    public class FixedCenterCircle : ShapeVisualBase, IDataExport<EllipseData>
+    public class FixedCenterCircle : ShapeVisualBase, IDataExport<EllipseData>, IBoardContextAware
     {
         #region fields
 
@@ -146,11 +149,11 @@ namespace Lan.Shapes.Custom
         }
 
         /// <summary>
-        /// 未选择状态
+        /// 未选择状�?
         /// </summary>
         public override void OnDeselected()
         {
-            throw new NotImplementedException();
+            State = ShapeVisualState.Normal;
         }
 
         /// <summary>
@@ -195,11 +198,17 @@ namespace Lan.Shapes.Custom
         }
 
         /// <summary>
-        /// 选择时
+        /// 选择�?
         /// </summary>
         public override void OnSelected()
         {
-            throw new NotImplementedException();
+            State = ShapeVisualState.Selected;
+        }
+
+        /// <inheritdoc />
+        public void OnBoardContextAvailable(double boardWidth, double boardHeight)
+        {
+            Center = new Point(boardWidth / 2, boardHeight / 2);
         }
 
         protected override void OnDragHandleSizeChanges(double dragHandleSize)

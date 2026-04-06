@@ -1,4 +1,5 @@
-﻿using Lan.Shapes.Interfaces;
+using Lan.Shapes.Interfaces;
+using Lan.Shapes.Models;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -63,7 +64,7 @@ namespace Lan.Shapes.Custom
         }
 
         /// <summary>
-        /// 未选择状态
+        /// δѡ��״̬
         /// </summary>
         public override void OnDeselected()
         {
@@ -79,7 +80,7 @@ namespace Lan.Shapes.Custom
         }
 
         /// <summary>
-        /// 选择时
+        /// ѡ��ʱ
         /// </summary>
         public override void OnSelected()
         {

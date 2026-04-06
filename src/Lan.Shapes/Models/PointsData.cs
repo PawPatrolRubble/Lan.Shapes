@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Windows;
 using Lan.Shapes.Enums;
+using Lan.Shapes.Interfaces;
 
-namespace Lan.Shapes.Interfaces
+namespace Lan.Shapes.Models
 {
     /// <summary>
     /// 方形两个点，top, bottom
@@ -17,15 +18,13 @@ namespace Lan.Shapes.Interfaces
             DataPoints = dataPoints;
         }
 
-
-        public PointsData(string tag, double strokeThickness, List<Point> dataPoints):this(strokeThickness,dataPoints)
+        public PointsData(string tag, double strokeThickness, List<Point> dataPoints) : this(strokeThickness, dataPoints)
         {
             Tag = tag;
         }
 
         public PointsData()
         {
-            
         }
 
         public TagPosition TagPosition { get; set; } = TagPosition.Center;

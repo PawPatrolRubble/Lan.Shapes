@@ -3,7 +3,7 @@
 #region
 
 using System;
-using System.Diagnostics;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -12,6 +12,7 @@ using System.Windows.Media;
 using Lan.Shapes;
 using Lan.Shapes.Enums;
 using Lan.Shapes.Interfaces;
+
 
 #endregion
 
@@ -70,23 +71,14 @@ namespace Lan.SketchBoard
         {
             if (SketchBoardDataManager == null) return;
 
-            // Use the ViewportScalingService to calculate appropriate thickness based on viewport size
             var scaleFactor = Lan.Shapes.Scaling.ViewportScalingService.CalculateStrokeThicknessFromViewportSize(ActualWidth, ActualHeight);
             var stylers = SketchBoardDataManager.CurrentShapeLayer.Stylers;
 
             foreach (var shapeStyler in stylers)
             {
-                // Use consistent base values multiplied by the calculated scale factor
-                shapeStyler.Value.SketchPen.Thickness = 2 * scaleFactor;
+                shapeStyler.Value.SetStrokeThickness(2 * scaleFactor);
                 shapeStyler.Value.DragHandleSize = 10 * scaleFactor;
             }
-        }
-
-        // This method is now deprecated as we're using ViewportScalingService
-        // Kept for backward compatibility
-        private double CalculateStrokeThickness()
-        {
-            return Lan.Shapes.Scaling.ViewportScalingService.CalculateStrokeThicknessFromViewportSize(ActualWidth, ActualHeight);
         }
 
         #region others
@@ -96,12 +88,14 @@ namespace Lan.SketchBoard
         {
             if (d is SketchBoard sketchBoard && e.NewValue is ISketchBoardDataManager dataManager)
             {
-                var oldShapes = dataManager.Shapes;
+                // Take a snapshot BEFORE InitializeVisualCollection clears Shapes.
+                var existingShapes = dataManager.Shapes?.ToList();
 
                 dataManager.InitializeVisualCollection(sketchBoard);
-                if (oldShapes != null)
+
+                if (existingShapes != null)
                 {
-                    foreach (var shape in oldShapes)
+                    foreach (var shape in existingShapes)
                     {
                         dataManager.AddShape(shape);
                     }
@@ -154,121 +148,84 @@ namespace Lan.SketchBoard
 
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
-            try
+            Focus();
+            if (SketchBoardDataManager == null) return;
+
+            var position = e.GetPosition(this);
+            var hitShape = GetHitTestShape(position);
+            _mouseDownHitExistingShape = hitShape != null;
+
+            SketchBoardDataManager.SelectedGeometry =
+                hitShape
+                ?? SketchBoardDataManager.CurrentGeometryInEdit
+                ?? SketchBoardDataManager.CreateNewGeometry(position);
+
+            if (e.ClickCount == 2)
             {
-                Focus();
-                if (SketchBoardDataManager != null)
-                {
-                    //find the shape clicked my mouse
-                    SketchBoardDataManager.SelectedGeometry = GetHitTestShape(e.GetPosition(this));
-
-                    if (SketchBoardDataManager.SelectedGeometry == null)
-                        SketchBoardDataManager.SelectedGeometry = SketchBoardDataManager?.CurrentGeometryInEdit ??
-                                                                  SketchBoardDataManager?.CreateNewGeometry(
-                                                                      e.GetPosition(this));
-
-                    //if sketchboard current geometry is not null, it means that it still being sketched
-                    //and we need to assign it to active shape
-
-                    if (e.ClickCount == 2)
-                    {
-                        SketchBoardDataManager?.SelectedGeometry?.OnMouseLeftButtonDoubleClick(e.GetPosition(this));
-                    }
-                    else
-                    {
-                        SketchBoardDataManager?.SelectedGeometry?.OnMouseLeftButtonDown(e.GetPosition(this));
-                    }
-                }
+                SketchBoardDataManager.SelectedGeometry?.OnMouseLeftButtonDoubleClick(position);
             }
-            catch (Exception exception)
+            else
             {
-                Console.WriteLine(exception);
+                SketchBoardDataManager.SelectedGeometry?.OnMouseLeftButtonDown(position);
             }
         }
 
 
-        private bool _hasShapeSelected = false;
+        private bool _mouseDownHitExistingShape;
         private ShapeVisualBase? GetHitTestShape(Point mousePosition)
         {
+            if (SketchBoardDataManager == null) return null;
+
             if ((SketchBoardDataManager.SelectedGeometry?.IsBeingDraggedOrPanMoving ?? false)
                 && !SketchBoardDataManager.SelectedGeometry.IsLocked)
             {
                 return SketchBoardDataManager.SelectedGeometry;
             }
 
-            //Debug.WriteLine($"it is not dragged, active shape: {ActiveShape?.GetType().Name}");
-            ShapeVisualBase? shape = null;
-
             var hitTestResult = VisualTreeHelper.HitTest(this, mousePosition);
+            var shape = hitTestResult?.VisualHit as ShapeVisualBase;
 
-            if (hitTestResult != null)
-            {
-                shape = hitTestResult.VisualHit as ShapeVisualBase;
-                _hasShapeSelected = shape != null;
-            }
-            else
-            {
-                _hasShapeSelected = false;
-            }
-
-            return shape?.IsLocked ?? true ? null : shape;
+            return (shape?.IsLocked ?? true) ? null : shape;
         }
 
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            try
+            if (e.LeftButton == MouseButtonState.Pressed)
             {
-                if (e.LeftButton == MouseButtonState.Pressed)
+                if (SketchBoardDataManager?.CurrentGeometryInEdit != null)
                 {
-
-                    if (SketchBoardDataManager?.CurrentGeometryInEdit != null)
-                    {
-                        SketchBoardDataManager?.CurrentGeometryInEdit?.OnMouseMove(e.GetPosition(this), e.LeftButton);
-                    }
-                    else
-                    {
-                        //SketchBoardDataManager.SelectedGeometry = GetHitTestShape(e.GetPosition(this));
-                        SketchBoardDataManager?.SelectedGeometry?.OnMouseMove(e.GetPosition(this), e.LeftButton);
-                    }
+                    SketchBoardDataManager.CurrentGeometryInEdit.OnMouseMove(e.GetPosition(this), e.LeftButton);
                 }
-            }
-            catch (Exception exception)
-            {
-                Console.WriteLine(exception);
+                else
+                {
+                    SketchBoardDataManager?.SelectedGeometry?.OnMouseMove(e.GetPosition(this), e.LeftButton);
+                }
             }
         }
 
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
-            try
+            if (SketchBoardDataManager == null) return;
+
+            var geometry = SketchBoardDataManager.SelectedGeometry;
+            if (geometry == null) return;
+
+            var position = e.GetPosition(this);
+            if (!geometry.IsGeometryRendered)
             {
-                if (SketchBoardDataManager == null) return;
-
-                var geometry = SketchBoardDataManager.SelectedGeometry;
-                if (geometry == null) return;
-
-                var position = e.GetPosition(this);
-                if (!geometry.IsGeometryRendered)
-                {
-                    SketchBoardDataManager.NewShapeSketched?.Invoke(geometry);
-                }
-
-                geometry.OnMouseLeftButtonUp(position);
-
-                if (geometry.IsGeometryRendered)
-                {
-                    if (!_hasShapeSelected)
-                    {
-                        SketchBoardDataManager.UnselectGeometry();
-                    }
-                    SketchBoardDataManager.UnselectGeometryType();
-                }
-
+                SketchBoardDataManager.RaiseNewShapeSketched(geometry);
             }
-            catch (Exception ex)
+
+            geometry.OnMouseLeftButtonUp(position);
+
+            if (geometry.IsGeometryRendered)
             {
-                Console.WriteLine(ex);
+                if (!_mouseDownHitExistingShape)
+                {
+                    SketchBoardDataManager.UnselectGeometry();
+                }
+                SketchBoardDataManager.UnselectGeometryType();
             }
         }
 

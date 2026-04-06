@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
@@ -6,6 +6,7 @@ using System.Windows.Media;
 
 using Lan.Shapes.Handle;
 using Lan.Shapes.Interfaces;
+using Lan.Shapes.Models;
 
 namespace Lan.Shapes.Shapes
 {
@@ -61,7 +62,7 @@ namespace Lan.Shapes.Shapes
 
         #endregion
 
-        #region Propeties
+        #region Properties
 
         /// <summary>
         /// </summary>
@@ -147,14 +148,9 @@ namespace Lan.Shapes.Shapes
                 lengthInMm = Radius * ShapeLayer.UnitsPerMillimeter / ShapeLayer.PixelPerUnit;
             }
 
-            var formattedText = new FormattedText(
+            var formattedText = CreateFormattedText(
                 $"{lengthInMm:f4} {ShapeLayer.UnitName}, {Radius:f4} px",
-                System.Globalization.CultureInfo.GetCultureInfo("en-us"),
-                FlowDirection.LeftToRight,
-                new Typeface("Verdana"),
-                ShapeLayer.TagFontSize,
-                Brushes.Red,
-                96);
+                ShapeStyler?.TagColor ?? Brushes.Red);
 
             renderContext.DrawText(formattedText, new Point(Center.X, Center.Y));
         }
@@ -198,14 +194,6 @@ namespace Lan.Shapes.Shapes
             OldPointForTranslate = newPoint;
         }
 
-        /// <summary>
-        ///     未选择状态
-        /// </summary>
-        public override void OnDeselected()
-        {
-            throw new NotImplementedException();
-        }
-
         protected override void OnDragHandleSizeChanges(double dragHandleSize)
         {
             if (_dragHandle != null)
@@ -241,7 +229,7 @@ namespace Lan.Shapes.Shapes
 
 
         /// <summary>
-        ///     鼠标点击移动
+        ///     ������ƶ�
         /// </summary>
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
@@ -283,14 +271,6 @@ namespace Lan.Shapes.Shapes
             // Clear mouse tracking points to prevent stale state
             OldPointForTranslate = null;
             MouseDownPoint = null;
-        }
-
-        /// <summary>
-        ///     选择时
-        /// </summary>
-        public override void OnSelected()
-        {
-            throw new NotImplementedException();
         }
 
         /// <summary>

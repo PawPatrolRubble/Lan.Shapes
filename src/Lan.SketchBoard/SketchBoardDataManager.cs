@@ -8,7 +8,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Media;
@@ -23,13 +22,13 @@ using Lan.Shapes.Styler;
 
 namespace Lan.SketchBoard
 {
-    public class SketchBoardDataManager : ISketchBoardDataManager, INotifyPropertyChanged
+    public class SketchBoardDataManager : ISketchBoardDataManager, IVisualHost, INotifyPropertyChanged
     {
         #region interface implementation
 
         #region Implementations
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         #endregion
 
@@ -39,7 +38,7 @@ namespace Lan.SketchBoard
 
         private readonly Dictionary<string, Type> _drawingTools = new Dictionary<string, Type>();
 
-        private readonly ShapeStylerFactory _shapeStylerFactory = new ShapeStylerFactory();
+        private readonly IShapeStylerFactory _shapeStylerFactory = new ShapeStylerFactory();
 
         private Type? _currentGeometryType;
 
@@ -129,8 +128,7 @@ namespace Lan.SketchBoard
         /// <returns></returns>
         public IEnumerable<ShapeVisualBase> GetSketchBoardVisuals()
         {
-            // return VisualCollection;
-            return null;
+            return Shapes;
         }
 
         /// <summary>
@@ -180,13 +178,13 @@ namespace Lan.SketchBoard
                 }
 
                 _selectedGeometry = value;
+                OnPropertyChanged();
 
                 if (_selectedGeometry != null)
                 {
                     _selectedGeometry.State = ShapeVisualState.Selected;
                     ShapeSelected?.Invoke(this, _selectedGeometry);
                 }
-
             }
         }
 
@@ -195,6 +193,20 @@ namespace Lan.SketchBoard
         {
             _currentGeometryType = type;
             GeometryTypeSelected?.Invoke(this, _currentGeometryType);
+        }
+
+        public void RegisterDrawingTool(string name, Type type)
+        {
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            if (type == null) throw new ArgumentNullException(nameof(type));
+            if (!typeof(ShapeVisualBase).IsAssignableFrom(type))
+            {
+                throw new ArgumentException(
+                    $"Type '{type.Name}' must derive from {nameof(ShapeVisualBase)}.",
+                    nameof(type));
+            }
+
+            _drawingTools[name] = type;
         }
 
         public void UnselectGeometry()
@@ -256,9 +268,9 @@ namespace Lan.SketchBoard
             ShapeRemoved?.Invoke(this, shape);
         }
 
-        public void RemoveShapes(Expression<Func<ShapeVisualBase, bool>> predict)
+        public void RemoveShapes(Func<ShapeVisualBase, bool> predicate)
         {
-            var shapesToRemove = Shapes.Where(predict.Compile()).ToList();
+            var shapesToRemove = Shapes.Where(predicate).ToList();
             foreach (var shape in shapesToRemove)
             {
                 RemoveShape(shape);
@@ -280,7 +292,14 @@ namespace Lan.SketchBoard
         /// <exception cref="NotImplementedException"></exception>
         public void RemoveAt(int index, int count)
         {
-            throw new NotImplementedException();
+            if (index < 0 || index >= Shapes.Count)
+                throw new ArgumentOutOfRangeException(nameof(index));
+            if (count < 0 || index + count > Shapes.Count)
+                throw new ArgumentOutOfRangeException(nameof(count));
+
+            var shapesToRemove = Shapes.Skip(index).Take(count).ToList();
+            foreach (var shape in shapesToRemove)
+                RemoveShape(shape);
         }
 
 
@@ -344,24 +363,19 @@ namespace Lan.SketchBoard
 
             if (shape != null)
             {
-                shape.ShapeLayer = CurrentShapeLayer;
                 VisualCollection.Add(shape);
                 CurrentGeometryInEdit = shape;
                 Shapes.Add(shape);
-            }
 
-            if (shape is FixedCenterCircle fixedCenterCircle)
-            {
-                if (_sketchBoard != null)
+                // Let shapes that need board dimensions opt-in via IBoardContextAware
+                // instead of hard-coding type-specific if-blocks here.
+                if (shape is IBoardContextAware contextAware && _sketchBoard != null)
                 {
-                    fixedCenterCircle.Center =
-                        new Point(_sketchBoard.ActualWidth / 2, _sketchBoard.ActualHeight / 2);
+                    contextAware.OnBoardContextAvailable(
+                        _sketchBoard.ActualWidth,
+                        _sketchBoard.ActualHeight);
                 }
-            }
 
-            // trigger event
-            if (shape != null)
-            {
                 ShapeCreated?.Invoke(this, shape);
             }
 
@@ -381,6 +395,8 @@ namespace Lan.SketchBoard
             }
 
             SketchBoardManagerInitialized?.Invoke(this, this);
+            // Also fire the IVisualHost event for consumers that depend on IShapeRepository only.
+            HostInitialized?.Invoke(this, this);
         }
 
         public void OnImageViewerPropertyChanged(double scale)
@@ -392,10 +408,17 @@ namespace Lan.SketchBoard
             }
         }
 
-        /// <summary>
-        ///     the skethboard is initialized and can load shape from now on
-        /// </summary>
+        public void RaiseNewShapeSketched(ShapeVisualBase shape)
+        {
+            if (shape == null) throw new ArgumentNullException(nameof(shape));
+            NewShapeSketched?.Invoke(this, shape);
+        }
+
+        /// <summary>Raised when the board is initialized and can load shapes. (ISketchBoardDataManager)</summary>
         public event EventHandler<ISketchBoardDataManager>? SketchBoardManagerInitialized;
+
+        /// <summary>Raised when the board is initialized and can load shapes. (IVisualHost)</summary>
+        public event EventHandler<IShapeRepository>? HostInitialized;
 
         public event EventHandler<ShapeVisualBase>? ShapeCreated;
         public event EventHandler<ShapeVisualBase>? ShapeRemoved;
@@ -407,7 +430,7 @@ namespace Lan.SketchBoard
         /// <summary>
         ///     triggered when new shape is sketched, right after the mouse up
         /// </summary>
-        public Action<ShapeVisualBase>? NewShapeSketched { get; set; }
+        public event EventHandler<ShapeVisualBase>? NewShapeSketched;
 
         #endregion
     }

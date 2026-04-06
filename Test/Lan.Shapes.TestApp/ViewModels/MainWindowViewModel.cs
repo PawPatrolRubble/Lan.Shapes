@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 
 #region
 
@@ -16,6 +16,7 @@ using Lan.ImageViewer;
 using Lan.Shapes.Custom;
 using Lan.Shapes.DialogGeometry.Dialog;
 using Lan.Shapes.Interfaces;
+using Lan.Shapes.Models;
 using Lan.Shapes.Shapes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;

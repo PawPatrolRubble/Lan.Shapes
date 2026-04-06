@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 
 #region
 
@@ -12,6 +12,7 @@ using Lan.Shapes.Enums;
 using Lan.Shapes.ExtensionMethods;
 using Lan.Shapes.Handle;
 using Lan.Shapes.Interfaces;
+using Lan.Shapes.Models;
 
 #endregion
 
@@ -29,7 +30,7 @@ namespace Lan.Shapes.Shapes
 
         private TagPosition _tagPosition;
 
-        #region Propeties
+        #region Properties
 
         public Point BottomRight
         {
@@ -157,14 +158,6 @@ namespace Lan.Shapes.Shapes
             }
         }
 
-        /// <summary>
-        /// 未选择状态
-        /// </summary>
-        public override void OnDeselected()
-        {
-            throw new NotImplementedException();
-        }
-
         protected override void OnDragHandleSizeChanges(double dragHandleSize)
         {
             foreach (var handle in Handles)
@@ -195,7 +188,7 @@ namespace Lan.Shapes.Shapes
 
 
         /// <summary>
-        /// 鼠标点击移动
+        /// ������ƶ�
         /// </summary>
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
@@ -230,14 +223,6 @@ namespace Lan.Shapes.Shapes
             base.OnMouseLeftButtonUp(newPoint);
             // Clear mouse tracking points to prevent stale state
             OldPointForTranslate = null;
-        }
-
-        /// <summary>
-        /// 选择时
-        /// </summary>
-        public override void OnSelected()
-        {
-            throw new NotImplementedException();
         }
 
         private void UpdateHandleLocation()

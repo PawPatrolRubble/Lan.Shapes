@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 #nullable enable
 using System;
@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Lan.Shapes.Handle;
 using Lan.Shapes.Interfaces;
+using Lan.Shapes.Models;
 
 #endregion
 
@@ -28,7 +29,7 @@ namespace Lan.Shapes.Shapes
 
         #endregion
 
-        #region Propeties
+        #region Properties
 
         /// <summary>
         /// 
@@ -123,14 +124,6 @@ namespace Lan.Shapes.Shapes
             MouseDownPoint = newPoint;
         }
 
-        /// <summary>
-        /// 未选择状态
-        /// </summary>
-        public override void OnDeselected()
-        {
-            throw new NotImplementedException();
-        }
-
         protected override void OnDragHandleSizeChanges(double dragHandleSize)
         {
             if (_rightDragHandle != null)
@@ -143,72 +136,6 @@ namespace Lan.Shapes.Shapes
             }
         }
 
-
-        /// <summary>
-        /// left mouse button down event
-        /// </summary>
-        /// <param name="mousePoint"></param>
-        public override void OnMouseLeftButtonDown(Point mousePoint)
-        {
-            if (!IsGeometryRendered)
-            {
-                Center = mousePoint;
-            }
-            else
-            {
-                FindSelectedHandle(mousePoint);
-            }
-
-            OldPointForTranslate = mousePoint;
-            MouseDownPoint = mousePoint;
-        }
-
-        public override void FindSelectedHandle(Point p)
-        {
-            if (_rightDragHandle.FillContains(p))
-            {
-                SelectedDragHandle = _rightDragHandle;
-            }
-
-            if (_topDragHandle.FillContains(p))
-            {
-                SelectedDragHandle = _topDragHandle;
-            }
-        }
-
-
-        /// <summary>
-        /// 鼠标点击移动
-        /// </summary>
-        public override void OnMouseMove(Point point, MouseButtonState buttonState)
-        {
-            if (buttonState == MouseButtonState.Pressed)
-            {
-                if (!IsGeometryRendered && OldPointForTranslate.HasValue)
-                {
-                    RadiusX = (point.X - OldPointForTranslate.Value.X) / 2;
-                    RadiusY = (point.Y - OldPointForTranslate.Value.Y) / 2;
-                }
-                else if (SelectedDragHandle != null)
-                {
-                    IsBeingDraggedOrPanMoving = true;
-                    HandleResizing(point);
-                }
-                else if (IsGeometryRendered)
-                {
-                    // If already dragging, continue. Otherwise check if mouse down was inside the ellipse
-                    if (IsBeingDraggedOrPanMoving || (MouseDownPoint.HasValue && _ellipseGeometry.FillContains(MouseDownPoint.Value)))
-                    {
-                        IsBeingDraggedOrPanMoving = true;
-                        HandleTranslate(point);
-                    }
-                }
-
-                UpdateVisual();
-            }
-
-        }
-
         /// <summary>
         /// Handle mouse left button up - clean up state
         /// </summary>
@@ -218,15 +145,6 @@ namespace Lan.Shapes.Shapes
             // Clear mouse tracking points to prevent stale state
             OldPointForTranslate = null;
             MouseDownPoint = null;
-        }
-
-
-        /// <summary>
-        /// 选择时
-        /// </summary>
-        public override void OnSelected()
-        {
-            throw new NotImplementedException();
         }
 
         /// <summary>

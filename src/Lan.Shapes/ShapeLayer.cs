@@ -1,9 +1,7 @@
-﻿#nullable enable
+#nullable enable
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Windows.Media;
 using Lan.Shapes.Enums;
 using Lan.Shapes.Styler;
@@ -22,7 +20,6 @@ namespace Lan.Shapes
     {
         #region fields
 
-        private List<ShapeVisualBase> _shapeVisuals = new List<ShapeVisualBase>();
 
         /// <summary>
         /// all shape stylers contained in one layer
@@ -40,14 +37,6 @@ namespace Lan.Shapes
             get => _stylers;
         }
 
-
-        /// <summary>
-        /// get all shapes contained the layer
-        /// </summary>
-        public IEnumerable<ShapeVisualBase> Shapes
-        {
-            get => _shapeVisuals;
-        }
 
 
         /// <summary>
@@ -107,22 +96,6 @@ namespace Lan.Shapes
 
         #region public interfaces
         
-        public IEnumerable<ShapeVisualBase> RenderShapes(List<ShapeVisualBase> shapeVisuals)
-        {
-            foreach (var visual in shapeVisuals)
-            {
-              RenderWithStyler(GetStyler(visual.State),visual);
-            }
-
-            return shapeVisuals;
-        }
-
-        private void RenderWithStyler(IShapeStyler styler, ShapeVisualBase shape)
-        {
-            var dc = shape.RenderOpen();
-            dc.DrawGeometry(GetStyler(shape.State).FillColor, styler.SketchPen, shape.RenderGeometry);
-            dc.Close();
-        }
 
         #endregion
         
@@ -141,14 +114,22 @@ namespace Lan.Shapes
         /// <param name="shapeState"></param>
         /// <returns></returns>
         /// <exception cref="KeyNotFoundException"> if shapeState is not found</exception>
-        public IShapeStyler GetStyler(ShapeVisualState shapeState) => _stylers[shapeState];
+        public IShapeStyler GetStyler(ShapeVisualState shapeState)
+        {
+            if (_stylers.TryGetValue(shapeState, out var styler))
+            {
+                return styler;
+            }
 
+            if (_stylers.TryGetValue(ShapeVisualState.Normal, out styler))
+            {
+                return styler;
+            }
+
+            throw new InvalidOperationException($"No styler configured for state '{shapeState}' and no fallback '{ShapeVisualState.Normal}' styler is available.");
+        }
 
       
-        public void AddShapeToLayer(ShapeVisualBase shape)
-        {
-            _shapeVisuals.Add(shape);
-        }
 
         public ShapeLayerParameter ToShapeLayerParameter()
         {

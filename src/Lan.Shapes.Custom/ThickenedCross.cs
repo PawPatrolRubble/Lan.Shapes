@@ -1,4 +1,4 @@
-ï»¿#region
+#region
 
 using System;
 using System.Collections.Generic;
@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Lan.Shapes.Handle;
 using Lan.Shapes.Interfaces;
+using Lan.Shapes.Models;
 
 #endregion
 
@@ -17,7 +18,7 @@ namespace Lan.Shapes.Custom
     {
         #region fields
 
-        //æ°´å¹³ä¸
+        //Ë®Æ½Óë
         private const int MinPixelDistance = 1;
 
         private readonly bool _isSquare;
@@ -273,7 +274,7 @@ namespace Lan.Shapes.Custom
         #region implementations
 
         /// <summary>
-        /// éœ€è¦4ä¸ªç‚¹
+        /// ĞèÒª4¸öµã
         /// </summary>
         /// <param name="data"></param>
         public void FromData(PointsData data)
@@ -428,7 +429,7 @@ namespace Lan.Shapes.Custom
 
 
         /// <summary>
-        ///     é¼ æ ‡ç‚¹å‡»ç§»åŠ¨
+        ///     Êó±êµã»÷ÒÆ¶¯
         /// </summary>
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {

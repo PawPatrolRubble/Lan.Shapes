@@ -8,6 +8,7 @@ using System.Windows.Media;
 
 using Lan.Shapes.Handle;
 using Lan.Shapes.Interfaces;
+using Lan.Shapes.Models;
 
 namespace Lan.Shapes.Shapes
 {
@@ -230,19 +231,15 @@ namespace Lan.Shapes.Shapes
             // Draw the length text
             var length = Math.Sqrt(Math.Pow(End.X - Start.X, 2) + Math.Pow(End.Y - Start.Y, 2));
             var lengthInMm = 0.0;
+
             if (ShapeLayer.UnitsPerMillimeter != 0 && ShapeLayer.PixelPerUnit != 0)
             {
                 lengthInMm = length * ShapeLayer.UnitsPerMillimeter / ShapeLayer.PixelPerUnit;
             }
 
-            var formattedText = new FormattedText(
+            var formattedText = CreateFormattedText(
                 $"{lengthInMm:f4} {ShapeLayer.UnitName}, {length:f4} px",
-                CultureInfo.GetCultureInfo("en-us"),
-                FlowDirection.LeftToRight,
-                new Typeface("Verdana"),
-                ShapeLayer.TagFontSize,
-                Brushes.Red,
-                96);
+                ShapeStyler?.TagColor ?? Brushes.Red);
 
             renderContext.DrawText(formattedText, new Point((Start.X + End.X) / 2, (Start.Y + End.Y) / 2));
         }
