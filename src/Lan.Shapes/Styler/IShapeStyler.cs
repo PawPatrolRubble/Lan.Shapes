@@ -1,4 +1,4 @@
-﻿using System.Windows.Media;
+using System.Windows.Media;
 
 namespace Lan.Shapes.Styler
 {
@@ -11,6 +11,7 @@ namespace Lan.Shapes.Styler
         void SetPenDashStyle(DashStyle dashStyle);
 
         double DragHandleSize { get; set; }
+        Brush TagColor { get; set; }
         Pen SketchPen { get; }
         Brush FillColor { get; }
         IShapeStyler Clone();

@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Media;
-using Lan.Shapes.Shapes;
+
 using Lan.Shapes.Styler;
 
 namespace Lan.Shapes.Handle

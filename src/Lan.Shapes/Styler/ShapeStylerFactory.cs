@@ -1,10 +1,11 @@
-﻿using System.Windows.Media;
+using System.Windows.Media;
 
 namespace Lan.Shapes.Styler
 {
-    public class ShapeStylerFactory
+    public class ShapeStylerFactory : IShapeStylerFactory
     {
         private IShapeStyler _defaultStyler;
+        private IShapeStyler _dottedLineStyler;
         private IShapeStyler _selectedStyler;
 
 
@@ -45,17 +46,17 @@ namespace Lan.Shapes.Styler
 
         public IShapeStyler DottedLineStyler()
         {
-            if (_selectedStyler == null)
+            if (_dottedLineStyler == null)
             {
-                _selectedStyler = new ShapeStyler();
-                _selectedStyler.SetFillColor(Brushes.LightYellow);
-                _selectedStyler.SetStrokeColor(Brushes.Green);
-                _selectedStyler.SetStrokeThickness(1);
-                _selectedStyler.SetPenDashStyle(DashStyles.Dash);
-                _selectedStyler.Name = "dotted line";
+                _dottedLineStyler = new ShapeStyler();
+                _dottedLineStyler.SetFillColor(Brushes.LightYellow);
+                _dottedLineStyler.SetStrokeColor(Brushes.Green);
+                _dottedLineStyler.SetStrokeThickness(1);
+                _dottedLineStyler.SetPenDashStyle(DashStyles.Dash);
+                _dottedLineStyler.Name = "dotted line";
             }
 
-            return _selectedStyler;
+            return _dottedLineStyler;
         }
 
 

@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using Lan.Shapes.DialogGeometry.Dialog;
 using Lan.Shapes.Interfaces;
+using Lan.Shapes.Models;
 using Lan.Shapes.Shapes;
 
 namespace Lan.Shapes.DialogGeometry
@@ -105,14 +106,14 @@ namespace Lan.Shapes.DialogGeometry
         }
 
         /// <summary>
-        ///     未选择状态
+        ///     未选择状�?
         /// </summary>
         public override void OnDeselected()
         {
         }
 
         /// <summary>
-        ///     选择时
+        ///     选择�?
         /// </summary>
         public override void OnSelected()
         {

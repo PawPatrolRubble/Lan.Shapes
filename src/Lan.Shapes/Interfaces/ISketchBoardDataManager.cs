@@ -1,160 +1,55 @@
-﻿#nullable enable
+#nullable enable
+
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Linq.Expressions;
 using System.Windows;
 using System.Windows.Media;
 
 namespace Lan.Shapes.Interfaces
 {
     /// <summary>
-    /// provide the functionality for managing geometry data for <see cref="SketchBoard"/>,
-    /// which is only responsible for displaying
-    /// doesn't provide any event handling functions
+    /// Combined interface for the sketch board data manager.
+    /// Extends <see cref="IShapeRepository"/> with the WPF visual-host members
+    /// that are required by <c>Lan.SketchBoard.SketchBoard</c> at runtime.
+    ///
+    /// <para>
+    /// <b>Dependency guidance:</b><br/>
+    /// — Depend on <see cref="IShapeRepository"/> when your consumer does not need
+    ///   access to <see cref="VisualCollection"/> or the WPF visual tree
+    ///   (ViewModels, services, unit tests).<br/>
+    /// — Depend on <c>ISketchBoardDataManager</c> only in WPF-layer code
+    ///   (controls, code-behind) that must manage the visual collection.
+    /// </para>
     /// </summary>
-    public interface ISketchBoardDataManager
+    public interface ISketchBoardDataManager : IShapeRepository
     {
+        // ── WPF visual-host members (not on IShapeRepository) ───────────────────
 
-
-
-
+        /// <summary>Reference to the host <see cref="ISketchBoard"/> WPF control.</summary>
         ISketchBoard SketchBoard { get; }
 
         /// <summary>
-        /// bindable collection of shapes
+        /// The WPF <see cref="System.Windows.Media.VisualCollection"/> backing the board's
+        /// visual children. Populated by <see cref="InitializeVisualCollection"/>.
         /// </summary>
-        ObservableCollection<ShapeVisualBase> Shapes { get; }
+        VisualCollection VisualCollection { get; }
 
         /// <summary>
-        /// this is used to hold all shapes
+        /// Attaches this manager to a WPF <see cref="Visual"/> (the <c>SketchBoard</c> canvas)
+        /// and initialises the <see cref="VisualCollection"/>.
+        /// Must be called before shapes can be rendered.
         /// </summary>
-        public VisualCollection VisualCollection { get; }
-
-        /// <summary>
-        /// get all shapes defined in canvas
-        /// </summary>
-        /// <returns></returns>
-        IEnumerable<ShapeVisualBase> GetSketchBoardVisuals();
-
-        /// <summary>
-        /// shape count
-        /// </summary>
-        int ShapeCount { get; }
-
-        /// <summary>
-        /// 当前选中的画图类型
-        /// </summary>
-        ShapeVisualBase? CurrentGeometryInEdit { get; set; }
-
-        ShapeVisualBase? SelectedGeometry { get; set; }
-
-        
-
-
-        /// <summary>
-        /// 设置图层
-        /// </summary>
-        /// <param name="layer"></param>
-        void SetShapeLayer(ShapeLayer layer);
-
-
-        void SetGeometryType(Type type);
-
-        /// <summary>
-        /// 当前使用图层
-        /// </summary>
-        ShapeLayer? CurrentShapeLayer { get; }
-
-
-        /// <summary>
-        /// 由sketchboard 向此添加,可用于初始化时加载现有图形,
-        /// </summary>
-        /// <param name="shape"></param>
-        void AddShape(ShapeVisualBase shape);
-
-        /// <summary>
-        /// 指定集合位置添加一个新图形
-        /// </summary>
-        /// <param name="shape"></param>
-        /// <param name="index"></param>
-        void AddShape(ShapeVisualBase shape, int index);
-
-        /// <summary>
-        /// remove one shape
-        /// </summary>
-        /// <param name="shape"></param>
-        void RemoveShape(ShapeVisualBase shape);
-
-        void RemoveShapes(Expression<Func<ShapeVisualBase, bool>> predict);
-
-        void RemoveAt(int index);
-
-        void RemoveAt(int index, int count);
-
-        /// <summary>
-        /// remove all shapes on canvas
-        /// </summary>
-        void ClearAllShapes();
-
-        ShapeVisualBase? GetShapeVisual(int index);
-
-        /// <summary>
-        /// add a specific geometry with specific data
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <typeparam name="TP"></typeparam>
-        /// <param name="parameter"></param>
-        ShapeVisualBase LoadShape<T, TP>(TP parameter) 
-            where T : ShapeVisualBase, IDataExport<TP>
-            where TP : IGeometryMetaData;
-        
-        /// <summary>
-        /// create a shape from sketchboard manager
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <typeparam name="TP"></typeparam>
-        /// <param name="parameter"></param>
-        /// <returns></returns>
-        ShapeVisualBase CreateShape<T, TP>(TP parameter) 
-            where T : ShapeVisualBase, IDataExport<TP>
-            where TP : IGeometryMetaData;
-
-
-        /// <summary>
-        /// create new geometry from mouse down position
-        /// </summary>
-        /// <param name="mousePosition"></param>
-        /// <returns>if no geometry type is selected, it will return null</returns>
-        ShapeVisualBase? CreateNewGeometry(Point mousePosition);
-
-        /// <summary>
-        /// set current geometry as null
-        /// </summary>
-        void UnselectGeometry();
-
-        void UnselectGeometryType();
-
         void InitializeVisualCollection(Visual visual);
-        void OnImageViewerPropertyChanged(double scale);
-        
-        event EventHandler<ISketchBoardDataManager> SketchBoardManagerInitialized;
-
-        event EventHandler<ShapeVisualBase> ShapeCreated;
-
-        event EventHandler<ShapeVisualBase> ShapeRemoved;
-
-        event EventHandler<ShapeVisualBase> ShapeSelected;
-
-        event EventHandler<ShapeVisualBase> ShapeUnselected;
-        event EventHandler<Type> GeometryTypeSelected;
-        event EventHandler<Type> GeometryTypeUnselected;
-
 
         /// <summary>
-        /// triggered when new shape is sketched, right after the mouse up
+        /// Notifies the manager that the image viewer's zoom scale changed so that
+        /// stroke thickness and drag-handle sizes can be recalculated.
         /// </summary>
-        Action<ShapeVisualBase>? NewShapeSketched { get; set; }
+        void OnImageViewerPropertyChanged(double scale);
+
+        /// <summary>
+        /// Raised after <see cref="InitializeVisualCollection"/> completes and the board
+        /// is ready to accept shapes.
+        /// </summary>
+        event EventHandler<ISketchBoardDataManager> SketchBoardManagerInitialized;
     }
 }

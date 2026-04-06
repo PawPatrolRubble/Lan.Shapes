@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows.Controls;
 using System.Windows.Media;
 
@@ -15,7 +15,10 @@ namespace Lan.Shapes.Styler
 
         public IShapeStyler Clone()
         {
-            return new ShapeStyler(FillColor, _sketchPen.Brush, _sketchPen.DashStyle, DragHandleSize);
+            return new ShapeStyler(FillColor, _sketchPen.Brush, _sketchPen.DashStyle, DragHandleSize)
+            {
+                TagColor = TagColor
+            };
         }
 
         public ShapeStylerParameter ToStylerParameter()
@@ -51,6 +54,8 @@ namespace Lan.Shapes.Styler
         }
 
         public double DragHandleSize { get; set; }
+
+        public Brush TagColor { get; set; } = Brushes.Red;
 
         public ShapeStyler()
         {

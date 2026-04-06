@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Windows.Media;
+using Lan.Shapes.Converters;
 using Lan.Shapes.Enums;
 using Lan.Shapes.Styler;
 using Newtonsoft.Json;

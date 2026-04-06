@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Windows.Media;
 using Newtonsoft.Json;
 
-namespace Lan.Shapes
+namespace Lan.Shapes.Converters
 {
     public class BrushToHexConverter : JsonConverter
     {
@@ -21,12 +21,9 @@ namespace Lan.Shapes
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            // convert the hex string to a Brush object
             if (reader.Value != null)
             {
-                // create a new instance of BrushConverter
                 BrushConverter converter = new BrushConverter();
-
                 Brush brush = (Brush)converter.ConvertFromString(reader.Value.ToString());
                 return brush;
             }

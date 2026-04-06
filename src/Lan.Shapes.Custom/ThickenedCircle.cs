@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Windows;
@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Lan.Shapes.Handle;
 using Lan.Shapes.Interfaces;
+using Lan.Shapes.Models;
 using Newtonsoft.Json.Linq;
 
 #endregion

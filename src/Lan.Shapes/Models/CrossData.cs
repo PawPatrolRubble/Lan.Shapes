@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows;
+using Lan.Shapes.Interfaces;
 
-namespace Lan.Shapes.Interfaces
+namespace Lan.Shapes.Models
 {
-    public class CrossData:IGeometryMetaData
+    public class CrossData : IGeometryMetaData
     {
         public CrossData()
         {
@@ -13,10 +11,7 @@ namespace Lan.Shapes.Interfaces
 
         public int Width { get; set; }
         public int Height { get; set; }
-
-
         public Point Center { get; set; }
-
         public double StrokeThickness { get; set; }
     }
 }

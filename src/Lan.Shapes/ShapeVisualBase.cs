@@ -1,7 +1,5 @@
 #nullable enable
 
-#region
-
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -12,20 +10,38 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Lan.Shapes.Enums;
 using Lan.Shapes.Handle;
-using Lan.Shapes.Shapes;
-using Lan.Shapes.Styler;
 
-#endregion
+using Lan.Shapes.Styler;
 
 namespace Lan.Shapes
 {
     public abstract class ShapeVisualBase : DrawingVisual, INotifyPropertyChanged
     {
+        #region constants
+
+        private const double DefaultDragHandleSize = 10;
+        private const double DefaultDpi = 96;
+        private const double DefaultTagDpi = 40;
+        private const string DefaultFontFamily = "Verdana";
+        private const string DefaultCulture = "en-us";
+
+        private static readonly IReadOnlyDictionary<DragLocation, Cursor> DragCursorMap =
+            new Dictionary<DragLocation, Cursor>
+            {
+                { DragLocation.TopLeft, Cursors.SizeNWSE },
+                { DragLocation.TopMiddle, Cursors.SizeNS },
+                { DragLocation.TopRight, Cursors.SizeNESW },
+                { DragLocation.RightMiddle, Cursors.SizeWE },
+                { DragLocation.BottomRight, Cursors.SizeNWSE },
+                { DragLocation.BottomMiddle, Cursors.SizeNS },
+                { DragLocation.BottomLeft, Cursors.SizeNESW },
+                { DragLocation.LeftMiddle, Cursors.SizeWE },
+            };
+
+        #endregion
+
         #region fields
 
-        /// <summary>
-        /// geometries will be rendered for the final shape
-        /// </summary>
         protected readonly GeometryGroup RenderGeometryGroup = new GeometryGroup();
 
         private bool _canMoveWithHand;
@@ -33,52 +49,30 @@ namespace Lan.Shapes
 
         private ShapeVisualState _state;
 
-        /// <summary>
-        /// 
-        /// </summary>
         protected GeometryGroup? HandleGeometryGroup;
 
-        /// <summary>
-        /// list of handles for drag and resizing
-        /// </summary>
-        protected List<DragHandle> Handles = new List<DragHandle>();
+        protected readonly List<DragHandle> Handles = new List<DragHandle>();
 
         protected Point? MouseDownPoint;
 
-        /// <summary>
-        /// the first point 
-        /// </summary>
         protected Point? OldPointForTranslate;
 
-        /// <summary>
-        /// in this area translation of the shape will be allowed
-        /// </summary>
-        protected CombinedGeometry PanSensitiveArea = new CombinedGeometry();
+        protected readonly CombinedGeometry PanSensitiveArea = new CombinedGeometry();
+
+        private readonly List<(Point Location, string Content)> _textGeometries = new List<(Point Location, string Content)>();
 
         #endregion
 
-        #region Propeties
+        #region Properties
 
-        /// <summary>
-        /// 
-        /// </summary>
         public abstract Rect BoundsRect { get; }
 
         protected double DragHandleSize { get; set; }
 
-
         public Guid Id { get; }
 
-
-        /// <summary>
-        /// this is used to ensure that during resizing or pan moving, the mouse will always
-        /// focus on the same shape, instead of moved to another one
-        /// </summary>
         public bool IsBeingDraggedOrPanMoving { get; protected set; }
 
-        /// <summary>
-        /// set it to be true, if geometry is first Rendered
-        /// </summary>
         public bool IsGeometryRendered { get; protected set; }
 
         public bool IsLocked
@@ -89,7 +83,6 @@ namespace Lan.Shapes
                 _isLocked = value;
 
                 State = _isLocked ? ShapeVisualState.Locked : ShapeVisualState.Normal;
-
             }
         }
 
@@ -100,12 +93,14 @@ namespace Lan.Shapes
 
         protected DragHandle? SelectedDragHandle { get; set; }
 
+        private ShapeLayer _shapeLayer;
 
-        public ShapeLayer ShapeLayer { get; set; }
+        public ShapeLayer ShapeLayer
+        {
+            get => _shapeLayer;
+            set => _shapeLayer = value ?? throw new ArgumentNullException(nameof(value));
+        }
 
-        /// <summary>
-        /// the current valid styler should be given from layer base on the shape State
-        /// </summary>
         public IShapeStyler? ShapeStyler
         {
             get => ShapeLayer?.GetStyler(State);
@@ -121,10 +116,9 @@ namespace Lan.Shapes
                 if (oldState != value)
                 {
                     UpdateVisualOnStateChanged();
-                    //update handle size
                     if (ShapeLayer != null)
                     {
-                        DragHandleSize = ShapeStyler?.DragHandleSize ?? 0;
+                        DragHandleSize = ShapeStyler?.DragHandleSize ?? DefaultDragHandleSize;
                         OnDragHandleSizeChanges(DragHandleSize);
                     }
                 }
@@ -143,33 +137,25 @@ namespace Lan.Shapes
             }
         }
 
+        protected IReadOnlyList<(Point Location, string Content)> TextGeometries => _textGeometries;
+
         #endregion
 
         #region Constructors
 
         protected ShapeVisualBase(ShapeLayer layer)
         {
-            ShapeLayer = layer;
+            _shapeLayer = layer ?? throw new ArgumentNullException(nameof(layer));
             Id = Guid.NewGuid();
-            State = ShapeVisualState.Normal;
-            DragHandleSize = ShapeStyler?.DragHandleSize ?? 10;
-            //Tag = this.GetType().Name;
+            _state = ShapeVisualState.Normal;
+            DragHandleSize = ShapeStyler?.DragHandleSize ?? DefaultDragHandleSize;
         }
 
-
         #endregion
-
-        #region Implementations
-
-        #region implementations
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        #endregion
-
-        #endregion
-
-        #region others
+        #region methods
 
         protected virtual void UpdateVisualOnStateChanged()
         {
@@ -190,10 +176,8 @@ namespace Lan.Shapes
 
         protected virtual void UpdateVisualOnLocked()
         {
-            //do nothing, but child classes can override to remove some geometries when locked
             UpdateVisual();
         }
-
 
         public virtual void Lock()
         {
@@ -211,22 +195,21 @@ namespace Lan.Shapes
 
         protected abstract void CreateHandles();
 
+        /// <inheritdoc cref="RectDragHandle.CreateRectDragHandleFromStyler(IShapeStyler, Point, int)"/>
+        [Obsolete("Use RectDragHandle.CreateRectDragHandleFromStyler(ShapeStyler, location, id) directly.")]
         protected DragHandle CreateRectDragHandle(Point location, int id)
         {
             if (ShapeStyler == null)
             {
-                throw new Exception("Style cannot be null");
+                throw new InvalidOperationException("ShapeStyler must be set before creating drag handles.");
             }
 
-            return new RectDragHandle(new Size(ShapeStyler.DragHandleSize, ShapeStyler.DragHandleSize), location, 10,
-                id);
+            return RectDragHandle.CreateRectDragHandleFromStyler(ShapeStyler, location, id);
         }
 
         protected virtual void DrawGeometryInMouseMove(Point oldPoint, Point newPoint)
         {
-            //throw new NotImplementedException();
         }
-
 
         public DragHandle? FindDragHandleMouseOver(Point p)
         {
@@ -246,31 +229,19 @@ namespace Lan.Shapes
             SelectedDragHandle = FindDragHandleMouseOver(p);
         }
 
-
         protected double GetDistanceBetweenTwoPoint(Point p1, Point p2)
         {
             return (p2 - p1).Length;
         }
 
-        protected Point GetMiddleToTwoPoints(Point p1, Point p2)
-        {
-            return new Point((p1.X + p2.X) / 2, (p1.Y + p2.Y) / 2);
-        }
-
         protected abstract void HandleResizing(Point point);
-
 
         protected abstract void HandleTranslate(Point newPoint);
 
-        /// <summary>
-        /// 未选择状态
-        /// </summary>
-        public abstract void OnDeselected();
+        public virtual void OnDeselected()
+        {
+        }
 
-        /// <summary>
-        /// left mouse button down event
-        /// </summary>
-        /// <param name="mousePoint"></param>
         public virtual void OnMouseLeftButtonDown(Point mousePoint)
         {
             if (HandleGeometryGroup?.FillContains(mousePoint) ?? false)
@@ -286,10 +257,6 @@ namespace Lan.Shapes
             MouseDownPoint = mousePoint;
         }
 
-        /// <summary>
-        /// when mouse left button up
-        /// </summary>
-        /// <param name="newPoint"></param>
         public virtual void OnMouseLeftButtonUp(Point newPoint)
         {
             if (!IsGeometryRendered && RenderGeometryGroup.Children.Count > 0)
@@ -301,77 +268,74 @@ namespace Lan.Shapes
             IsBeingDraggedOrPanMoving = false;
         }
 
-
-        /// <summary>
-        /// 鼠标点击移动
-        /// </summary>
         public virtual void OnMouseMove(Point point, MouseButtonState buttonState)
         {
             if (buttonState == MouseButtonState.Released)
             {
-                State = ShapeVisualState.MouseOver;
-
-                if (HandleGeometryGroup?.FillContains(point) ?? false)
-                {
-                    var handle = FindDragHandleMouseOver(point);
-                    if (handle != null)
-                    {
-                        UpdateMouseCursor((DragLocation)handle.Id);
-                    }
-                }
-
-
-                if (PanSensitiveArea.FillContains(point))
-                {
-                    Mouse.SetCursor(Cursors.Hand);
-                    _canMoveWithHand = true;
-                }
-                else
-                {
-                    _canMoveWithHand = false;
-                }
+                HandleMouseMoveReleased(point);
             }
-            else //when the mouse left button is pressed
+            else
             {
-                if (IsGeometryRendered)
-                {
-                    //scale operation
-                    if (SelectedDragHandle != null)
-                    {
-                        IsBeingDraggedOrPanMoving = true;
-                        UpdateMouseCursor((DragLocation)SelectedDragHandle.Id);
-                        HandleResizing(point);
-                        CreateHandles();
-                        UpdateGeometryGroup();
-                        UpdateVisual();
-                        return;
-                    }
-
-                    if (_canMoveWithHand)
-                    {
-                        HandleTranslate(point);
-                        CreateHandles();
-                        UpdateGeometryGroup();
-                        UpdateVisual();
-                    }
-                }
-                else
-                {
-                    if (MouseDownPoint != null)
-                    {
-                        DrawGeometryInMouseMove(MouseDownPoint.Value, point);
-                    }
-
-                    CreateHandles();
-                    UpdateGeometryGroup();
-                    UpdateVisual();
-                }
+                HandleMouseMovePressed(point);
             }
-
 
             OldPointForTranslate = point;
         }
 
+        private void HandleMouseMoveReleased(Point point)
+        {
+            if (State != ShapeVisualState.MouseOver)
+            {
+                State = ShapeVisualState.MouseOver;
+            }
+
+            if (HandleGeometryGroup?.FillContains(point) ?? false)
+            {
+                var handle = FindDragHandleMouseOver(point);
+                if (handle != null)
+                {
+                    TryUpdateMouseCursor(handle.Id);
+                }
+            }
+
+            _canMoveWithHand = PanSensitiveArea.FillContains(point);
+            if (_canMoveWithHand)
+            {
+                Mouse.SetCursor(Cursors.Hand);
+            }
+        }
+
+        private void HandleMouseMovePressed(Point point)
+        {
+            if (IsGeometryRendered)
+            {
+                if (SelectedDragHandle != null)
+                {
+                    IsBeingDraggedOrPanMoving = true;
+                    TryUpdateMouseCursor(SelectedDragHandle.Id);
+                    HandleResizing(point);
+                }
+                else if (_canMoveWithHand)
+                {
+                    HandleTranslate(point);
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else
+            {
+                if (MouseDownPoint != null)
+                {
+                    DrawGeometryInMouseMove(MouseDownPoint.Value, point);
+                }
+            }
+
+            CreateHandles();
+            UpdateGeometryGroup();
+            UpdateVisual();
+        }
 
         public virtual void OnMouseRightButtonUp(Point mousePosition)
         {
@@ -381,7 +345,6 @@ namespace Lan.Shapes
 
         public virtual void OnMouseLeftButtonDoubleClick(Point mouseDoubleClickPoint)
         {
-            ;
         }
 
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -389,10 +352,9 @@ namespace Lan.Shapes
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        /// <summary>
-        /// 选择时
-        /// </summary>
-        public abstract void OnSelected();
+        public virtual void OnSelected()
+        {
+        }
 
         protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
@@ -411,51 +373,26 @@ namespace Lan.Shapes
             Mouse.SetCursor(Cursors.Hand);
         }
 
-
-        /// <summary>
-        /// add geometries to group
-        /// </summary>
         protected virtual void UpdateGeometryGroup()
         {
         }
 
         public void UpdateMouseCursor(DragLocation dragLocation)
         {
-            switch (dragLocation)
+            if (DragCursorMap.TryGetValue(dragLocation, out var cursor))
             {
-                case DragLocation.TopLeft:
-                    Mouse.SetCursor(Cursors.SizeNWSE);
-
-                    break;
-                case DragLocation.TopMiddle:
-                    Mouse.SetCursor(Cursors.SizeNS);
-                    break;
-                case DragLocation.TopRight:
-                    Mouse.SetCursor(Cursors.SizeNESW);
-
-                    break;
-                case DragLocation.RightMiddle:
-                    Mouse.SetCursor(Cursors.SizeWE);
-
-                    break;
-                case DragLocation.BottomRight:
-                    Mouse.SetCursor(Cursors.SizeNWSE);
-                    break;
-                case DragLocation.BottomMiddle:
-                    Mouse.SetCursor(Cursors.SizeNS);
-                    break;
-                case DragLocation.BottomLeft:
-                    Mouse.SetCursor(Cursors.SizeNESW);
-
-                    break;
-                case DragLocation.LeftMiddle:
-                    Mouse.SetCursor(Cursors.SizeWE);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(dragLocation), dragLocation, null);
+                Mouse.SetCursor(cursor);
             }
+            // Silently ignore unknown locations — same policy as TryUpdateMouseCursor.
         }
 
+        private void TryUpdateMouseCursor(int handleId)
+        {
+            if (DragCursorMap.TryGetValue((DragLocation)handleId, out var cursor))
+            {
+                Mouse.SetCursor(cursor);
+            }
+        }
 
         public virtual void UpdateVisual()
         {
@@ -466,52 +403,42 @@ namespace Lan.Shapes
 
             var renderContext = RenderOpen();
             renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometry);
+            DrawText(renderContext);
             renderContext.Close();
-
         }
 
-        #endregion
-
-        protected double EnsureNumberWithinRange(double value, double min, double max)
+        protected static double EnsureNumberWithinRange(double value, double min, double max)
         {
-            value = Math.Min(value, max);
-            value = Math.Max(value, min);
-            return value;
+            return Math.Max(min, Math.Min(value, max));
         }
 
-        /// <summary>
-        /// if the point passed is out of the range defined after,
-        /// it will used the maximum valid value
-        /// </summary>
-        /// <param name="point"></param>
-        /// <param name="minX"></param>
-        /// <param name="maxX"></param>
-        /// <param name="minY"></param>
-        /// <param name="maxY"></param>
-        /// <returns></returns>
-        protected Point ForcePointInRange(Point point, double minX, double maxX, double minY, double maxY)
+        protected static Point ForcePointInRange(Point point, double minX, double maxX, double minY, double maxY)
         {
-            var x = point.X;
-            var y = point.Y;
-            x = EnsureNumberWithinRange(x, minX, maxX);
-            y = EnsureNumberWithinRange(y, minY, maxY);
+            var x = EnsureNumberWithinRange(point.X, minX, maxX);
+            var y = EnsureNumberWithinRange(point.Y, minY, maxY);
             return new Point(x, y);
         }
 
+        #region text rendering helpers
+
+        protected FormattedText CreateFormattedText(string text, Brush foreground, double dpi = DefaultDpi)
+        {
+            return new FormattedText(
+                text,
+                CultureInfo.GetCultureInfo(DefaultCulture),
+                FlowDirection.LeftToRight,
+                new Typeface(DefaultFontFamily),
+                ShapeLayer.TagFontSize,
+                foreground,
+                dpi);
+        }
 
         protected void AddTagText(DrawingContext renderContext, Point location)
         {
             if (!string.IsNullOrEmpty(Tag))
             {
-                FormattedText formattedText = new FormattedText(
-                    Tag,
-                    CultureInfo.GetCultureInfo("en-us"),
-                    FlowDirection.LeftToRight,
-                    new Typeface("Verdana"),
-                    ShapeLayer.TagFontSize,
-                    Brushes.Red,
-                    40);
-
+                var brush = ShapeStyler?.TagColor ?? Brushes.Red;
+                var formattedText = CreateFormattedText(Tag, brush, DefaultTagDpi);
                 renderContext.DrawText(formattedText, location);
             }
         }
@@ -520,29 +447,16 @@ namespace Lan.Shapes
         {
             if (!string.IsNullOrEmpty(Tag))
             {
-                RotateTransform rt = new RotateTransform();
-
-                rt.Angle = angle;
-                rt.CenterX = location.X;
-                rt.CenterY = location.Y;
+                var rt = new RotateTransform(angle, location.X, location.Y);
                 renderContext.PushTransform(rt);
 
-                FormattedText formattedText = new FormattedText(
-                    Tag,
-                    CultureInfo.GetCultureInfo("en-us"),
-                    FlowDirection.LeftToRight,
-                    new Typeface("Verdana"),
-                    ShapeLayer.TagFontSize,
-                    Brushes.Lime,
-                    96);
-
+                var brush = ShapeStyler?.TagColor ?? Brushes.Red;
+                var formattedText = CreateFormattedText(Tag, brush);
                 renderContext.DrawText(formattedText, location);
                 renderContext.Pop();
             }
         }
 
-
-        protected List<(Point Location, string Content)> _textGeometries = new List<(Point Location, string Content)>();
         public virtual void AddText(string content, Point? location = null)
         {
             if (string.IsNullOrEmpty(content) || location == null)
@@ -550,40 +464,31 @@ namespace Lan.Shapes
                 return;
             }
 
-            var renderContext = RenderOpen();
-            var formattedText = new FormattedText(
-                content,
-                CultureInfo.GetCultureInfo("en-us"),
-                FlowDirection.LeftToRight,
-                new Typeface("Verdana"),
-                ShapeLayer.TagFontSize,
-                Brushes.Red,
-                96);
-
-            renderContext.DrawText(formattedText, location.Value);
-            renderContext.Close();
-
             _textGeometries.Add((location.Value, content));
+            UpdateVisual();
         }
 
+        /// <summary>
+        /// Removes all text entries previously added with <see cref="AddText"/>.
+        /// Call this before re-adding updated labels to prevent stale text accumulating.
+        /// </summary>
+        public virtual void ClearText()
+        {
+            _textGeometries.Clear();
+            UpdateVisual();
+        }
 
-        protected void DrawText()
+        protected void DrawText(DrawingContext renderContext)
         {
             foreach (var textGeometry in _textGeometries)
             {
-                var renderContext = RenderOpen();
-                var formattedText = new FormattedText(
-                    textGeometry.Content,
-                    CultureInfo.GetCultureInfo("en-us"),
-                    FlowDirection.LeftToRight,
-                    new Typeface("Verdana"),
-                    ShapeLayer.TagFontSize,
-                    Brushes.Red,
-                    96);
-
+                var formattedText = CreateFormattedText(textGeometry.Content, Brushes.Red);
                 renderContext.DrawText(formattedText, textGeometry.Location);
-                renderContext.Close();
             }
         }
+
+        #endregion // text rendering helpers
+
+        #endregion // methods
     }
 }

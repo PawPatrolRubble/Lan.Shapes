@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Collections.Generic;
@@ -9,6 +9,7 @@ using System.Windows.Media;
 using Lan.Shapes.Enums;
 using Lan.Shapes.Handle;
 using Lan.Shapes.Interfaces;
+using Lan.Shapes.Models;
 
 #endregion
 
@@ -32,7 +33,7 @@ namespace Lan.Shapes.Shapes
 
         #endregion
 
-        #region Propeties
+        #region Properties
 
         /// <summary>
         /// 
@@ -60,7 +61,12 @@ namespace Lan.Shapes.Shapes
         {
             foreach (var point in data.DataPoints)
             {
+                CreateNewGeometryAndRenderIt(point);
+            }
 
+            if (!_pathFigure.IsClosed)
+            {
+                ClosePolygon();
             }
         }
 
@@ -173,14 +179,6 @@ namespace Lan.Shapes.Shapes
         }
 
         /// <summary>
-        /// 未选择状态
-        /// </summary>
-        public override void OnDeselected()
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
         /// left mouse button down event
         /// </summary>
         /// <param name="mousePoint"></param>
@@ -235,14 +233,6 @@ namespace Lan.Shapes.Shapes
         public override void OnMouseRightButtonUp(Point mousePosition)
         {
             ClosePolygon();
-        }
-
-        /// <summary>
-        /// 选择时
-        /// </summary>
-        public override void OnSelected()
-        {
-            throw new NotImplementedException();
         }
 
         protected override void OnDragHandleSizeChanges(double dragHandleSize)

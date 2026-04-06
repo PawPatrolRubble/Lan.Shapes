@@ -1,4 +1,4 @@
-ï»¿#region
+#region
 
 using System;
 using System.Collections.Generic;
@@ -8,8 +8,10 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using Lan.Shapes.Enums;
+using Lan.Shapes.ExtensionMethods;
 using Lan.Shapes.Handle;
 using Lan.Shapes.Interfaces;
+using Lan.Shapes.Models;
 using Point = System.Windows.Point;
 
 #endregion
@@ -147,7 +149,7 @@ namespace Lan.Shapes.Custom
         }
 
         /// <summary>
-        /// é¼ æ ‡ç‚¹å‡»ç§»åŠ¨
+        /// Êó±êµã»÷ÒÆ¶¯
         /// </summary>
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
@@ -225,7 +227,7 @@ namespace Lan.Shapes.Custom
         private void UpdateResizeHandleLocation()
         {
             DistanceResizeHandle.GeometryCenter =
-                GetMiddleToTwoPoints(Start, End) + new Vector(0, -StrokeThickness / 2);
+                Start.MiddleWith(End) + new Vector(0, -StrokeThickness / 2);
         }
 
 
@@ -309,7 +311,7 @@ namespace Lan.Shapes.Custom
             }
             else
             {
-                throw new Exception($"æä¾›çš„ç‚¹æ•°æ®ä¸è¶³ï¼Œå¿…é¡»å¤§äº2ä¸ªç‚¹ã€‚");
+                throw new Exception($"Ìá¹©µÄµãÊı¾İ²»×ã£¬±ØĞë´óÓÚ2¸öµã¡£");
             }
 
         }
