@@ -1,45 +1,66 @@
-# GeometryShapesSketcher
-a wpf control can be used to sketch common shapes like rectangle, ellipse on an image. it is extensible to support more custom shapes.
+# WpfGeometrySketcher
 
-the sketch area can be zoomed in and out using mouse wheel. 
-to pan move the sketch area you need to press CTRL + Left mouse button pressed.
+A high-performance WPF image viewer and geometry sketching control. Built on `DrawingVisual` for superior rendering performance compared to standard WPF shape controls, with extensible support for custom shapes.
 
-本项目主要实现如何在wpf下绘制各种图形，基于drawingVisual比wpf自带图形控件性能上更具优势。
+## Features
 
-![image](https://github.com/PawPatrolRubble/WpfGeometrySketcher/assets/44959548/a2c5f68b-cd2b-4539-8e96-45ecdd3da0c6)
+- **Performance**: Built on `DrawingVisual` for optimized rendering
+- **Shape Support**: Rectangle, ellipse, line, polygon, circle, and cross shapes
+- **Custom Shapes**: Extensible architecture for custom geometry types
+- **Zoom & Pan**: Mouse wheel zoom and CTRL+drag panning
+- **Pixel Info**: Display RGB values at cursor position
+- **Scale Display**: Real-time zoom ratio display
+- **Auto-Sized Handles**: Drag handles automatically sized based on shape dimensions
+- **Dialog Integration**: Grid rectangles with interactive row/column input
+- **DXF Export**: Export shapes to DXF format
 
+## Getting Started
 
+### Basic Usage
 
-## Get started
+1. Add the control to your XAML:
 
-1. add the follwing to xaml
 ```xml
 <imageViewer:ImageViewerControl
-        Margin="5"
-        Padding="10"
-        BorderBrush="Red"
-        DataContext="{Binding Camera2}" //datacontext for imageviewer control
-        BorderThickness="1" />
+    Margin="5"
+    Padding="10"
+    BorderBrush="Red"
+    DataContext="{Binding Camera2}"
+    BorderThickness="1" />
 ```
 
-2. define view models
-``` c#
+2. Define the view model in your code:
 
-//define image control viewmodel
+```csharp
+// Define image control viewmodel
 public IImageViewerViewModel Camera1 { get; set; }
 
-//instantiation
+// Instantiation
 Camera1 = new ImageViewerControlViewModel();
 ```
 
+### Navigation Controls
 
-### Features
-1. extensible to support all kinds of custom geometries 方便扩展，可支持自定义图形
-2. drag handle is auto calculated to ensure unifrom using experience， 根据图形大小自动计算拖拉框
-3. rgb value of pixel is displayed， 显示像素rgb值
-4. scale rate is supported， 显示缩放倍率
+- **Zoom**: Use mouse wheel to zoom in/out
+- **Pan**: Press CTRL + Left mouse button and drag to move the sketch area
 
+## Architecture
 
-### todo list
-1. add grid rectangle， 添加带格子矩形，带交互对话框，输入行和列数
+The project is organized into several core modules:
 
+- **Lan.ImageViewer**: Main image viewer control and view models
+- **Lan.Shapes**: Core shape rendering and manipulation
+- **Lan.SketchBoard**: Canvas and drawing infrastructure
+- **Lan.Shapes.Custom**: Custom shape implementations
+- **Lan.Shapes.DialogGeometry**: Dialog-based geometry types (grid rectangles, DXF export)
+- **Lan.ImageViewer.Prism**: Prism framework integration
+
+## Requirements
+
+- .NET 6.0 Windows
+- WPF
+- Extended.Wpf.Toolkit (v4.5.1)
+
+## License
+
+See LICENSE.md for details.
