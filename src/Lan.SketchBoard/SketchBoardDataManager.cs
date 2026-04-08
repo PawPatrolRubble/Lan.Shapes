@@ -367,6 +367,12 @@ namespace Lan.SketchBoard
                 CurrentGeometryInEdit = shape;
                 Shapes.Add(shape);
 
+                // Subscribe to shape cancellation to remove shapes that abort creation (e.g., cancelled dialogs)
+                shape.ShapeCreationCancelled += (s, e) =>
+                {
+                    RemoveShape(shape);
+                };
+
                 // Let shapes that need board dimensions opt-in via IBoardContextAware
                 // instead of hard-coding type-specific if-blocks here.
                 if (shape is IBoardContextAware contextAware && _sketchBoard != null)

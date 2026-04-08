@@ -2,8 +2,8 @@
 
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
-	    <PackageVersion>1.1.23</PackageVersion>
-	    <Description>add text to circle radius</Description>
+	    <PackageVersion>1.1.24</PackageVersion>
+	    <Description>implement Fiber shape with fillet radius and triangle apex</Description>
         <UseWPF>true</UseWPF>
 
     </PropertyGroup>

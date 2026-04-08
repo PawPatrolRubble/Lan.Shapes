@@ -155,6 +155,20 @@ namespace Lan.Shapes
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        /// <summary>
+        /// Raised when shape creation is cancelled (e.g., user cancels an import dialog).
+        /// The shape should be removed from the canvas.
+        /// </summary>
+        public event EventHandler? ShapeCreationCancelled;
+
+        /// <summary>
+        /// Raises the ShapeCreationCancelled event to signal that this shape should be removed.
+        /// </summary>
+        protected void OnShapeCreationCancelled()
+        {
+            ShapeCreationCancelled?.Invoke(this, EventArgs.Empty);
+        }
+
         #region methods
 
         protected virtual void UpdateVisualOnStateChanged()

@@ -481,6 +481,11 @@ namespace Lan.Shapes.DialogGeometry
                             UpdateVisual();
                             IsGeometryRendered = true;
                         }
+                        else
+                        {
+                            // Dialog was cancelled - signal that this shape should be removed
+                            OnShapeCreationCancelled();
+                        }
                     });
             }
             else
