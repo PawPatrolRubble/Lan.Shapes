@@ -16,6 +16,7 @@ using Lan.ImageViewer;
 using Lan.Shapes.Custom;
 using Lan.Shapes.DialogGeometry.Dialog;
 using Lan.Shapes.Interfaces;
+using Lan.Shapes.Models;
 using Lan.Shapes.Shapes;
 
 using Microsoft.Win32;
@@ -68,6 +69,7 @@ namespace Lan.Shapes.SimpleApp.ViewModels
             SetTagNameCommand = new RelayCommand(SetTagNameCommandImpl);
             ChooseFileDialogCommand = new RelayCommand(ChooseFileDialogCommandImpl);
             ClearAllShapesCommand = new RelayCommand(ClearAllShapesCommandImpl);
+            LoadFiberFromDataCommand = new RelayCommand(LoadFiberFromDataCommandImpl);
 
             ImageViewerViewModels.Add(Camera1);
             //ImageViewerViewModels.Add(Camera2);
@@ -164,6 +166,8 @@ namespace Lan.Shapes.SimpleApp.ViewModels
         public RelayCommand ChooseFileDialogCommand { get; private set; }
 
         public RelayCommand ClearAllShapesCommand { get; private set; }
+
+        public RelayCommand LoadFiberFromDataCommand { get; private set; }
 
 
         private void ClearAllShapesCommandImpl()
@@ -363,6 +367,19 @@ namespace Lan.Shapes.SimpleApp.ViewModels
             //    new Point(800,800),
             //}));
             //Camera1.SketchBoardDataManager.Shapes[0].Lock();
+        }
+
+        private void LoadFiberFromDataCommandImpl()
+        {
+            SelectedImageViewModel?.SketchBoardDataManager.LoadShape<Fiber, FiberData>(new FiberData
+            {
+                FilletCenter = new Point(700, 450),
+                FiberAngleInDeg = 145,
+                FilletRadius = 35,
+                Width = 320,
+                Height = 500,
+                EnableTranslation = true
+            });
         }
 
         private void LockEditCommandImpl()

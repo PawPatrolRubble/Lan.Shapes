@@ -12,8 +12,8 @@
     Title="MainWindow"
     Width="1200"
     Height="800"
-    WindowStartupLocation="CenterScreen"
     d:DataContext="{d:DesignInstance viewModels:MainWindowViewModel}"
+    WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
 
     <Window.Resources>
@@ -37,7 +37,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="150" />
+                <ColumnDefinition Width="200" />
             </Grid.ColumnDefinitions>
             <UniformGrid>
 
@@ -70,7 +70,7 @@
 
             <StackPanel Grid.Column="2">
                 <ComboBox ItemsSource="{Binding ImageViewerViewModels}" SelectedItem="{Binding SelectedImageViewModel}" />
-                
+
                 <Button Command="{Binding LoadFromParameterCommand}" Content="load from parameter" />
                 <Button Command="{Binding LockEditCommand}" Content="lock" />
                 <Button Command="{Binding UnlockEditCommand}" Content="Unlock" />
@@ -78,9 +78,7 @@
                 <Button Command="{Binding SetTagNameCommand}" Content="Set Tag" />
                 <Button Command="{Binding ClearAllShapesCommand}" Content="clear all" />
 
-                <TextBox
-                    VerticalAlignment="Center"
-                    Text="{Binding ImagePath}">
+                <TextBox VerticalAlignment="Center" Text="{Binding ImagePath}">
 
                     <TextBox.InputBindings>
                         <MouseBinding Command="{Binding ChooseFileDialogCommand}" MouseAction="LeftDoubleClick" />

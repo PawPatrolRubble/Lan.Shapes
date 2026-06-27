@@ -10,7 +10,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="Extended.Wpf.Toolkit" Version="4.5.1" />
-		<PackageReference Include="Lan.ImageViewer.Prism" Version="1.1.35" />
 		<PackageReference Include="Prism.DryIoc" Version="8.1.97" />
 
 		<PackageReference Include="Prism.Container.Extensions" Version="8.0.62" />
@@ -40,6 +39,13 @@
 		<None Update="appsettings.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\src\Lan.ImageViewer\Lan.ImageViewer.csproj" />
+		<ProjectReference Include="..\src\Lan.ImageViewer.Prism\Lan.ImageViewer.Prism.csproj" />
+		<ProjectReference Include="..\src\Lan.Shapes.Custom\Lan.Shapes.Custom.csproj" />
+		<ProjectReference Include="..\src\Lan.Shapes.DialogGeometry\Lan.Shapes.DialogGeometry.csproj" />
 	</ItemGroup>
 
 </Project>

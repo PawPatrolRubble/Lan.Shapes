@@ -1,5 +1,4 @@
 using System;
-using System.Numerics;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -12,102 +11,6 @@ using Vector = System.Windows.Vector;
 
 namespace Lan.Shapes.Custom
 {
-    public static class LineHelper
-    {
-        #region properties        
-        public static double Length(Point start, Point end)
-        {
-            return Math.Sqrt(Math.Pow(end.X - start.X, 2) + Math.Pow(end.Y - start.Y, 2));
-        }
-
-        public static double Angle(Point start, Point end)
-        {
-            return Math.Atan2(end.Y - start.Y, end.X - start.X);
-        }
-
-        #endregion
-
-        #region other members
-
-        public static bool TryGetIntersection(
-            Vector2 p1, Vector2 p2,
-            Vector2 p3, Vector2 p4,
-            out Vector2 intersection)
-        {
-            intersection = default;
-
-            float x1 = p1.X, y1 = p1.Y;
-            float x2 = p2.X, y2 = p2.Y;
-            float x3 = p3.X, y3 = p3.Y;
-            float x4 = p4.X, y4 = p4.Y;
-
-            var denominator = (x1 - x2) * (y3 - y4) -
-                              (y1 - y2) * (x3 - x4);
-
-            if (Math.Abs(denominator) < 1e-6)
-            {
-                // Lines are parallel or coincident
-                return false;
-            }
-
-            var pre = x1 * y2 - y1 * x2;
-            var post = x3 * y4 - y3 * x4;
-
-            var x = (pre * (x3 - x4) - (x1 - x2) * post) / denominator;
-            var y = (pre * (y3 - y4) - (y1 - y2) * post) / denominator;
-
-            intersection = new Vector2(x, y);
-            return true;
-        }
-
-        public static Point GetIntersectionWithLine(Point start, Point end, Point lineStart, Point lineEnd)
-        {
-            TryGetIntersection(new Vector2((float)start.X, (float)start.Y), new Vector2((float)end.X, (float)end.Y),
-                new Vector2((float)lineStart.X, (float)lineStart.Y),
-                new Vector2((float)lineEnd.X, (float)lineEnd.Y), out var intersection);
-            return new Point(intersection.X, intersection.Y);
-        }
-
-        public static double GetAngleBetweenLines(Point start, Point end)
-        {
-            return Math.Atan2(end.Y - start.Y, end.X - start.X);
-        }
-
-        public static (Point, Point) GetPerpendicularLineThroughPoint(Point lineStart, Point lineEnd, Point point, double length = 200)
-        {
-            Vector direction = new Vector(lineEnd.X - lineStart.X, lineEnd.Y - lineStart.Y);
-            if (direction.Length > 0)
-            {
-                direction.Normalize();
-            }
-            else
-            {
-                return (point, point);
-            }
-            Vector perpendicular = new Vector(direction.Y, -direction.X);
-            perpendicular *= length / 2;
-            Point start = new Point(point.X - perpendicular.X, point.Y - perpendicular.Y);
-            Point end = new Point(point.X + perpendicular.X, point.Y + perpendicular.Y);
-            return (start, end);
-        }
-
-        public static (Point, Point) GetParallelLineThroughPoint(Point lineStart, Point lineEnd, Point point)
-        {
-            Vector direction = new Vector(lineEnd.X - lineStart.X, lineEnd.Y - lineStart.Y);
-            if (direction.Length < 1e-6)
-            {
-                return (point, point);
-            }
-            double originalLength = direction.Length;
-            direction.Normalize();
-            direction *= originalLength / 2;
-            Point start = new Point(point.X - direction.X, point.Y - direction.Y);
-            Point end = new Point(point.X + direction.X, point.Y + direction.Y);
-            return (start, end);
-        }
-        #endregion
-    }
-
     public class Fiber : CustomGeometryBase, IDataExport<FiberData>
     {
         private readonly RectDragHandle _bottomLeftHandle;
@@ -268,25 +171,21 @@ namespace Lan.Shapes.Custom
         public void FromData(FiberData data)
         {
             _enableTranslation = data.EnableTranslation;
-            FiberAngle = data.FiberAngleInDeg;
-            FilletRadius = data.FilletRadius;
+            _fiberAngle = data.FiberAngleInDeg;
+            _filletRadius = data.FilletRadius;
 
-            double w2 = data.Width / 2.0;
-            double h2 = data.Height / 2.0;
-            double a = -data.FiberAngleInDeg * Math.PI / 180.0;
-            double cosA = Math.Cos(a);
-            double sinA = Math.Sin(a);
+            double halfWidth = data.Width / 2.0;
+            double halfHeight = data.Height / 2.0;
+            double angle = AngleToRadian(data.FiberAngleInDeg);
 
             Point center = data.FilletCenter;
-            Point p1 = new Point(-w2, -h2);
-            Point p2 = new Point(w2, -h2);
-            Point p3 = new Point(-w2, h2);
-            Point p4 = new Point(w2, h2);
+            Vector widthVector = new Vector(Math.Sin(angle), Math.Cos(angle)) * halfWidth;
+            Vector topToBottomVector = new Vector(-Math.Cos(angle), Math.Sin(angle)) * halfHeight;
 
-            RectTopLeft = new Point(center.X + p1.X * cosA - p1.Y * sinA, center.Y + p1.X * sinA + p1.Y * cosA);
-            RectTopRight = new Point(center.X + p2.X * cosA - p2.Y * sinA, center.Y + p2.X * sinA + p2.Y * cosA);
-            RectBottomLeft = new Point(center.X + p3.X * cosA - p3.Y * sinA, center.Y + p3.X * sinA + p3.Y * cosA);
-            RectBottomRight = new Point(center.X + p4.X * cosA - p4.Y * sinA, center.Y + p4.X * sinA + p4.Y * cosA);
+            RectTopLeft = center - widthVector - topToBottomVector;
+            RectTopRight = center + widthVector - topToBottomVector;
+            RectBottomLeft = center - widthVector + topToBottomVector;
+            RectBottomRight = center + widthVector + topToBottomVector;
             
             UpdateGeometry();
 
@@ -311,8 +210,10 @@ namespace Lan.Shapes.Custom
             {
                 FiberAngleInDeg = GetFiberAngleInDeg(),
                 FilletCenter = _filletGeometry.Center,
+                FilletRadius = FilletRadius,
                 Width = w,
-                Height = h
+                Height = h,
+                EnableTranslation = _enableTranslation
             };
         }
 
@@ -583,6 +484,15 @@ namespace Lan.Shapes.Custom
         {
         }
 
+        protected override void OnDragHandleSizeChanges(double dragHandleSize)
+        {
+            base.OnDragHandleSizeChanges(dragHandleSize);
+            foreach (DragHandle handle in Handles)
+            {
+                handle.HandleSize = new Size(dragHandleSize, dragHandleSize);
+            }
+        }
+
         private Point RotatePointAroundCenter(Point point, Point center, double angleInRadians)
         {
             double dx = point.X - center.X;
@@ -620,9 +530,7 @@ namespace Lan.Shapes.Custom
 
         private void DrawCircleText(DrawingContext renderContext)
         {
-            double rScaled = 0.0;
-            if (ShapeLayer.UnitsPerMillimeter != 0 && ShapeLayer.PixelPerUnit != 0.0)
-                rScaled = FilletRadius * (double)ShapeLayer.UnitsPerMillimeter / ShapeLayer.PixelPerUnit;
+            double rScaled = FilletRadius * ShapeLayer.UnitsPerMillimeter / ShapeLayer.PixelPerUnit;
 
             FormattedText fmtRadius = new FormattedText(
                 $"radius: {rScaled:f0} {ShapeLayer.UnitName}",
@@ -643,9 +551,7 @@ namespace Lan.Shapes.Custom
                 96.0);
 
             double width = Math.Sqrt(Math.Pow(RectTopLeft.X - RectTopRight.X, 2.0) + Math.Pow(RectTopLeft.Y - RectTopRight.Y, 2.0));
-            double wScaled = 0.0;
-            if (ShapeLayer.UnitsPerMillimeter != 0 && ShapeLayer.PixelPerUnit != 0.0)
-                wScaled = width * (double)ShapeLayer.UnitsPerMillimeter / ShapeLayer.PixelPerUnit;
+            double wScaled = width * ShapeLayer.UnitsPerMillimeter / ShapeLayer.PixelPerUnit;
 
             FormattedText fmtWidth = new FormattedText(
                 $"width: {wScaled:f0} {ShapeLayer.UnitName}",
@@ -699,9 +605,7 @@ namespace Lan.Shapes.Custom
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
             double height = Math.Sqrt(Math.Pow(RectTopLeft.X - RectBottomLeft.X, 2.0) + Math.Pow(RectTopLeft.Y - RectBottomLeft.Y, 2.0));
-            double hScaled = 0.0;
-            if (ShapeLayer.UnitsPerMillimeter != 0 && ShapeLayer.PixelPerUnit != 0.0)
-                hScaled = height * (double)ShapeLayer.UnitsPerMillimeter / ShapeLayer.PixelPerUnit;
+            double hScaled = height * ShapeLayer.UnitsPerMillimeter / ShapeLayer.PixelPerUnit;
 
             FormattedText fmtHeight = new FormattedText(
                 $"Height: {hScaled:f0} {ShapeLayer.UnitName}",

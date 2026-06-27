@@ -172,6 +172,8 @@ namespace Lan.Shapes.Shapes
 
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
+            var oldPointForTranslate = OldPointForTranslate;
+
             base.OnMouseMove(point, buttonState);
 
             if (buttonState == MouseButtonState.Pressed)
@@ -194,6 +196,7 @@ namespace Lan.Shapes.Shapes
                                 End = point;
                                 break;
                             default:
+                                OldPointForTranslate = oldPointForTranslate;
                                 HandleTranslate(point);
                                 break;
                         }

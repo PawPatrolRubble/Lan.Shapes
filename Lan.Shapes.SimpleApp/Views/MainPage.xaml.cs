@@ -1,5 +1,6 @@
 ﻿using Lan.ImageViewer;
 using Lan.Shapes.Interfaces;
+using Lan.Shapes.Models;
 using Lan.Shapes.Shapes;
 using Lan.Shapes.SimpleApp.ViewModels;
 

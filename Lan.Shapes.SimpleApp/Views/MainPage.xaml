@@ -70,6 +70,7 @@
             <StackPanel Grid.Column="2">
                 <ComboBox ItemsSource="{Binding ImageViewerViewModels}" SelectedItem="{Binding SelectedImageViewModel}" />
                 <Button Command="{Binding LoadFromParameterCommand}" Content="load from parameter" />
+                <Button Command="{Binding LoadFiberFromDataCommand}" Content="load fiber from data" />
                 <Button Command="{Binding LockEditCommand}" Content="lock" />
                 <Button Command="{Binding UnlockEditCommand}" Content="Unlock" />
                 <Button Command="{Binding FilterShapeTypeCommand}" Content="Filter" />
