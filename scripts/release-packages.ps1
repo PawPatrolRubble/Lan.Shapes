@@ -33,7 +33,7 @@ $projects = @(
 foreach ($project in $projects) {
     dotnet pack (Join-Path $root $project) `
         --configuration $Configuration `
-        --no-build `
+        --no-restore `
         --output $outputPath
 }
 
