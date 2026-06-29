@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<TargetFramework>net6.0-windows</TargetFramework>
 		<UseWPF>true</UseWPF>
-		<PackageVersion>1.4.3</PackageVersion>
+		<PackageVersion>1.4.8</PackageVersion>
 		<Description>fixed the bug of line movement and fiber shape drag handle scale issue</Description>
 		<!--<ReferenceOutputAssembly>true</ReferenceOutputAssembly>-->
 		<!--<IncludeReferencedProjects>true</IncludeReferencedProjects>-->
