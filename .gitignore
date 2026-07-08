@@ -354,3 +354,6 @@ MigrationBackup/
 /Test/Lan.Shapes.TestApp/test0.bmp
 /.claude
 /.omc
+/.glm_tui_session.json
+/.glm_tui_sessions.json
+/ARCHITECTURE_ASSESSMENT.md

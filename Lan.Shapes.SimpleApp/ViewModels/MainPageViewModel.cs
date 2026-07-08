@@ -376,7 +376,7 @@ namespace Lan.Shapes.SimpleApp.ViewModels
                 FilletCenter = new Point(700, 450),
                 FiberAngleInDeg = 145,
                 FilletRadius = 35,
-                Width = 320,
+                Width = 125,
                 Height = 500,
                 EnableTranslation = true
             });
