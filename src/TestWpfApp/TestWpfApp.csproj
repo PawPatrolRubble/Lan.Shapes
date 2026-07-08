@@ -1,8 +1,16 @@
-﻿<?xml version="1.0" encoding="UTF-8" ?>
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>net8.0-windows</TargetFramework>
         <UseWPF>true</UseWPF>
     </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Lan.Shapes.Custom\Lan.Shapes.Custom.csproj" />
+        <ProjectReference Include="..\Lan.Shapes\Lan.Shapes.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\data\ShapeLayers.json" Link="ShapeLayers.json" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
 </Project>

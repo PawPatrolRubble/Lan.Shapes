@@ -40,7 +40,7 @@
     "UnitsPerMillimeter": 1000,
     "PixelPerUnit": 3410,
     "UnitName": "um",
-    "TextForeground": null,
+    "TextForeground": "#000000",
     "BorderBackground": "#00FFFFFF",
     "MaximumThickenedShapeWidth": 80,
     "TagFontSize": 50
@@ -86,7 +86,7 @@
     "UnitsPerMillimeter": 1000,
     "PixelPerUnit": 3410,
     "UnitName": "um",
-    "TextForeground": null,
+    "TextForeground": "#000000",
     "BorderBackground": "#00FFFFFF",
     "MaximumThickenedShapeWidth": 80,
     "TagFontSize": 50

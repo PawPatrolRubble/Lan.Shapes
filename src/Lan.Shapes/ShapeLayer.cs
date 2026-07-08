@@ -139,9 +139,14 @@ namespace Lan.Shapes
                 BorderBackground = BorderBackground,
                 Description = Description,
                 Name = Name,
-                StyleSchema = new Dictionary<ShapeVisualState, ShapeStylerParameter>(_stylers.Select(x => new KeyValuePair<ShapeVisualState, ShapeStylerParameter>(x.Key,x.Value.ToStylerParameter())))
+                MaximumThickenedShapeWidth = MaximumThickenedShapeWidth,
+                TagFontSize = TagFontSize,
+                UnitsPerMillimeter = UnitsPerMillimeter,
+                PixelPerUnit = (int)PixelPerUnit,
+                UnitName = UnitName,
+                TextForeground = TextForeground,
+                StyleSchema = new Dictionary<ShapeVisualState, ShapeStylerParameter>(_stylers.Select(x => new KeyValuePair<ShapeVisualState, ShapeStylerParameter>(x.Key, x.Value.ToStylerParameter())))
             };
-            //throw new NotImplementedException();
         }
     }
 }

@@ -174,8 +174,9 @@ namespace Lan.Shapes.Custom
             _fiberAngle = data.FiberAngleInDeg;
             _filletRadius = data.FilletRadius;
 
-            double halfWidth = data.Width / 2.0;
-            double halfHeight = data.Height / 2.0;
+            double toPixels = ShapeLayer.PixelPerUnit / (ShapeLayer.UnitsPerMillimeter);
+            double halfWidth = data.Width * toPixels / 2.0;
+            double halfHeight = data.Height * toPixels / 2.0;
             double angle = AngleToRadian(data.FiberAngleInDeg);
 
             Point center = data.FilletCenter;
@@ -186,7 +187,7 @@ namespace Lan.Shapes.Custom
             RectTopRight = center + widthVector - topToBottomVector;
             RectBottomLeft = center - widthVector + topToBottomVector;
             RectBottomRight = center + widthVector + topToBottomVector;
-            
+
             UpdateGeometry();
 
             Point currentCenter = _filletGeometry.Center;
@@ -203,8 +204,9 @@ namespace Lan.Shapes.Custom
 
         public FiberData GetMetaData()
         {
-            double w = Math.Sqrt(Math.Pow(RectTopRight.X - RectTopLeft.X, 2.0) + Math.Pow(RectTopRight.Y - RectTopLeft.Y, 2.0));
-            double h = Math.Sqrt(Math.Pow(RectBottomLeft.X - RectTopLeft.X, 2.0) + Math.Pow(RectBottomLeft.Y - RectTopLeft.Y, 2.0));
+            double toMicrometers = 1000.0 * ShapeLayer.UnitsPerMillimeter / ShapeLayer.PixelPerUnit;
+            double w = Math.Sqrt(Math.Pow(RectTopRight.X - RectTopLeft.X, 2.0) + Math.Pow(RectTopRight.Y - RectTopLeft.Y, 2.0)) * toMicrometers;
+            double h = Math.Sqrt(Math.Pow(RectBottomLeft.X - RectTopLeft.X, 2.0) + Math.Pow(RectBottomLeft.Y - RectTopLeft.Y, 2.0)) * toMicrometers;
 
             return new FiberData()
             {
@@ -410,16 +412,16 @@ namespace Lan.Shapes.Custom
         {
             if (!_enableTranslation || !OldPointForTranslate.HasValue)
                 return;
-            
+
             Point oldPoint = OldPointForTranslate.Value;
             double dx = point.X - oldPoint.X;
             double dy = point.Y - oldPoint.Y;
-            
+
             RectBottomLeft = new Point(RectBottomLeft.X + dx, RectBottomLeft.Y + dy);
             RectTopLeft = new Point(RectTopLeft.X + dx, RectTopLeft.Y + dy);
             RectBottomRight = new Point(RectBottomRight.X + dx, RectBottomRight.Y + dy);
             RectTopRight = new Point(RectTopRight.X + dx, RectTopRight.Y + dy);
-            
+
             OldPointForTranslate = point;
         }
 
@@ -455,20 +457,20 @@ namespace Lan.Shapes.Custom
             {
                 double num = FilletRadius / Math.Sin((180.0 - 2.0 * TriangleBottomEdgeAngleInDeg) * Math.PI / 2.0 / 180.0);
                 double angleInDegrees = 90.0 - TriangleBottomEdgeAngleInDeg;
-                
+
                 Point pointLine1AnglePoint1 = GetIntersectionPoint_Line1AnglePoint(RectTopLeft, RectBottomLeft, TriangleApex, angleInDegrees);
                 Point pointLine1AnglePoint2 = GetIntersectionPoint_Line1AnglePoint(RectTopRight, RectBottomRight, TriangleApex, -angleInDegrees);
-                
+
                 Vector vector1 = new Vector(pointLine1AnglePoint1.X - TriangleApex.X, pointLine1AnglePoint1.Y - TriangleApex.Y);
                 Vector vector2 = new Vector(pointLine1AnglePoint2.X - TriangleApex.X, pointLine1AnglePoint2.Y - TriangleApex.Y);
                 if (vector1.Length > 0) vector1.Normalize();
                 if (vector2.Length > 0) vector2.Normalize();
-                
+
                 Vector vector3 = new Vector((vector1.X + vector2.X) / 2.0, (vector1.Y + vector2.Y) / 2.0);
                 if (vector3.Length > 0) vector3.Normalize();
-                
+
                 Point point = new Point(TriangleApex.X + vector3.X * num, TriangleApex.Y + vector3.Y * num);
-                
+
                 _filletGeometry.Center = point;
                 _filletGeometry.RadiusX = FilletRadius;
                 _filletGeometry.RadiusY = FilletRadius;
@@ -536,16 +538,16 @@ namespace Lan.Shapes.Custom
                 $"radius: {rScaled:f0} {ShapeLayer.UnitName}",
                 CultureInfo.GetCultureInfo("en-us"),
                 FlowDirection.LeftToRight,
-                new Typeface("Verdana"),
+                new Typeface("Consolas"),
                 (double)ShapeLayer.TagFontSize,
                 Brushes.Red,
                 96.0);
 
             FormattedText fmtAngle = new FormattedText(
-                $"tip angle: {TriangleBottomEdgeAngleInDeg:f2}°",
+                $"tip angle: {(90 - TriangleBottomEdgeAngleInDeg) * 2:f2}°",
                 CultureInfo.GetCultureInfo("en-us"),
                 FlowDirection.LeftToRight,
-                new Typeface("Verdana"),
+                new Typeface("Consolas"),
                 (double)ShapeLayer.TagFontSize,
                 Brushes.Red,
                 96.0);
@@ -557,31 +559,33 @@ namespace Lan.Shapes.Custom
                 $"width: {wScaled:f0} {ShapeLayer.UnitName}",
                 CultureInfo.GetCultureInfo("en-us"),
                 FlowDirection.LeftToRight,
-                new Typeface("Verdana"),
+                new Typeface("Consolas"),
                 (double)ShapeLayer.TagFontSize,
                 Brushes.Red,
                 96.0);
 
-            Vector vRot = new Vector(RectTopRight.X - RectTopLeft.X, RectTopRight.Y - RectTopLeft.Y);
-            double angle = Math.Atan2(vRot.Y, vRot.X) * 180.0 / Math.PI;
+            // Position text above the top edge
+            Vector vTop = new Vector(RectTopRight.X - RectTopLeft.X, RectTopRight.Y - RectTopLeft.Y);
+            double angle = Math.Atan2(vTop.Y, vTop.X) * 180.0 / Math.PI;
 
-            Vector norm = new Vector(-vRot.Y, vRot.X);
+            Vector norm = new Vector(-vTop.Y, vTop.X);
             if (norm.Length > 0.0) norm.Normalize();
 
-            double padding = 2.0;    
-            double baseYOffset = -110.0;
+            double padding = 0.0;
+            double baseOffset = -55.0;
 
-            double offset1 = baseYOffset + fmtWidth.Height + fmtAngle.Height + fmtRadius.Height + 2.0 * padding;
+            // Stack text outward (negative offset = above edge)
+            double offset1 = baseOffset;
             Point o1 = new Point(RectTopLeft.X + norm.X * offset1, RectTopLeft.Y + norm.Y * offset1);
 
-            double offset2 = baseYOffset + fmtAngle.Height + fmtRadius.Height + padding;
+            double offset2 = baseOffset - fmtRadius.Height * 0.75 - padding;
             Point o2 = new Point(RectTopLeft.X + norm.X * offset2, RectTopLeft.Y + norm.Y * offset2);
 
-            double offset3 = baseYOffset + fmtRadius.Height;
+            double offset3 = baseOffset - (fmtRadius.Height + fmtAngle.Height) * 0.75 - 2.0 * padding;
             Point o3 = new Point(RectTopLeft.X + norm.X * offset3, RectTopLeft.Y + norm.Y * offset3);
 
             renderContext.PushTransform(new RotateTransform(angle, o1.X, o1.Y));
-            renderContext.DrawText(fmtWidth, o1);
+            renderContext.DrawText(fmtRadius, o1);
             renderContext.Pop();
 
             renderContext.PushTransform(new RotateTransform(angle, o2.X, o2.Y));
@@ -589,7 +593,7 @@ namespace Lan.Shapes.Custom
             renderContext.Pop();
 
             renderContext.PushTransform(new RotateTransform(angle, o3.X, o3.Y));
-            renderContext.DrawText(fmtRadius, o3);
+            renderContext.DrawText(fmtWidth, o3);
             renderContext.Pop();
         }
 
@@ -599,8 +603,8 @@ namespace Lan.Shapes.Custom
                 $"Angle: {GetFiberAngleInDeg():f2}°",
                 CultureInfo.GetCultureInfo("en-us"),
                 FlowDirection.LeftToRight,
-                new Typeface("Verdana"),
-                (double)ShapeLayer.TagFontSize, 
+                new Typeface("Consolas"),
+                (double)ShapeLayer.TagFontSize,
                 Brushes.Red,
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
@@ -611,28 +615,36 @@ namespace Lan.Shapes.Custom
                 $"Height: {hScaled:f0} {ShapeLayer.UnitName}",
                 CultureInfo.GetCultureInfo("en-us"),
                 FlowDirection.LeftToRight,
-                new Typeface("Verdana"),
+                new Typeface("Consolas"),
                 (double)ShapeLayer.TagFontSize,
                 Brushes.Red,
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
-            Vector vRot = new Vector(RectBottomLeft.X - RectTopLeft.X, RectBottomLeft.Y - RectTopLeft.Y);
-            double angle = Math.Atan2(vRot.Y, vRot.X) * 180.0 / Math.PI;
+            // Position text outside the left edge
+            Vector vLeft = new Vector(RectBottomLeft.X - RectTopLeft.X, RectBottomLeft.Y - RectTopLeft.Y);
+            double angle = Math.Atan2(vLeft.Y, vLeft.X) * 180.0 / Math.PI;
+
+            Vector norm = new Vector(-vLeft.Y, vLeft.X);
+            if (norm.Length > 0.0) norm.Normalize();
 
             Point midPoint = new Point((RectTopLeft.X + RectBottomLeft.X) / 2.0, (RectTopLeft.Y + RectBottomLeft.Y) / 2.0);
 
-            Vector norm = new Vector(-vRot.Y, vRot.X);
-            if (norm.Length > 0.0) norm.Normalize();
+            double padding = 0.0;
+            double baseOffset = 25.0;
 
-            int offset = 25;
-            Point origin = new Point(midPoint.X + norm.X * offset, midPoint.Y + norm.Y * offset);
+            // Stack text outward (positive offset = outside left edge)
+            double offset1 = baseOffset;
+            Point o1 = new Point(midPoint.X + norm.X * offset1, midPoint.Y + norm.Y * offset1);
 
-            renderContext.PushTransform(new RotateTransform(angle, origin.X, origin.Y));
-            renderContext.DrawText(fmtAngle, origin);
+            double offset2 = baseOffset + fmtAngle.Height * 0.75 + padding;
+            Point o2 = new Point(midPoint.X + norm.X * offset2, midPoint.Y + norm.Y * offset2);
+
+            renderContext.PushTransform(new RotateTransform(angle, o1.X, o1.Y));
+            renderContext.DrawText(fmtAngle, o1);
             renderContext.Pop();
 
-            renderContext.PushTransform(new RotateTransform(angle, origin.X, origin.Y));
-            renderContext.DrawText(fmtHeight, new Point(origin.X, origin.Y - fmtHeight.Height - 5.0));
+            renderContext.PushTransform(new RotateTransform(angle, o2.X, o2.Y));
+            renderContext.DrawText(fmtHeight, o2);
             renderContext.Pop();
         }
 
