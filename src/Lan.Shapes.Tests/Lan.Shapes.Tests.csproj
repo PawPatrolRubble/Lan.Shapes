@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0-windows</TargetFramework>
+        <UseWPF>true</UseWPF>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Lan.Shapes.Custom\Lan.Shapes.Custom.csproj" />
+        <ProjectReference Include="..\Lan.Shapes\Lan.Shapes.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\data\ShapeLayers.json" Link="TestData\ShapeLayers.json" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+</Project>
