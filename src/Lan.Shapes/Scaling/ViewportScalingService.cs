@@ -63,8 +63,14 @@ namespace Lan.Shapes.Scaling
         }
 
         /// <summary>
-        /// Calculates stroke thickness from viewport pixel dimensions when the explicit
-        /// scale factor is unavailable.
+        /// Seed-only helper for stroke thickness from viewport pixel dimensions when
+        /// an explicit zoom scale is not yet available (e.g. pre-host configuration).
+        /// <para>
+        /// <b>Not a live driver after the board is attached.</b> Runtime stroke/handle
+        /// sizing must use <see cref="CalculateStrokeThickness(double)"/> /
+        /// <see cref="CalculateStrokeThickness(double, ViewportScalingOptions)"/> with
+        /// the viewer <c>LocalScale</c>.
+        /// </para>
         /// <para>
         /// <b>Formula derivation:</b> <c>1.8 ^ (log2(w+h) - 10)</c>.
         /// At the reference viewport of 1024×768 (w+h ≈ 1792, log2 ≈ 10.8) this yields ~1.5 px.
@@ -73,6 +79,7 @@ namespace Lan.Shapes.Scaling
         /// Edge case: at w+h ≤ 0 the method falls back to <see cref="BaseStrokeThickness"/>.
         /// </para>
         /// </summary>
+        [Obsolete("Seed-only. Prefer CalculateStrokeThickness(LocalScale, options) as the live scale authority.")]
         public static double CalculateStrokeThicknessFromViewportSize(double viewportWidth, double viewportHeight)
         {
             var sum = viewportWidth + viewportHeight;

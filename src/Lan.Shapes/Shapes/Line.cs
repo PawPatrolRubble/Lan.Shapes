@@ -86,7 +86,7 @@ namespace Lan.Shapes.Shapes
             _rightDragHandle.GeometryCenter = End;
             _panHandle.GeometryCenter = new Point((Start.X + End.X) / 2, (Start.Y + End.Y) / 2);
 
-            RenderVisualWithLength();
+            UpdateVisual();
         }
 
         protected override void CreateHandles()
@@ -105,20 +105,9 @@ namespace Lan.Shapes.Shapes
             {
                 Start += newPoint - OldPointForTranslate.Value;
                 End += newPoint - OldPointForTranslate.Value;
-                RenderVisualWithLength();
+                UpdateVisual();
                 OldPointForTranslate = newPoint;
             }
-        }
-
-        public override void OnDeselected()
-        {
-            //throw new NotImplementedException();
-        }
-
-        public override void OnSelected()
-        {
-            //throw new NotImplementedException();
-
         }
 
         protected override void OnDragHandleSizeChanges(double dragHandleSize)
@@ -213,22 +202,6 @@ namespace Lan.Shapes.Shapes
 
         #endregion
 
-        private void RenderVisualWithLength()
-        {
-            if (ShapeStyler == null)
-            {
-                return;
-            }
-
-            var renderContext = RenderOpen();
-
-            // Draw the line geometry
-            renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometry);
-
-            DrawLengthText(renderContext);
-            renderContext.Close();
-        }
-
         private void DrawLengthText(DrawingContext renderContext)
         {
             // Draw the length text
@@ -247,39 +220,24 @@ namespace Lan.Shapes.Shapes
             renderContext.DrawText(formattedText, new Point((Start.X + End.X) / 2, (Start.Y + End.Y) / 2));
         }
 
-        // Kept for backward compatibility but marked as obsolete
-        [Obsolete("Use RenderVisualWithLength instead")]
-        private void ShowLineLength()
-        {
-            // This method is kept for backward compatibility
-            // but should not be used anymore
-            RenderVisualWithLength();
-        }
-
         #region Overrides of ShapeVisualBase
 
         protected override void UpdateVisualOnLocked()
         {
-            //base.UpdateVisualOnLocked();
-            RenderLineAndText();
-
+            UpdateVisual();
         }
-
-        private void RenderLineAndText()
-        {
-            //base.UpdateVisualOnLocked();
-            var renderContext = RenderOpen();
-            // Draw the line geometry
-            renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometryGroup);
-
-            DrawLengthText(renderContext);
-            renderContext.Close();
-        }
-
 
         public override void UpdateVisual()
         {
-            RenderLineAndText();
+            if (ShapeStyler == null)
+            {
+                return;
+            }
+
+            var renderContext = RenderOpen();
+            renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometryGroup);
+            DrawLengthText(renderContext);
+            renderContext.Close();
         }
 
         #endregion
@@ -292,23 +250,10 @@ namespace Lan.Shapes.Shapes
                 throw new Exception($"{nameof(PointsData)} must have 2 elements in  DataPoints");
             }
 
-            // Set the points
             Start = data.DataPoints[0];
             End = data.DataPoints[1];
-
-            // Since we can't modify the drag handle size directly (immutable after creation),
-            // we need to recreate the geometry group with properly sized handles
-            RenderGeometryGroup.Children.Clear();
-
-            // Recreate the geometry group with the current drag handle size
-            RenderGeometryGroup.Children.Add(_lineGeometry);
-            RenderGeometryGroup.Children.Add(_leftDragHandle.HandleGeometry);
-            RenderGeometryGroup.Children.Add(_rightDragHandle.HandleGeometry);
-            RenderGeometryGroup.Children.Add(_panHandle.HandleGeometry);
-
-            // Force update of geometry to ensure everything is properly positioned
-            UpdateGeometry();
             IsGeometryRendered = true;
+            UpdateVisual();
         }
 
         public PointsData GetMetaData()

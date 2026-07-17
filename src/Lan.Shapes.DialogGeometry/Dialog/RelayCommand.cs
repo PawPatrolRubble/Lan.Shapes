@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Windows.Input;
 
+#nullable enable
+
 namespace Lan.Shapes.DialogGeometry.Dialog
 {
     public class RelayCommand<T> : ICommand
@@ -32,7 +34,11 @@ namespace Lan.Shapes.DialogGeometry.Dialog
         }
 
         /// <summary>Occurs when changes occur that affect whether or not the command should execute.</summary>
-        public event EventHandler? CanExecuteChanged;
+        public event EventHandler? CanExecuteChanged
+        {
+            add => CommandManager.RequerySuggested += value;
+            remove => CommandManager.RequerySuggested -= value;
+        }
     }
 
     public class RelayCommand : ICommand
@@ -61,6 +67,10 @@ namespace Lan.Shapes.DialogGeometry.Dialog
         }
 
         /// <summary>Occurs when changes occur that affect whether or not the command should execute.</summary>
-        public event EventHandler? CanExecuteChanged;
+        public event EventHandler? CanExecuteChanged
+        {
+            add => CommandManager.RequerySuggested += value;
+            remove => CommandManager.RequerySuggested -= value;
+        }
     }
 }

@@ -1,11 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net6.0-windows;net8.0-windows</TargetFrameworks>
+        <TargetFramework>net8.0-windows</TargetFramework>
         <UseWPF>true</UseWPF>
+        <Description>WPF sketch board host for Lan.Shapes: VisualCollection mirror, shape repository manager, and mouse-driven drawing surface.</Description>
+        <Authors>Lan</Authors>
+        <PackageTags>wpf;sketchboard;drawingvisual;annotation</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Lan.Shapes.Custom\Lan.Shapes.Custom.csproj" />
+      <ProjectReference Include="..\Lan.Shapes\Lan.Shapes.csproj" />
     </ItemGroup>
 </Project>

@@ -4,117 +4,113 @@
 > **Scope:** `Lan.Shapes` core library + direct consumers (`Lan.SketchBoard`, `Lan.ImageViewer`)  
 > **Status legend:** 🔴 Critical · 🟠 Major · 🟡 Minor
 
+> **Target architecture:** [`docs/adr/0001-wpf-native-sketch-architecture.md`](adr/0001-wpf-native-sketch-architecture.md)  
+> **Execution plan:** [`docs/refactor-checklist.md`](refactor-checklist.md)  
+> Re-verify row statuses against code before starting work — several items below have been fixed since this log was written.
+
 ---
 
 ## Summary
 
 | # | Severity | Issue | Status |
 |---|----------|-------|--------|
-| 1 | 🔴 Critical | `ISketchBoardDataManager` leaks WPF types into the core library | ✅ **Fixed** (Step 1–4) |
-| 2 | 🔴 Critical | `ShapeLayer` ↔ `ShapeVisualBase` circular ownership + dual render path | ⏳ Open |
-| 3 | 🔴 Critical | Data Transfer Objects live inside the `Interfaces/` folder/namespace | ⏳ Open |
+| 1 | 🔴 Critical | `ISketchBoardDataManager` mixed shape data with visual-host concerns | ✅ **Fixed** (Step 1–4) |
+| 2 | 🔴 Critical | `ShapeLayer` ↔ `ShapeVisualBase` circular ownership + dual render path | ✅ **Fixed** (Phase 3) |
+| 3 | 🔴 Critical | Data Transfer Objects live inside the `Interfaces/` folder/namespace | ✅ **Fixed** (earlier — Models/) |
 | 4 | 🟠 Major | `ISketchBoardDataManager` was a God Interface (ISP violation) | ✅ **Fixed** (Step 1–4) |
-| 5 | 🟠 Major | Four interfaces/types are defined but never implemented or used | ⏳ Open |
-| 6 | 🟠 Major | `ViewportScalingService` uses globally mutable state + unexplained magic formula | ⏳ Open |
-| 7 | 🟡 Minor | `DragLocation.cs` placed in `Shapes/` instead of `Handle/` | ⏳ Open |
-| 8 | 🟡 Minor | `BrushToHexConverter` and `AffineTransformationHelper` are root-level orphans | ⏳ Open |
-| 9 | 🟡 Minor | `ShapeStylerFactory` is not behind an interface | ⏳ Open |
-| 10 | 🔴 Critical | `OnSelected()`/`OnDeselected()` throw `NotImplementedException` in 4 subclasses | ⏳ Open |
-| 11 | 🔴 Critical | `Cross.UpdateVisual()` double `RenderOpen()` wipes base drawing | ⏳ Open |
-| 12 | 🔴 Critical | `Polygon.FromData()` empty loop — deserialization is broken | ⏳ Open |
-| 13 | 🔴 Critical | `ShapeStylerFactory.DottedLineStyler()` corrupts `_selectedStyler` field | ⏳ Open |
-| 14 | 🟠 Major | `ShapeLayer.GetStyler()` unguarded dictionary access | ⏳ Open |
-| 15 | 🟠 Major | `IShapeRepository.NewShapeSketched` is `Action` instead of `event` | ⏳ Open |
-| 16 | 🟠 Major | `Circle`/`Line` bypass `CreateFormattedText()` — duplicated text rendering | ⏳ Open |
-| 17 | 🟡 Minor | Dead code: `Pointer.cs` entirely commented out, ~290 lines in `Cross.cs` | ⏳ Open |
-| 18 | 🟡 Minor | `#region Propeties` typo in `Rectangle`, `Circle`, `Ellipse`, `Polygon` | ⏳ Open |
-| 19 | 🟡 Minor | Duplicate `using System.Windows.Media` in `ShapeStylerParameter.cs` | ⏳ Open |
-| 20 | 🟡 Minor | `PointExtension.MiddleWith` duplicates `ShapeVisualBase.GetMiddleToTwoPoints` | ⏳ Open |
-| 21 | 🟡 Minor | `IGeometryMetaData` XML doc comment is cut off mid-sentence | ⏳ Open |
+| 5 | 🟠 Major | Four interfaces/types are defined but never implemented or used | ✅ **Fixed** (Phase 3) |
+| 6 | 🟠 Major | `ViewportScalingService` uses globally mutable state + unexplained magic formula | ✅ **Fixed** (Phase 2) |
+| 7 | 🟡 Minor | `DragLocation.cs` placed in `Shapes/` instead of `Handle/` | ✅ **Fixed** (already in Handle/) |
+| 8 | 🟡 Minor | `BrushToHexConverter` and `AffineTransformationHelper` are root-level orphans | ✅ **Fixed** (Converters/Utilities) |
+| 9 | 🟡 Minor | `ShapeStylerFactory` is not behind an interface | ✅ **Fixed** (Phase 5) |
+| 10 | 🔴 Critical | `OnSelected()`/`OnDeselected()` throw `NotImplementedException` in 4 subclasses | ✅ **Fixed** (Phase 1) |
+| 11 | 🔴 Critical | `Cross.UpdateVisual()` double `RenderOpen()` wipes base drawing | ✅ **Fixed** (Phase 1) |
+| 12 | 🔴 Critical | `Polygon.FromData()` empty loop — deserialization is broken | ✅ **Fixed** (earlier + Phase 1 tests) |
+| 13 | 🔴 Critical | `ShapeStylerFactory.DottedLineStyler()` corrupts `_selectedStyler` field | ✅ **Fixed** (Phase 1) |
+| 14 | 🟠 Major | `ShapeLayer.GetStyler()` unguarded dictionary access | ✅ **Fixed** (fallback to Normal) |
+| 15 | 🟠 Major | `IShapeRepository.NewShapeSketched` is `Action` instead of `event` | ✅ **Fixed** (earlier) |
+| 16 | 🟠 Major | `Circle`/`Line` bypass `CreateFormattedText()` — duplicated text rendering | ✅ **Fixed** (already use helper) |
+| 17 | 🟡 Minor | Dead code: `Pointer.cs` / commented `Cross` / StrokeWidened stubs | ✅ **Fixed** (Phase 6) |
+| 18 | 🟡 Minor | `#region Propeties` typo across shapes/controls | ✅ **Fixed** (Phase 6) |
+| 19 | 🟡 Minor | Duplicate `using System.Windows.Media` in `ShapeStylerParameter.cs` | ✅ **Fixed** (already clean) |
+| 20 | 🟡 Minor | `PointExtension.MiddleWith` duplicates `ShapeVisualBase.GetMiddleToTwoPoints` | ✅ **Fixed** (base helper removed) |
+| 21 | 🟡 Minor | `IGeometryMetaData` XML doc comment is cut off mid-sentence | ✅ **Fixed** (already complete) |
 
 ---
 
-## 🔴 Issue 1 — WPF types leaked into the core library interface ✅ Fixed
+## 🔴 Issue 1 — Shape data mixed with visual-host concerns ✅ Fixed
 
 ### Problem
 
-`ISketchBoardDataManager` lived in `Lan.Shapes` (the portable core) but exposed concrete WPF types:
+`ISketchBoardDataManager` exposed both shape CRUD/selection and live visual-host members:
 
 ```csharp
-// Lan.Shapes/Interfaces/ISketchBoardDataManager.cs  ← WRONG LAYER
+// Lan.Shapes/Interfaces/ISketchBoardDataManager.cs
 VisualCollection VisualCollection { get; }        // System.Windows.Media
 void InitializeVisualCollection(Visual visual);   // System.Windows.Media
 ISketchBoard SketchBoard { get; }                 // WPF control reference
 ```
 
-`VisualCollection` requires a **live WPF dispatcher** to instantiate. Any code depending on
-`ISketchBoardDataManager` — including ViewModels and services — was forced to bring in the
-WPF rendering stack, making unit testing impossible without spinning up a `WPF Application`.
+Any consumer that only needed shape state — ViewModels, services, tests — still had to
+take the full visual-host surface. `VisualCollection` also requires a live WPF visual
+parent, so tests that only exercised data logic were forced through host initialization.
+
+This project is **WPF-only**; the issue was interface segregation inside the WPF stack,
+not portability to other UI frameworks.
 
 ### Fix applied
 
-The interface was split across the correct layers:
+The interface was split by concern:
 
-| Interface | Location | WPF types? |
-|-----------|----------|-----------|
-| `IShapeRepository` | `Lan.Shapes/Interfaces/` | ❌ None — fully portable |
-| `IVisualHost` | `Lan.SketchBoard/` | ✅ Contains all WPF members |
-| `ISketchBoardDataManager` | `Lan.Shapes/Interfaces/` | extends `IShapeRepository`, adds WPF subset for backward compat |
+| Interface | Location | Responsibility |
+|-----------|----------|----------------|
+| `IShapeRepository` | `Lan.Shapes/Interfaces/` | Shape collections, selection, tools, CRUD, events |
+| `IVisualHost` | `Lan.SketchBoard/` | `VisualCollection`, board attachment, scale feedback |
+| `ISketchBoardDataManager` | `Lan.Shapes/Interfaces/` | Combined data + visual-host surface for WPF controls |
 
 `SketchBoardDataManager` now implements `ISketchBoardDataManager`, `IVisualHost`, and `INotifyPropertyChanged`.
 
-### Remaining migration (Step 5+)
+### Remaining migration (Step 5 / Phase 4) ✅ Done
 
-ViewModel and service constructors should be updated to accept `IShapeRepository` instead of
-`ISketchBoardDataManager` wherever WPF rendering access is not needed:
+ViewModel surface now segregates concerns:
 
-```csharp
-// Before
-public MyViewModel(ISketchBoardDataManager manager) { }
+| Member | Role |
+|--------|------|
+| `SketchBoardDataManager` | Control DP / visual host only |
+| `ShapeRepository` | Shape collections, selection, CRUD, events |
+| `Shapes` / `SelectedShape` | XAML list bind (maps to `SelectedGeometry`) |
 
-// After — testable, WPF-agnostic
-public MyViewModel(IShapeRepository repository) { }
-```
+`DeleteShapeCommand` removes `SelectedShape`, not `CurrentGeometryInEdit`.
+DI registers both `ISketchBoardDataManager` and `IShapeRepository` (same instance).
 
 ---
 
-## 🔴 Issue 2 — Circular ownership between `ShapeLayer` and `ShapeVisualBase`
+## 🔴 Issue 2 — Circular ownership between `ShapeLayer` and `ShapeVisualBase` ✅ Fixed (Phase 3)
 
 ### Problem
 
-Both types reference each other at the core layer:
+Historically both types referenced each other, and `ShapeLayer` owned a shape list plus
+dead `RenderShapes` / `AddShapeToLayer` helpers that duplicated shape self-rendering.
 
-```
-ShapeVisualBase ──holds──► ShapeLayer          (shape.ShapeLayer property)
-ShapeLayer      ──holds──► List<ShapeVisualBase> (_shapeVisuals field)
-```
+### Fix applied (Phase 3)
 
-Additionally, `ShapeLayer.RenderShapes(List<ShapeVisualBase>)` calls `shape.RenderOpen()`
-directly, duplicating the render path that already exists inside each shape's own `UpdateVisual()`.
-This means the same shape can be rendered from two completely different entry points.
-
-Both `ShapeLayer.RenderShapes()` and `ShapeLayer.AddShapeToLayer()` have **zero call sites**
-in the entire codebase — they are dead code that makes the public API misleading.
-
-### Recommended fix
-
-1. Remove `_shapeVisuals` from `ShapeLayer`. Shape grouping belongs in the `IShapeRepository`,
-   not in the styling descriptor.
-2. Remove `RenderShapes()` and `AddShapeToLayer()` — they are dead and create a second render
-   path that violates the shape's self-rendering contract.
-3. `ShapeVisualBase.ShapeLayer` can remain as a reference (for styler lookup), but `ShapeLayer`
-   must not own `ShapeVisualBase` instances.
+1. `ShapeLayer` is a **style + units profile only** — no shape collection, no render helpers.
+2. Shape ownership remains on `IShapeRepository` / `SketchBoardDataManager`.
+3. `ShapeVisualBase.ShapeLayer` stays for styler lookup only (one-way reference).
+4. Layer construction and `ShapeLayerManager.ReadShapeLayers` fail-fast when `StyleSchema`
+   lacks required `Normal` / `Selected` states (`EnsureRequiredStylerStates`).
+5. `GetStyler` keeps fallback to `Normal` for optional states (`MouseOver`, `Locked`).
 
 ```
 After fix:
-  ShapeVisualBase ──holds──► ShapeLayer   (to look up its current IShapeStyler)
-  ShapeLayer                              (styling descriptor only — no shape ownership)
+  ShapeVisualBase ──holds──► ShapeLayer   (styler lookup only)
+  ShapeLayer                              (style/units profile — no shape ownership)
   IShapeRepository ─────────► manages all shape instances
 ```
 
 ---
 
-## 🔴 Issue 3 — Concrete DTOs live in the `Interfaces/` namespace
+## 🔴 Issue 3 — Concrete DTOs live in the `Interfaces/` namespace ✅ Fixed (Models/)
 
 ### Problem
 
@@ -140,6 +136,10 @@ Before:  Lan.Shapes.Interfaces.CrossData
 After:   Lan.Shapes.Models.CrossData
 ```
 
+### Fix applied
+
+DTOs live under `src/Lan.Shapes/Models/` (`CrossData`, `EllipseData`, `PointsData`, `TextGeometryData`).
+
 ---
 
 ## 🟠 Issue 4 — God Interface (ISP violation) ✅ Fixed
@@ -157,42 +157,29 @@ can depend on the narrowest interface that satisfies its need.
 
 ---
 
-## 🟠 Issue 5 — Defined but never adopted interfaces and types
+## 🟠 Issue 5 — Defined but never adopted interfaces and types ✅ Fixed (Phase 3)
 
 ### Problem
 
-Four types are declared in `Lan.Shapes` with **zero implementations and zero usages**:
+Several types inflated the public API with zero implementations/usages.
 
-| Type | File | Problem |
-|------|------|---------|
-| `IShapeManipulator` / `IShapeManipulator<T>` | `Interfaces/IShapeManipulator.cs` | 0 implementations, 0 usages |
-| `IShapeLayerManager` | `Interfaces/IShapeLayerManager.cs` | 0 usages inside `Lan.Shapes` |
-| `ISketchBoardMouseHandler` | `Interfaces/ISketchBoardMouseHandler.cs` | 0 implementations anywhere |
-| `ShapeStateMachine` (enum) | `Shapes/ShapeStateMachine.cs` | 0 usages, wrong folder |
+### Fix applied (Phase 3)
 
-These inflate the public API surface and create false signals about capabilities the library
-provides. A consumer reading the headers would assume manipulation, layer management, and a
-state machine are wired up — they are not.
-
-### Recommended fix
-
-- **`IShapeManipulator<T>`**: Implement it within each shape, or remove it and document the
-  intent in a tracking issue.
-- **`IShapeLayerManager`**: Move its implementation into `Lan.ImageViewer` where it is actually
-  used (`GeometryTypeManager.cs`), or wire it up in `Lan.Shapes`.
-- **`ISketchBoardMouseHandler`**: Implement on `SketchBoard` control and wire into `ISketchBoard`,
-  or remove if the event-routing design has changed.
-- **`ShapeStateMachine`**: Move to `Lan.Shapes/Enums/` and integrate into `ShapeVisualBase`'s
-  state tracking, or remove.
+| Type | Action |
+|------|--------|
+| `IShapeManipulator` / `IShapeManipulator<T>` | **Deleted** |
+| `ISketchBoardMouseHandler` | **Deleted**; `ISketchBoard` is a marker only |
+| `ShapeStateMachine` | **Deleted** (0 usages) |
+| `IShapeLayerManager` | **Kept** — implemented by `ShapeLayerManager` in Prism host |
 
 ---
 
-## 🟠 Issue 6 — `ViewportScalingService` uses globally mutable state and an unexplained formula
+## 🟠 Issue 6 — `ViewportScalingService` uses globally mutable state and an unexplained formula ✅ Fixed (Phase 2)
 
 ### Problem
 
 ```csharp
-// Lan.Shapes/Scaling/ViewportScalingService.cs
+// Historical (pre-Phase 2)
 public static double BaseStrokeThickness { get; set; } = 1.0;   // ← global mutable
 public static double BaseDragHandleSize  { get; set; } = 8.0;   // ← global mutable
 
@@ -202,103 +189,79 @@ public static double CalculateStrokeThicknessFromViewportSize(double w, double h
 }
 ```
 
-**Global mutable state** (`static { get; set; }`) breaks any scenario where two `SketchBoard`
-instances run simultaneously with different zoom levels, because changing the global base
-for one board affects the other.
+**Global mutable state** broke concurrent `SketchBoard` instances. A second dual path
+(`SketchBoard_SizeChanged` → viewport-size formula) also fought zoom-driven thickness.
 
-The `Math.Pow(1.8, Math.Log2(w + h) - 10)` formula is empirical and undocumented. Its range
-and expected behaviour at edge values (very small or large viewports) is unknown.
+### Fix applied (Phase 2)
 
-### Recommended fix
-
-1. Make `BaseStrokeThickness` and `BaseDragHandleSize` instance configuration passed in through
-   a `ViewportScalingOptions` record, not static fields.
-2. Document the scaling formula with its derivation, or replace it with an explicit piecewise
-   function whose behaviour is auditable.
+1. Static bases are **readonly process-wide defaults** only.
+2. Per-board bases live in `ViewportScalingOptions`, injected via
+   `SketchBoardDataManager(ViewportScalingOptions)` and used by
+   `OnImageViewerPropertyChanged` → `CalculateStrokeThickness(scale, options)`.
+3. Live driver is **`LocalScale` only**. `SketchBoard_SizeChanged` styler mutation removed.
+4. Viewport-size formula kept as **seed-only** (`[Obsolete]` + documented derivation);
+   not used after the board is attached.
+5. Existing shapes refresh via `ShapeVisualBase.RefreshScaleDependentVisuals()`.
+6. Viewer chrome (crosshair) uses the same `base / scale` formula on fit and wheel zoom.
+7. `ImageViewer` unsubscribes/resubscribes on manager DP rebind to avoid stacked handlers.
 
 ```csharp
-// Suggested approach
-public sealed class ViewportScalingOptions
-{
-    public double BaseStrokeThickness { get; init; } = 1.0;
-    public double BaseDragHandleSize  { get; init; } = 8.0;
-}
-
-public readonly struct ViewportScalingService(ViewportScalingOptions options)
-{
-    public double CalculateStrokeThickness(double scale) =>
-        options.BaseStrokeThickness / Math.Max(scale, double.Epsilon);
-}
+// Live path
+manager.OnImageViewerPropertyChanged(localScale);
+// → stylers: thickness = options.BaseStrokeThickness / max(scale, 1)
+// → shapes.RefreshScaleDependentVisuals()
 ```
 
 ---
 
-## 🟡 Issue 7 — `DragLocation.cs` in wrong folder
+## 🟡 Issue 7 — `DragLocation.cs` in wrong folder ✅ Fixed
+
+### Fix applied
+
+Lives at `src/Lan.Shapes/Handle/DragLocation.cs` (`namespace Lan.Shapes.Handle`).
+
+---
+
+## 🟡 Issue 8 — Root-level utility files with no folder grouping ✅ Fixed
+
+### Fix applied
+
+| File | Location |
+|------|----------|
+| `BrushToHexConverter.cs` | `src/Lan.Shapes/Converters/` (`Lan.Shapes.Converters`) |
+| `AffineTransformationHelper.cs` | `src/Lan.Shapes/Utilities/` (`Lan.Shapes.Utilities`) |
+
+---
+
+## 🟡 Issue 9 — `ShapeStylerFactory` is not behind an interface ✅ Fixed (Phase 5)
 
 ### Problem
 
-`Lan.Shapes/Shapes/DragLocation.cs` defines the `DragLocation` enum. This enum exists
-exclusively to describe *which edge or corner of a drag handle is being dragged*. It drives
-cursor logic in `ShapeVisualBase` and is a parameter to `RectDragHandle.CreateRectDragHandleFromStyler`.
-It is a handle concept, not a shape concept.
+Historically `SketchBoardDataManager` / layer construction newed `ShapeStylerFactory`
+directly, so tests and themes could not substitute a factory.
 
-### Recommended fix
+### Fix applied (Phase 5)
 
-Move to `Lan.Shapes/Handle/DragLocation.cs` with no other changes.
-
----
-
-## 🟡 Issue 8 — Root-level utility files with no folder grouping
-
-### Problem
-
-Two files sit at the `Lan.Shapes` project root with no folder:
-
-| File | Purpose |
-|------|---------|
-| `BrushToHexConverter.cs` | `Brush` → hex string conversion |
-| `AffineTransformationHelper.cs` | 2-D affine math helpers |
-
-At the root they have no namespace grouping signal and are harder to discover.
-
-### Recommended fix
-
-```
-Move to:
-  Lan.Shapes/Converters/BrushToHexConverter.cs         → namespace Lan.Shapes.Converters
-  Lan.Shapes/Utilities/AffineTransformationHelper.cs   → namespace Lan.Shapes.Utilities
-```
-
----
-
-## 🟡 Issue 9 — `ShapeStylerFactory` is not behind an interface
-
-### Problem
-
-`SketchBoardDataManager` creates `ShapeStylerFactory` directly:
+1. `IShapeStylerFactory` lives under `Lan.Shapes/Styler/` with
+   `CreateStyler(ShapeStylerParameter)` plus the preset styler methods.
+2. `ShapeLayer` dual ctor: default factory, or inject `IShapeStylerFactory`.
+3. `ShapeLayerManager` injects the factory and passes it into every
+   `new ShapeLayer(parameter, factory)` during `ReadShapeLayers`.
+4. Composition roots register
+   `IShapeStylerFactory` → `ShapeStylerFactory` (Prism module + TestApp MSDI).
+5. Palette icons follow the same composition pattern via
+   `IGeometryIconProvider` / `ResourceDictionaryGeometryIconProvider`.
 
 ```csharp
-private readonly ShapeStylerFactory _shapeStylerFactory = new ShapeStylerFactory();
+// Layer construction
+public ShapeLayer(ShapeLayerParameter p, IShapeStylerFactory stylerFactory) { ... }
+
+// DI
+containerRegistry.RegisterSingleton<IShapeStylerFactory, ShapeStylerFactory>();
 ```
-
-There is no `IShapeStylerFactory`. This makes it impossible to substitute a different styler
-factory (e.g. for testing, theming, or a different styling strategy) without modifying
-`SketchBoardDataManager`.
-
-### Recommended fix
-
-```csharp
-// New interface in Lan.Shapes/Styler/
-public interface IShapeStylerFactory
-{
-    IShapeStyler CreateStyler(ShapeStylerParameter parameter);
-}
-
-// Inject via constructor
-public class SketchBoardDataManager(IShapeStylerFactory stylerFactory, ...)
-```
-
 ---
+
+> **Status (2026-07-17):** ✅ Fixed in Phase 1. Base hooks are empty `virtual`s; `CustomGeometryBase` / `DxfGeometry` no-ops; selection covered by `ShapeLifecycleTests`.
 
 ## 🔴 Issue 10 — `OnSelected()`/`OnDeselected()` throw `NotImplementedException`
 
@@ -337,6 +300,8 @@ Remove all `throw new NotImplementedException()` overrides in subclasses.
 
 ---
 
+> **Status (2026-07-17):** ✅ Fixed. `Cross.UpdateVisual` uses a single `RenderOpen()` pass.
+
 ## 🔴 Issue 11 — `Cross.UpdateVisual()` double `RenderOpen()` wipes base drawing
 
 ### Problem
@@ -368,6 +333,8 @@ or override to build a complete render in one pass.
 
 ---
 
+> **Status (2026-07-17):** ✅ Fixed earlier; Phase 1 added `LoadShape_RoundTrips_Polygon` regression.
+
 ## 🔴 Issue 12 — `Polygon.FromData()` empty loop — deserialization is broken
 
 ### Problem
@@ -392,6 +359,8 @@ Call `CreateNewGeometryAndRenderIt(point)` for each point in the loop body, matc
 logic used in `OnMouseLeftButtonDown`.
 
 ---
+
+> **Status (2026-07-17):** ✅ Fixed. Dedicated `_dottedLineStyler` field; isolation test added.
 
 ## 🔴 Issue 13 — `ShapeStylerFactory.DottedLineStyler()` corrupts `_selectedStyler`
 
@@ -426,6 +395,8 @@ Add a `private IShapeStyler _dottedLineStyler;` field and use it in `DottedLineS
 
 ---
 
+> **Status:** ✅ Fixed earlier — `TryGetValue` with fallback to `Normal`.
+
 ## 🟠 Issue 14 — `ShapeLayer.GetStyler()` unguarded dictionary access
 
 ### Problem
@@ -450,6 +421,8 @@ public IShapeStyler GetStyler(ShapeVisualState shapeState) =>
 ```
 
 ---
+
+> **Status:** ✅ Fixed earlier — `NewShapeSketched` is an `event`.
 
 ## 🟠 Issue 15 — `NewShapeSketched` is `Action` instead of `event`
 
@@ -476,7 +449,7 @@ event EventHandler<ShapeVisualBase> NewShapeSketched;
 
 ---
 
-## 🟠 Issue 16 — `Circle`/`Line` bypass `CreateFormattedText()` helper
+## 🟠 Issue 16 — `Circle`/`Line` bypass `CreateFormattedText()` helper ✅ Fixed
 
 ### Problem
 
@@ -503,9 +476,14 @@ pick up the change.
 
 Replace the manual `FormattedText` construction with calls to `CreateFormattedText()`.
 
+### Fix applied
+
+`Circle.AddRadiusText` and `Line.DrawLengthText` already call `CreateFormattedText(...)`.
+No further change required.
+
 ---
 
-## 🟡 Issue 17 — Dead code files
+## 🟡 Issue 17 — Dead code files ✅ Fixed (Phase 6)
 
 ### Problem
 
@@ -521,9 +499,15 @@ and creates confusion about what is active.
 
 Delete `Pointer.cs` entirely. Remove the commented-out block in `Cross.cs`.
 
+### Fix applied (Phase 6)
+
+- `Pointer.cs` already absent from tree.
+- `Cross.cs` is a short active implementation (no commented legacy block).
+- Deleted fully commented stubs: `StrokeWidenedCircle.cs`, `StrokeWidenedCross.cs`, `StrokeWidenedRectangle.cs`.
+
 ---
 
-## 🟡 Issue 18 — `#region Propeties` typo in four subclasses
+## 🟡 Issue 18 — `#region Propeties` typo ✅ Fixed (Phase 6)
 
 ### Problem
 
@@ -538,9 +522,14 @@ The same `Propeties` → `Properties` typo that was fixed in `ShapeVisualBase` s
 
 Find-and-replace `#region Propeties` → `#region Properties` across all files.
 
+### Fix applied (Phase 6)
+
+Replaced all remaining `#region Propeties` with `#region Properties` under `src/`
+(controls, custom shapes, dialog geometry, sketch board). Core shape files already used `Properties`.
+
 ---
 
-## 🟡 Issue 19 — Duplicate `using` in `ShapeStylerParameter.cs`
+## 🟡 Issue 19 — Duplicate `using` in `ShapeStylerParameter.cs` ✅ Fixed
 
 ### Problem
 
@@ -554,9 +543,13 @@ using System.Windows.Media;   // ← duplicate
 
 Remove the duplicate line.
 
+### Fix applied
+
+`ShapeStylerParameter.cs` already has a single `using System.Windows.Media;` line.
+
 ---
 
-## 🟡 Issue 20 — `PointExtension.MiddleWith` duplicates `ShapeVisualBase.GetMiddleToTwoPoints`
+## 🟡 Issue 20 — `PointExtension.MiddleWith` duplicates base helper ✅ Fixed
 
 ### Problem
 
@@ -582,9 +575,13 @@ is defined in the base class. Keeping both invites divergence.
 Consolidate on the extension method `MiddleWith` (more discoverable and idiomatic C#).
 Remove `GetMiddleToTwoPoints` from `ShapeVisualBase` and update any callers.
 
+### Fix applied
+
+`GetMiddleToTwoPoints` is gone from `ShapeVisualBase`. Call sites use `PointExtension.MiddleWith`.
+
 ---
 
-## 🟡 Issue 21 — `IGeometryMetaData` XML doc is incomplete
+## 🟡 Issue 21 — `IGeometryMetaData` XML doc is incomplete ✅ Fixed
 
 ### Problem
 
@@ -606,6 +603,10 @@ Complete the documentation, e.g.:
 /// Marker interface for geometry metadata DTOs used to serialize and deserialize shape data.
 /// </summary>
 ```
+
+### Fix applied
+
+XML summary documents the marker-interface role for serialize/deserialize DTOs.
 
 ---
 

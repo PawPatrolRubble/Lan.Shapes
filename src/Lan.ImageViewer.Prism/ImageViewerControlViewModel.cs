@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Windows;
@@ -8,87 +9,198 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Lan.Shapes;
-using Lan.Shapes.Custom;
-using Lan.Shapes.DialogGeometry;
 using Lan.Shapes.Interfaces;
 using Lan.Shapes.Shapes;
 using Prism.Commands;
 using Prism.Mvvm;
 
+#nullable enable
+
 namespace Lan.ImageViewer.Prism
 {
     public class ImageViewerControlViewModel : BindableBase, IImageViewerViewModel
     {
-        #region constructor
+        private const double ScaleIncremental = 0.1;
 
-        #region Constructors
+        private readonly IGeometryTypeManager _geometryTypeManager;
+        private readonly IGeometryIconProvider _iconProvider;
+        private readonly IShapeLayerManager _shapeLayerManager;
+
+        private double _scale;
+        private GeometryType? _selectedGeometryType;
+        private ShapeLayer _selectedShapeLayer;
+        private Point _mouseDoubleClickPosition;
+        private ImageSource _image = new BitmapImage();
+        private bool _hideShapeList;
+        private ObservableCollection<GeometryType> _geometryTypeList = new();
 
         public ImageViewerControlViewModel(
             IShapeLayerManager shapeLayerManager,
             ISketchBoardDataManager sketchBoardDataManager,
-            IGeometryTypeManager geometryTypeManager)
+            IGeometryTypeManager geometryTypeManager,
+            IGeometryIconProvider? geometryIconProvider = null)
         {
-            _resourceDictionary = new ResourceDictionary();
-            _resourceDictionary.Source = new Uri("pack://application:,,,/Lan.ImageViewer;component/Geometries.xaml");
-            SketchBoardDataManager = sketchBoardDataManager;
-            _shapeLayerManager = shapeLayerManager;
-            _geometryTypeManager = geometryTypeManager;
+            SketchBoardDataManager = sketchBoardDataManager
+                ?? throw new ArgumentNullException(nameof(sketchBoardDataManager));
+            ShapeRepository = sketchBoardDataManager;
+            _shapeLayerManager = shapeLayerManager
+                ?? throw new ArgumentNullException(nameof(shapeLayerManager));
+            _geometryTypeManager = geometryTypeManager
+                ?? throw new ArgumentNullException(nameof(geometryTypeManager));
+            _iconProvider = geometryIconProvider
+                ?? new ResourceDictionaryGeometryIconProvider();
+
+            if (_shapeLayerManager.Layers.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    "IShapeLayerManager must contain at least one layer before creating the view-model.");
+            }
+
+            _selectedShapeLayer = _shapeLayerManager.Layers[0];
             GeometryTypeList = new ObservableCollection<GeometryType>();
 
             Scale = 1;
             ShowSimpleCanvas = true;
             CreateGeometryTypeList();
             Image = CreateEmptyImageSource(2048, 2048);
-            SketchBoardDataManager.SetShapeLayer(_shapeLayerManager.Layers[0]);
-            //Image = ImageFromFile(Path.Combine(Environment.CurrentDirectory, "996.png"));
-            ZoomOutCommand = new DelegateCommand(() => { Scale *= 1 - ScaleIncremental; });
-            ChooseGeometryTypeCommand = new DelegateCommand<GeometryType>(ChooseGeometryTypeCommandImpl);
-            ZoomInCommand = new DelegateCommand(() => { Scale *= 1 + ScaleIncremental; });
+
+            // Repository surface only — no VisualCollection / host init from the VM.
+            ShapeRepository.SetShapeLayer(_selectedShapeLayer);
+
+            ZoomOutCommand = new DelegateCommand(() => Scale *= 1 - ScaleIncremental);
+            ZoomInCommand = new DelegateCommand(() => Scale *= 1 + ScaleIncremental);
             ScaleToFitCommand = new DelegateCommand(() => Scale = -1);
             ScaleToOriginalSizeCommand = new DelegateCommand(() => Scale = 0);
-
+            ChooseGeometryTypeCommand = new DelegateCommand<GeometryType>(ChooseGeometryTypeCommandImpl);
             DeleteShapeCommand = new DelegateCommand(DeleteShapeCommandExecute);
 
             Layers = new ObservableCollection<ShapeLayer>(_shapeLayerManager.Layers);
-            sketchBoardDataManager.GeometryTypeUnselected += SketchBoardDataManager_GeometryTypeUnselected;
+
+            ShapeRepository.GeometryTypeUnselected += ShapeRepository_GeometryTypeUnselected;
+
+            // Keep SelectedShape in sync when the board changes selection (mouse / keyboard).
+            if (sketchBoardDataManager is INotifyPropertyChanged npc)
+            {
+                npc.PropertyChanged += Board_PropertyChanged;
+            }
         }
 
-        private void SketchBoardDataManager_GeometryTypeUnselected(object sender, Type e)
+        private void Board_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is null
+                or nameof(IShapeRepository.SelectedGeometry)
+                or nameof(SketchBoardDataManager.SelectedGeometry))
+            {
+                RaisePropertyChanged(nameof(SelectedShape));
+            }
+        }
+
+        private void ShapeRepository_GeometryTypeUnselected(object? sender, Type e)
         {
             if (SelectedGeometryType != null && SelectedGeometryType.Name == e.Name)
             {
                 SelectedGeometryType.IsSelected = false;
             }
+
             SelectedGeometryType = null;
         }
 
-        #endregion
-
-        #endregion
-
-        #region private fields
-
-        #region fields
-
-        private const double ScaleIncremental = 0.1;
-
-        #endregion
-
-        #endregion
-
-        #region properties
-
-        #region Propeties
-
         public ICommand ChooseGeometryTypeCommand { get; }
-
-        #endregion
 
         public ICommand DeleteShapeCommand { get; }
 
-        #endregion
+        /// <inheritdoc />
+        public ISketchBoardDataManager SketchBoardDataManager { get; }
 
-        #region other members
+        /// <inheritdoc />
+        public IShapeRepository ShapeRepository { get; }
+
+        /// <inheritdoc />
+        public ObservableCollection<ShapeVisualBase> Shapes => ShapeRepository.Shapes;
+
+        /// <inheritdoc />
+        public ShapeVisualBase? SelectedShape
+        {
+            get => ShapeRepository.SelectedGeometry;
+            set
+            {
+                if (ReferenceEquals(ShapeRepository.SelectedGeometry, value))
+                {
+                    return;
+                }
+
+                ShapeRepository.SelectedGeometry = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        public ObservableCollection<GeometryType> GeometryTypeList { get; }
+
+        public ObservableCollection<ShapeLayer> Layers { get; set; }
+
+        public ShapeLayer SelectedShapeLayer
+        {
+            get => _selectedShapeLayer;
+            set
+            {
+                if (SetProperty(ref _selectedShapeLayer, value) && value != null)
+                {
+                    ShapeRepository.SetShapeLayer(value);
+                }
+            }
+        }
+
+        public Point MouseDoubleClickPosition
+        {
+            get => _mouseDoubleClickPosition;
+            set => SetProperty(ref _mouseDoubleClickPosition, value);
+        }
+
+        public GeometryType? SelectedGeometryType
+        {
+            get => _selectedGeometryType;
+            set
+            {
+                SetProperty(ref _selectedGeometryType, value);
+                if (_selectedGeometryType != null)
+                {
+                    ShapeRepository.SetGeometryType(
+                        _geometryTypeManager.GetGeometryTypeByName(_selectedGeometryType.Name));
+                }
+            }
+        }
+
+        public ImageSource Image
+        {
+            get => _image;
+            set => SetProperty(ref _image, value);
+        }
+
+        public double Scale
+        {
+            get => _scale;
+            set => SetProperty(ref _scale, value);
+        }
+
+        public ICommand ZoomOutCommand { get; set; }
+        public ICommand ZoomInCommand { get; set; }
+        public ICommand ScaleToOriginalSizeCommand { get; set; }
+        public ICommand ScaleToFitCommand { get; set; }
+
+        public bool ShowSimpleCanvas
+        {
+            get => _hideShapeList;
+            set => SetProperty(ref _hideShapeList, value);
+        }
+
+        public bool ShowShapeTypes { get; set; } = true;
+
+        public void FilterGeometryTypes(Expression<Func<GeometryType, bool>> predicate)
+        {
+            var func = predicate.Compile();
+            GeometryTypeList.Clear();
+            GeometryTypeList.AddRange(_geometryTypeList.Where(x => func(x)));
+        }
 
         private void ChooseGeometryTypeCommandImpl(GeometryType? geometryType)
         {
@@ -106,19 +218,37 @@ namespace Lan.ImageViewer.Prism
             SelectedGeometryType.IsSelected = true;
         }
 
-        private ImageSource CreateEmptyImageSource(int width, int height)
+        private void DeleteShapeCommandExecute()
+        {
+            // List selection maps to SelectedShape (SelectedGeometry), not the
+            // in-progress sketch CurrentGeometryInEdit.
+            if (SelectedShape != null)
+            {
+                ShapeRepository.RemoveShape(SelectedShape);
+            }
+        }
+
+        private void CreateGeometryTypeList()
+        {
+            _geometryTypeList = new ObservableCollection<GeometryType>(
+                _geometryTypeManager.GetRegisteredGeometryTypes()
+                    .Select(name => new GeometryType(name, name, _iconProvider.GetIcon(name))));
+
+            GeometryTypeList.AddRange(_geometryTypeList);
+        }
+
+        private static ImageSource CreateEmptyImageSource(int width, int height)
         {
             var stride = width / 8;
             var pixels = new byte[height * stride];
-
-            // Try creating a new image with a custom palette.
-            var colors = new List<Color>();
-            colors.Add(Colors.Black);
-            colors.Add(Colors.Blue);
-            colors.Add(Colors.Green);
+            var colors = new List<Color>
+            {
+                Colors.Black,
+                Colors.Blue,
+                Colors.Green
+            };
             var myPalette = new BitmapPalette(colors);
 
-            // Creates a new empty image with the pre-defined palette
             return BitmapSource.Create(
                 width, height,
                 96, 96,
@@ -127,186 +257,5 @@ namespace Lan.ImageViewer.Prism
                 pixels,
                 stride);
         }
-
-
-        private void CreateGeometryTypeList()
-        {
-            var iconPngsFromResource = new Dictionary<string, Geometry?>
-            {
-                { nameof(Ellipse), _resourceDictionary["Ellipse"] as Geometry },
-                { nameof(Circle), _resourceDictionary["Circle"] as Geometry },
-                { nameof(Rectangle), _resourceDictionary["Rectangle"] as Geometry },
-                { nameof(Polygon), _resourceDictionary["Polygon"] as Geometry },
-                { nameof(ThickenedCircle), _resourceDictionary["ThickenedCircle"] as Geometry },
-                { nameof(ThickenedCross), _resourceDictionary["ThickenedCross"] as Geometry },
-                { nameof(ThickenedRectangle), _resourceDictionary["ThickenedRectangle"] as Geometry },
-                { nameof(ThickenedLine), _resourceDictionary["ThickenedLine"] as Geometry },
-                { nameof(FixedCenterCircle), _resourceDictionary["FixedCenterCircle"] as Geometry },
-                { nameof(GriddedRectangle), _resourceDictionary["Grid"] as Geometry },
-                { nameof(Line), _resourceDictionary["Line"] as Geometry }
-            };
-
-
-            Geometry? GetIconImage(string iconName)
-            {
-                return iconPngsFromResource.ContainsKey(iconName) ? iconPngsFromResource[iconName] : null;
-            }
-
-            _geometryTypeList = new ObservableCollection<GeometryType>(_geometryTypeManager.GetRegisteredGeometryTypes()
-                .Select(x => new GeometryType(x, x, GetIconImage(x))));
-
-            GeometryTypeList.AddRange(_geometryTypeList);
-        }
-
-        private void DeleteShapeCommandExecute()
-        {
-            if (SketchBoardDataManager.CurrentGeometryInEdit != null)
-            {
-                SketchBoardDataManager.RemoveShape(SketchBoardDataManager.CurrentGeometryInEdit);
-            }
-        }
-
-
-        private ImageSource ImageFromFile(string filePath)
-        {
-            var image = new BitmapImage();
-            image.BeginInit();
-            image.UriSource = new Uri(filePath);
-            image.EndInit();
-            image.Freeze();
-            return image;
-        }
-
-        #endregion
-
-        #region fields
-
-        private readonly IGeometryTypeManager _geometryTypeManager;
-        private readonly ResourceDictionary _resourceDictionary;
-        private readonly IShapeLayerManager _shapeLayerManager;
-
-        private double _scale;
-
-
-        private GeometryType? _selectedGeometryType;
-
-        /// <summary>
-        ///     当前选中的layer
-        /// </summary>
-        //public ShapeLayer SelectedShapeLayer { get; set; }
-        private ShapeLayer _selectedShapeLayer;
-
-        #endregion
-
-        #region implementations
-
-        /// <summary>
-        ///     the sketch boar data manager used to manage sketch board
-        /// </summary>
-        public ISketchBoardDataManager SketchBoardDataManager { get; set; }
-
-
-        private ObservableCollection<GeometryType> _geometryTypeList;
-
-        /// <summary>
-        ///     geometry type list
-        /// </summary>
-        public ObservableCollection<GeometryType> GeometryTypeList { get; }
-
-
-        public ObservableCollection<ShapeLayer> Layers { get; set; }
-
-        public ShapeLayer SelectedShapeLayer
-        {
-            get { return _selectedShapeLayer; }
-            set
-            {
-                if (SetProperty(ref _selectedShapeLayer, value))
-                {
-                    SketchBoardDataManager.SetShapeLayer(_selectedShapeLayer);
-                }
-            }
-        }
-
-        /// <summary>
-        ///     双击相对于图片位置
-        /// </summary>
-        private Point _mouseDoubleClickPosition;
-
-        public Point MouseDoubleClickPosition
-        {
-            get { return _mouseDoubleClickPosition; }
-            set { SetProperty(ref _mouseDoubleClickPosition, value); }
-        }
-
-
-        /// <summary>
-        /// </summary>
-        public GeometryType? SelectedGeometryType
-        {
-            get { return _selectedGeometryType; }
-            set
-            {
-                SetProperty(ref _selectedGeometryType, value);
-                if (_selectedGeometryType != null)
-                {
-                    SketchBoardDataManager.SetGeometryType(
-                        _geometryTypeManager.GetGeometryTypeByName(_selectedGeometryType.Name));
-                }
-            }
-        }
-
-        /// <summary>
-        ///     the image displayed
-        /// </summary>
-        private ImageSource _image;
-
-        public ImageSource Image
-        {
-            get { return _image; }
-            set { SetProperty(ref _image, value); }
-        }
-
-
-        public double Scale
-        {
-            get { return _scale; }
-            set { SetProperty(ref _scale, value); }
-        }
-
-        public ICommand ZoomOutCommand { get; set; }
-        public ICommand ZoomInCommand { get; set; }
-        public ICommand ScaleToOriginalSizeCommand { get; set; }
-        public ICommand ScaleToFitCommand { get; set; }
-
-
-        /// <summary>
-        ///     if true, it will show canvas only, geometry list will be hidden
-        /// </summary>
-        private bool _hideShapeList;
-
-        public bool ShowSimpleCanvas
-        {
-            get { return _hideShapeList; }
-            set { SetProperty(ref _hideShapeList, value); }
-        }
-
-        /// <summary>
-        ///     use to control the visibility of tools
-        /// </summary>
-        public bool ShowShapeTypes { get; set; } = true;
-
-        /// <summary>
-        ///     show shapes only confirm to the conditions provided
-        /// </summary>
-        /// <param name="predicate"></param>
-        public void FilterGeometryTypes(Expression<Func<GeometryType, bool>> predicate)
-        {
-            var func = predicate.Compile();
-            GeometryTypeList.Clear();
-            GeometryTypeList.AddRange(_geometryTypeList.Where(x => func(x)));
-        }
-
-        #endregion
     }
 }

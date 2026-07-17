@@ -1,9 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0-windows;net8.0-windows</TargetFrameworks>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <!-- visiondotnet ships native helper DLLs under lib; MSBuild probes those
+         files as managed references and reports MSB3246 even though they are
+         required at runtime by Halcon. -->
+    <NoWarn>$(NoWarn);MSB3246</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\src\Lan.ImageViewer\Lan.ImageViewer.csproj" />
+	<ProjectReference Include="..\src\Lan.Shapes\Lan.Shapes.csproj" />
     <ProjectReference Include="..\src\Lan.SketchBoard\Lan.SketchBoard.csproj" />
   </ItemGroup>
 

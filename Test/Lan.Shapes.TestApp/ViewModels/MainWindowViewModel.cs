@@ -47,7 +47,7 @@ namespace Lan.Shapes.App.ViewModels
             IServiceProvider serviceProvider,
             IShapeLayerManager shapeLayerManager)
         {
-            Camera1 = serviceProvider.GetService<IImageViewerViewModel>();
+            Camera1 = serviceProvider.GetRequiredService<IImageViewerViewModel>();
 
             Camera1.ShowSimpleCanvas = true;
             //Camera2 = serviceProvider.GetService<IImageViewerViewModel>();
@@ -121,7 +121,7 @@ namespace Lan.Shapes.App.ViewModels
         {
             if (SelectedImageViewModel != null)
             {
-                SelectedImageViewModel.SketchBoardDataManager.ClearAllShapes();
+                SelectedImageViewModel.ShapeRepository.ClearAllShapes();
             }
         }
 
@@ -134,7 +134,7 @@ namespace Lan.Shapes.App.ViewModels
             set
             {
                 SetProperty(ref _x, value);
-                var cross = Camera1.SketchBoardDataManager.Shapes.FirstOrDefault(x =>
+                var cross = Camera1.ShapeRepository.Shapes.FirstOrDefault(x =>
                     x.GetType() == typeof(Cross));
                 if (cross is Cross cr)
                 {
@@ -152,7 +152,7 @@ namespace Lan.Shapes.App.ViewModels
             set
             {
                 SetProperty(ref _y, value);
-                var cross = Camera1.SketchBoardDataManager.Shapes.FirstOrDefault(x =>
+                var cross = Camera1.ShapeRepository.Shapes.FirstOrDefault(x =>
                     x.GetType() == typeof(Cross));
                 if (cross is Cross cr)
                 {
@@ -163,12 +163,18 @@ namespace Lan.Shapes.App.ViewModels
         }
 
 
-        private string _imagePath;
+        private string _imagePath = string.Empty;
 
         public string ImagePath
         {
             get => _imagePath;
-            set { SetProperty(_imagePath, value, changed => UpdateImageSource(changed)); }
+            set
+            {
+                if (SetProperty(ref _imagePath, value))
+                {
+                    UpdateImageSource(value);
+                }
+            }
         }
 
         private void UpdateImageSource(string changed)
@@ -236,9 +242,9 @@ namespace Lan.Shapes.App.ViewModels
         {
             try
             {
-                if (SelectedImageViewModel?.SketchBoardDataManager.SelectedGeometry != null)
+                if (SelectedImageViewModel?.SelectedShape != null)
                 {
-                    SelectedImageViewModel.SketchBoardDataManager.SelectedGeometry.Tag = "absdasdasd";
+                    SelectedImageViewModel.SelectedShape.Tag = "absdasdasd";
                 }
             }
             catch (Exception e)
@@ -256,11 +262,11 @@ namespace Lan.Shapes.App.ViewModels
             //})); 
 
 
-            Camera1.SketchBoardDataManager.LoadShape<TextGeometry, TextGeometryData>(
+            Camera1.ShapeRepository.LoadShape<TextGeometry, TextGeometryData>(
                 new TextGeometryData(new Point(400, 400), "Hello world", 50));
 
 
-          var cross=  Camera1.SketchBoardDataManager.LoadShape<Cross, CrossData>(
+          var cross=  Camera1.ShapeRepository.LoadShape<Cross, CrossData>(
                 new CrossData()
                 {
                     StrokeThickness = 3,
@@ -274,7 +280,7 @@ namespace Lan.Shapes.App.ViewModels
 
           cross.AddText("abc");
 
-         var line = Camera1.SketchBoardDataManager.LoadShape<Line, PointsData>(new PointsData()
+         var line = Camera1.ShapeRepository.LoadShape<Line, PointsData>(new PointsData()
           {
               DataPoints = new List<Point>()
               {
@@ -326,12 +332,12 @@ namespace Lan.Shapes.App.ViewModels
 
         private void LockEditCommandImpl()
         {
-            SelectedImageViewModel?.SketchBoardDataManager.SelectedGeometry?.Lock();
+            SelectedImageViewModel?.SelectedShape?.Lock();
         }
 
         private void UnlockEditCommandImpl()
         {
-            SelectedImageViewModel?.SketchBoardDataManager.Shapes.Last().UnLock();
+            SelectedImageViewModel?.ShapeRepository.Shapes.Last().UnLock();
         }
 
         private void FilterShapeTypeCommandImpl()

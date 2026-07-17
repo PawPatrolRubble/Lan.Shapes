@@ -117,7 +117,7 @@ namespace Lan.ImageViewer
 
         #endregion
 
-        #region Propeties
+        #region Properties
 
         public Brush CrossLineColor
         {
@@ -243,7 +243,7 @@ namespace Lan.ImageViewer
 
         #region Implementations
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         #endregion
 
@@ -282,8 +282,9 @@ namespace Lan.ImageViewer
                 0);
             matrix.Translate((width - pixelWidth * ratio) / 2, (height - pixelHeight * ratio) / 2);
             _matrixTransform.Matrix = matrix;
-            StrokeThickness = DefaultStrokeThickness;
-
+            // Same LocalScale authority as mouse-wheel zoom: keep viewer chrome
+            // (crosshair) stroke consistent with shape stylers.
+            StrokeThickness = Lan.Shapes.Scaling.ViewportScalingService.CalculateStrokeThickness(LocalScale);
         }
 
         private double CalculateAutoFitRatio(double width, double height, double pixelWidth, double pixelHeight)
@@ -314,14 +315,16 @@ namespace Lan.ImageViewer
             if (_borderContainer != null)
             {
 
-                _gridContainer.SizeChanged += (s, e) =>
+                if (_gridContainer != null)
                 {
-
-                    if (PixelHeight != 0 && PixelWidth != 0)
+                    _gridContainer.SizeChanged += (s, e) =>
                     {
-                        AutoScaleImageToFit(_borderContainer.ActualWidth, _borderContainer.ActualHeight, PixelWidth, PixelHeight);
-                    }
-                };
+                        if (PixelHeight != 0 && PixelWidth != 0)
+                        {
+                            AutoScaleImageToFit(_borderContainer.ActualWidth, _borderContainer.ActualHeight, PixelWidth, PixelHeight);
+                        }
+                    };
+                }
 
 
                 _borderContainer.SizeChanged += (s, e) =>
@@ -371,7 +374,7 @@ namespace Lan.ImageViewer
             if (saveFileDialog.ShowDialog() == true)
             {
                 string filePath = saveFileDialog.FileName;
-                BitmapEncoder encoder = null;
+                BitmapEncoder? encoder = null;
 
                 // Determine the encoder to use based on the file extension
                 switch (System.IO.Path.GetExtension(filePath).ToLower())

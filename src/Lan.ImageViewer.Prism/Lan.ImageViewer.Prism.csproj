@@ -1,20 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>net6.0-windows;net8.0-windows</TargetFrameworks>
+		<TargetFramework>net8.0-windows</TargetFramework>
 		<UseWPF>true</UseWPF>
 		<PackageVersion>1.5.0</PackageVersion>
-		<Description>fixed the bug of line movement and fiber shape drag handle scale issue</Description>
-		<!--<ReferenceOutputAssembly>true</ReferenceOutputAssembly>-->
-		<!--<IncludeReferencedProjects>true</IncludeReferencedProjects>-->
+		<Description>Prism composition root for Lan.Shapes image viewer: DI module, default ViewModel, geometry type registration, and layer manager.</Description>
+		<Authors>Lan</Authors>
+		<PackageTags>wpf;prism;image-viewer;di;sketch</PackageTags>
 		<ReferenceOutputAssembly>true</ReferenceOutputAssembly>
 		<IncludeReferencedProjects>true</IncludeReferencedProjects>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 		<appendframeworktooutputpath>false</appendframeworktooutputpath>
-
-
 	</PropertyGroup>
 
-
+	<!--
+	  Fat-package packaging (intentional):
+	  Project references use PrivateAssets=All so this nupkg embeds Lan.ImageViewer,
+	  Lan.Shapes, Custom, DialogGeometry, and SketchBoard outputs via
+	  CopyProjectReferencesToPackage. Consumers take one package for the full
+	  Prism host stack. Do not remove without multi-package dependency publishing.
+	-->
 	<PropertyGroup>
 		<TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
 	</PropertyGroup>
@@ -26,7 +30,7 @@
 	</Target>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="7.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
 		<PackageReference Include="Prism.Wpf" Version="8.1.97" />
 		<PackageReference Include="HandyControls" Version="3.4.5" />
 		<PackageReference Include="netDxf" Version="2023.11.10" />
@@ -34,6 +38,8 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Lan.ImageViewer\Lan.ImageViewer.csproj" PrivateAssets="All" />
+		<ProjectReference Include="..\Lan.Shapes\Lan.Shapes.csproj" PrivateAssets="All" />
+		<ProjectReference Include="..\Lan.Shapes.Custom\Lan.Shapes.Custom.csproj" PrivateAssets="All" />
 		<ProjectReference Include="..\Lan.Shapes.DialogGeometry\Lan.Shapes.DialogGeometry.csproj" PrivateAssets="All" />
 		<ProjectReference Include="..\Lan.SketchBoard\Lan.SketchBoard.csproj" PrivateAssets="All" />
 	</ItemGroup>

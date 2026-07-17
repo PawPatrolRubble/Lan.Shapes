@@ -18,7 +18,7 @@
         #endregion
 
 
-        #region Propeties
+        #region Properties
 
         public int ColCount
         {

@@ -16,28 +16,61 @@ A high-performance WPF image viewer and geometry sketching control. Built on `Dr
 
 ## Getting Started
 
-### Basic Usage
+### Canonical host: Prism + DryIoc (`Lan.Shapes.SimpleApp`)
 
-1. Add the control to your XAML:
+1. Load the module and resolve the view-model from the container (do **not** `new` the VM):
+
+```csharp
+// App.xaml.cs (PrismApplication)
+protected override void ConfigureModuleCatalog(IModuleCatalog moduleCatalog)
+{
+    base.ConfigureModuleCatalog(moduleCatalog);
+    moduleCatalog.AddModule<ImageViewerModule>();
+}
+
+// MainPageViewModel
+Camera1 = ContainerLocator.Container.Resolve<IImageViewerViewModel>();
+```
+
+2. Bind the control:
 
 ```xml
 <imageViewer:ImageViewerControl
     Margin="5"
     Padding="10"
     BorderBrush="Red"
-    DataContext="{Binding Camera2}"
+    DataContext="{Binding Camera1}"
     BorderThickness="1" />
 ```
 
-2. Define the view model in your code:
+`ImageViewerModule` registers:
+
+| Interface | Implementation / note |
+|-----------|------------------------|
+| `IGeometryTypeManager` | `GeometryTypeManager` (singleton) |
+| `IShapeLayerManager` | `ShapeLayerManager` (singleton) |
+| `IGeometryIconProvider` | `ResourceDictionaryGeometryIconProvider` |
+| `IShapeStylerFactory` | `ShapeStylerFactory` |
+| `IImageViewerViewModel` | `ImageViewerControlViewModel` (transient) |
+| `ISketchBoardDataManager` | `SketchBoardDataManager` (transient) |
+| `IShapeRepository` | same instance as the fat manager |
+
+Full IoC walkthrough: [`scripts/IImageViewerViewModel-IoC使用说明.md`](scripts/IImageViewerViewModel-IoC使用说明.md).
+
+### Alternate host: MSDI (`Lan.Shapes.TestApp`)
 
 ```csharp
-// Define image control viewmodel
-public IImageViewerViewModel Camera1 { get; set; }
-
-// Instantiation
-Camera1 = new ImageViewerControlViewModel();
+_serviceCollection.AddSingleton<IShapeLayerManager, ShapeLayerManager>();
+_serviceCollection.AddSingleton<IGeometryTypeManager>(geometryTypeManager);
+_serviceCollection.AddSingleton<IGeometryIconProvider, ResourceDictionaryGeometryIconProvider>();
+_serviceCollection.AddSingleton<IShapeStylerFactory, ShapeStylerFactory>();
+_serviceCollection.AddTransient<IImageViewerViewModel, ImageViewerControlViewModel>();
+_serviceCollection.AddTransient<ISketchBoardDataManager, SketchBoardDataManager>();
+_serviceCollection.AddTransient<IShapeRepository>(
+    sp => sp.GetRequiredService<ISketchBoardDataManager>());
 ```
+
+Resolve `IImageViewerViewModel` from `IServiceProvider` the same way as any other transient service.
 
 ### Navigation Controls
 
@@ -46,14 +79,31 @@ Camera1 = new ImageViewerControlViewModel();
 
 ## Architecture
 
-The project is organized into several core modules:
+The project is a **Windows-only WPF** image viewer and geometry sketcher. Shapes render via `DrawingVisual` for performance. There is no non-WPF target.
 
-- **Lan.ImageViewer**: Main image viewer control and view models
-- **Lan.Shapes**: Core shape rendering and manipulation
-- **Lan.SketchBoard**: Canvas and drawing infrastructure
-- **Lan.Shapes.Custom**: Custom shape implementations
-- **Lan.Shapes.DialogGeometry**: Dialog-based geometry types (grid rectangles, DXF export)
-- **Lan.ImageViewer.Prism**: Prism framework integration
+### Modules
+
+- **Lan.Shapes**: Core shape rendering, layers, stylers, handles, metadata contracts
+- **Lan.SketchBoard**: Canvas host, shape repository, visual-collection mirror
+- **Lan.ImageViewer**: Image zoom/pan control and viewer chrome
+- **Lan.Shapes.Custom**: Extended shape implementations
+- **Lan.Shapes.DialogGeometry**: Dialog-based geometry types (grid rectangles, DXF)
+- **Lan.ImageViewer.Prism**: Prism composition root (DI module, default VM, registrations)
+
+### Design docs
+
+- [`docs/adr/0001-wpf-native-sketch-architecture.md`](docs/adr/0001-wpf-native-sketch-architecture.md) — target ownership model, lifecycle, scale policy
+- [`docs/refactor-checklist.md`](docs/refactor-checklist.md) — phased refactor plan mapped to concrete files
+- [`docs/architecture-issues.md`](docs/architecture-issues.md) — issue log (status table kept in sync with phases)
+
+### Packaging note (fat packages)
+
+`Lan.ImageViewer` and `Lan.ImageViewer.Prism` ship as **fat packages**:
+
+- Project references use `PrivateAssets="All"` so NuGet restore does **not** emit separate dependency packages for core projects.
+- `CopyProjectReferencesToPackage` embeds those project (and selected third-party) DLLs into the nupkg.
+
+This is intentional for single-package host consumption. Do not drop `PrivateAssets` / the copy target without switching to multi-package dependency publishing.
 
 ## Adding a New Shape
 
@@ -256,29 +306,20 @@ namespace Lan.Shapes.Custom
 
 ### Step 4: Register the Shape
 
-Register your shape with the `SketchBoardDataManager` so it can be instantiated by the drawing tools:
+Register tools at the composition root (preferred) or on the repository:
 
 ```csharp
-// Assuming you have access to the SketchBoardDataManager instance
+// Preferred: GeometryTypeRegistration / host startup
+geometryTypeManager.RegisterGeometryType<MyShape>();
+
+// Or on the board repository
 dataManager.RegisterDrawingTool("MyShape", typeof(MyShape));
-
-// Select it for drawing
 dataManager.SetGeometryType(typeof(MyShape));
-
-// Or select by name
-dataManager.SetGeometryType("MyShape");
 ```
 
-If using the `ImageViewerControlViewModel`, register tools during initialization:
-
-```csharp
-var viewModel = new ImageViewerControlViewModel();
-viewModel.SketchBoardDataManager.RegisterDrawingTool("MyShape", typeof(MyShape));
-```
+Palette icons: add a resource key in `Lan.ImageViewer/Geometries.xaml` (or implement `IGeometryIconProvider`). Do **not** hardcode icons in the VM.
 
 ### Step 5: Load Existing Shapes from Data
-
-To deserialize and display a previously saved shape:
 
 ```csharp
 var data = new MyShapeData { Center = new Point(100, 100), Radius = 50 };
@@ -287,7 +328,7 @@ dataManager.LoadShape<MyShape, MyShapeData>(data);
 
 ## Requirements
 
-- .NET 6.0 Windows
+- .NET 8.0 Windows
 - WPF
 - Extended.Wpf.Toolkit (v4.5.1)
 

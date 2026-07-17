@@ -8,10 +8,11 @@ using Lan.Shapes.Interfaces;
 namespace Lan.SketchBoard
 {
     /// <summary>
-    /// WPF-specific contract for the component that bridges a <see cref="IShapeRepository"/>
-    /// to a WPF visual tree.
-    /// Keeps <see cref="System.Windows.Media.VisualCollection"/> and related WPF types
-    /// out of the core <c>Lan.Shapes</c> library.
+    /// Visual-host contract that bridges an <see cref="IShapeRepository"/> to the
+    /// WPF visual tree used by <see cref="SketchBoard"/>.
+    /// Separates visual-collection attachment and scale feedback from the
+    /// shape-data API so hosts and ViewModels can depend on the narrower surface.
+    /// This project is WPF-only; there is no non-WPF host target.
     /// </summary>
     public interface IVisualHost
     {
@@ -22,7 +23,7 @@ namespace Lan.SketchBoard
         VisualCollection VisualCollection { get; }
 
         /// <summary>Reference to the <see cref="ISketchBoard"/> WPF control.</summary>
-        ISketchBoard SketchBoard { get; }
+        ISketchBoard? SketchBoard { get; }
 
         /// <summary>
         /// Attaches this host to a WPF <see cref="Visual"/> (typically the <see cref="SketchBoard"/>
@@ -40,6 +41,9 @@ namespace Lan.SketchBoard
         /// <summary>
         /// Raised once after <see cref="InitializeVisualCollection"/> completes and the
         /// board is ready to receive shapes.
+        /// Prefer this when the subscriber only depends on <see cref="IVisualHost"/> /
+        /// <see cref="IShapeRepository"/>. Same fire site as
+        /// <c>ISketchBoardDataManager.SketchBoardManagerInitialized</c> — subscribe to one, not both.
         /// </summary>
         event EventHandler<IShapeRepository> HostInitialized;
     }

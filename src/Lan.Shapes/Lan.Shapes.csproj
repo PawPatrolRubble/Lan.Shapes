@@ -1,11 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net6.0-windows;net8.0-windows</TargetFrameworks>
+        <TargetFramework>net8.0-windows</TargetFramework>
 	    <PackageVersion>1.1.24</PackageVersion>
-	    <Description>implement Fiber shape with fillet radius and triangle apex</Description>
+	    <Description>WPF DrawingVisual shape core: geometry types, layers, stylers, handles, and metadata contracts for Lan.Shapes sketching.</Description>
+	    <Authors>Lan</Authors>
+	    <PackageTags>wpf;drawingvisual;shapes;annotation;sketch</PackageTags>
         <UseWPF>true</UseWPF>
-
     </PropertyGroup>
 
 	<Target Name="PrePackage" BeforeTargets="BuildPackage">
@@ -14,6 +15,6 @@
 		</PropertyGroup>
 	</Target>
     <ItemGroup>
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.2-beta2" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
 </Project>

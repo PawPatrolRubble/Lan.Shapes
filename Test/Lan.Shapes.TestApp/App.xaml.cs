@@ -1,5 +1,4 @@
 using Lan.ImageViewer;
-using Lan.Shapes.Custom;
 using Lan.Shapes.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -8,6 +7,10 @@ using Lan.SketchBoard;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Lan.Shapes.App.ViewModels;
+using ImageViewerControlViewModel = Lan.ImageViewer.Prism.ImageViewerControlViewModel;
+using ShapeLayerManager = Lan.ImageViewer.Prism.ShapeLayerManager;
+using Lan.ImageViewer.Prism;
+using Lan.Shapes.Styler;
 
 namespace Lan.Shapes.App
 {
@@ -21,13 +24,6 @@ namespace Lan.Shapes.App
         {
             ConfigServices();
             ServiceProvider.GetService<IShapeLayerManager>().ReadShapeLayers("ShapeLayers.json");
-            //ServiceProvider.GetService<IGeometryTypeManager>().ReadGeometryTypesFromAssembly();
-
-            //var shapeLayerManager = ServiceProvider.GetService<IGeometryTypeManager>();
-            //shapeLayerManager.RegisterGeometryType<ThickenedCircle>();
-            //shapeLayerManager.RegisterGeometryType<ThickenedCross>();
-            //shapeLayerManager.RegisterGeometryType<ThickenedRectangle>();
-
             // Setup the Serilog logger
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
@@ -51,10 +47,16 @@ namespace Lan.Shapes.App
 
             _serviceCollection.AddSingleton<MainWindowViewModel>();
             _serviceCollection.AddSingleton<MainWindow>();
-            _serviceCollection.AddSingleton<IGeometryTypeManager, GeometryTypeManager>();
             _serviceCollection.AddSingleton<IShapeLayerManager, ShapeLayerManager>();
+            var geometryTypeManager = new GeometryTypeManager();
+            GeometryTypeRegistration.RegisterDefaultGeometryTypes(geometryTypeManager);
+            _serviceCollection.AddSingleton<IGeometryTypeManager>(geometryTypeManager);
+            _serviceCollection.AddSingleton<IGeometryIconProvider, ResourceDictionaryGeometryIconProvider>();
+            _serviceCollection.AddSingleton<IShapeStylerFactory, ShapeStylerFactory>();
             _serviceCollection.AddTransient<IImageViewerViewModel, ImageViewerControlViewModel>();
             _serviceCollection.AddTransient<ISketchBoardDataManager, SketchBoardDataManager>();
+            _serviceCollection.AddTransient<IShapeRepository>(
+                sp => sp.GetRequiredService<ISketchBoardDataManager>());
 
             ServiceProvider = _serviceCollection.BuildServiceProvider();
         }

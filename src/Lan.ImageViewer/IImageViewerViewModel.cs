@@ -1,51 +1,62 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq.Expressions;
-using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using Lan.Shapes;
 using Lan.Shapes.Interfaces;
-using Lan.SketchBoard;
+using Lan.Shapes.Shapes;
 
 namespace Lan.ImageViewer
 {
+    /// <summary>
+    /// View-model surface for the image viewer control.
+    /// Shape list/selection/commands use <see cref="IShapeRepository"/> members;
+    /// <see cref="SketchBoardDataManager"/> is retained only so the WPF control can
+    /// attach the visual host (<c>VisualCollection</c>, scale feedback).
+    /// </summary>
     public interface IImageViewerViewModel
     {
         /// <summary>
-        /// the sketch boar data manager used to manage sketch board
+        /// Fat board manager for the control dependency property / visual host only.
+        /// Prefer <see cref="ShapeRepository"/>, <see cref="Shapes"/>, and
+        /// <see cref="SelectedShape"/> for shape state.
         /// </summary>
         ISketchBoardDataManager SketchBoardDataManager { get; }
 
         /// <summary>
-        /// geometry type list
+        /// Shape-data surface (collections, selection, CRUD, events) without visual-host members.
+        /// Same instance as <see cref="SketchBoardDataManager"/> in the default implementation.
         /// </summary>
+        IShapeRepository ShapeRepository { get; }
+
+        /// <summary>Shapes on the board (bindable list).</summary>
+        ObservableCollection<ShapeVisualBase> Shapes { get; }
+
+        /// <summary>
+        /// Shape currently selected for edit/delete (maps to repository
+        /// <c>SelectedGeometry</c>, not the in-progress sketch
+        /// <c>CurrentGeometryInEdit</c>).
+        /// </summary>
+        ShapeVisualBase? SelectedShape { get; set; }
+
+        /// <summary>Geometry type palette for the toolbar.</summary>
         ObservableCollection<GeometryType> GeometryTypeList { get; }
 
-        /// <summary>
-        ///
-        /// </summary>
-        GeometryType SelectedGeometryType { get; }
+        GeometryType? SelectedGeometryType { get; }
 
-        /// <summary>
-        /// the image displayed
-        /// </summary>
+        /// <summary>Image displayed under the sketch board.</summary>
         ImageSource Image { get; set; }
 
         double Scale { get; set; }
 
         ObservableCollection<ShapeLayer> Layers { get; set; }
 
-        /// <summary>
-        /// 当前选中的layer
-        /// </summary>
+        /// <summary>Active layer for new shapes.</summary>
         ShapeLayer SelectedShapeLayer { get; set; }
 
-        /// <summary>
-        /// 双击相对于图片位置
-        /// </summary>
+        /// <summary>Last double-click position in image coordinates.</summary>
         Point MouseDoubleClickPosition { get; set; }
 
         #region commands
@@ -55,21 +66,14 @@ namespace Lan.ImageViewer
         ICommand ScaleToOriginalSizeCommand { get; }
         ICommand ScaleToFitCommand { get; }
         ICommand DeleteShapeCommand { get; }
-        /// <summary>
-        /// if true, it will show canvas only, geometry list will be hidden
-        /// </summary>
+
+        /// <summary>When true, the shape list pane is shown; when false, canvas only.</summary>
         bool ShowSimpleCanvas { get; set; }
 
-        /// <summary>
-        /// use to control the visibility of tools
-        /// </summary>
+        /// <summary>Controls visibility of geometry-type tools.</summary>
         bool ShowShapeTypes { get; set; }
 
-
-        /// <summary>
-        /// show shapes only confirm to the conditions provided
-        /// </summary>
-        /// <param name="predicate"></param>
+        /// <summary>Filters the geometry-type palette by the given predicate.</summary>
         void FilterGeometryTypes(Expression<Func<GeometryType, bool>> predicate);
 
         #endregion

@@ -79,9 +79,16 @@ namespace Lan.Shapes.Custom
 
         public void FromData(PointsData data)
         {
-            if (data.DataPoints.Count != 2)
+            if (data == null)
             {
-                throw new Exception($"{nameof(PointsData)} must have 2 elements in  DataPoints");
+                throw new ArgumentNullException(nameof(data));
+            }
+
+            if (data.DataPoints == null || data.DataPoints.Count != 2)
+            {
+                throw new ArgumentException(
+                    $"{nameof(PointsData)} must have exactly 2 elements in {nameof(PointsData.DataPoints)} (TopLeft, BottomRight).",
+                    nameof(data));
             }
 
             CreateHandles();
@@ -89,6 +96,7 @@ namespace Lan.Shapes.Custom
             BottomRight = data.DataPoints[1];
             StrokeThickness = data.StrokeThickness;
             IsGeometryRendered = true;
+            UpdateVisual();
         }
 
         /// <summary>

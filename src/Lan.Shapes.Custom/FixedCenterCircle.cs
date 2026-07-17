@@ -31,7 +31,7 @@ namespace Lan.Shapes.Custom
 
         #endregion
 
-        #region Propeties
+        #region Properties
 
         /// <summary>
         /// 
@@ -79,9 +79,15 @@ namespace Lan.Shapes.Custom
 
         public void FromData(EllipseData data)
         {
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
             Center = data.Center;
             Radius = data.RadiusX;
             IsGeometryRendered = true;
+            UpdateVisual();
         }
 
         public EllipseData GetMetaData()
@@ -90,7 +96,7 @@ namespace Lan.Shapes.Custom
             {
                 Center = Center,
                 RadiusX = Radius,
-                RadiusY = Radius,
+                RadiusY = Radius
             };
         }
 
@@ -100,7 +106,6 @@ namespace Lan.Shapes.Custom
 
         protected override void CreateHandles()
         {
-            throw new NotImplementedException();
         }
 
 
@@ -149,7 +154,7 @@ namespace Lan.Shapes.Custom
         }
 
         /// <summary>
-        /// 未选择状�?
+        /// 未选择状�?
         /// </summary>
         public override void OnDeselected()
         {
@@ -198,7 +203,7 @@ namespace Lan.Shapes.Custom
         }
 
         /// <summary>
-        /// 选择�?
+        /// 选择�?
         /// </summary>
         public override void OnSelected()
         {

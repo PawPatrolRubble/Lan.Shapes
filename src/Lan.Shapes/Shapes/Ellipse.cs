@@ -179,6 +179,7 @@ namespace Lan.Shapes.Shapes
             RadiusX = data.RadiusX;
             RadiusY = data.RadiusY;
             IsGeometryRendered = true;
+            UpdateVisual();
         }
 
         public EllipseData GetMetaData()

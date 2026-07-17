@@ -38,6 +38,7 @@ namespace Lan.Shapes.Shapes
             Y = data.Center.Y;
             Radius = data.RadiusX;
             IsGeometryRendered = true;
+            UpdateVisual();
         }
 
         public EllipseData GetMetaData()

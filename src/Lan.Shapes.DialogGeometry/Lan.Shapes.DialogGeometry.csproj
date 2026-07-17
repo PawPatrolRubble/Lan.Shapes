@@ -1,9 +1,17 @@
 ﻿<?xml version="1.0" encoding="UTF-8" ?>
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net6.0-windows;net8.0-windows</TargetFrameworks>
+        <TargetFramework>net8.0-windows</TargetFramework>
         <UseWPF>true</UseWPF>
+        <Description>Dialog-driven geometries for Lan.Shapes: gridded rectangle, DXF import geometry, and related UI dialogs.</Description>
+        <Authors>Lan</Authors>
+        <PackageTags>wpf;shapes;dxf;dialog;grid</PackageTags>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <!--
+          Intentional: HandyControls/netDxf are PrivateAssets so consumers of the
+          fat Prism/ImageViewer packages do not get transitive package deps.
+          CopyProjectReferencesToPackage embeds those DLLs into this package output.
+        -->
         <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
     </PropertyGroup>
     <ItemGroup>

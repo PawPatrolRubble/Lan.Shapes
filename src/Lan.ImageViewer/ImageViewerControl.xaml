@@ -273,8 +273,8 @@
                 Margin="2,0,2,0"
                 BorderBrush="LightGray"
                 BorderThickness="1"
-                ItemsSource="{Binding SketchBoardDataManager.Shapes}"
-                SelectedItem="{Binding SketchBoardDataManager.CurrentGeometryInEdit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                ItemsSource="{Binding Shapes}"
+                SelectedItem="{Binding SelectedShape, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
 
                 <ListBox.InputBindings>
                     <KeyBinding Key="Delete" Command="{Binding DeleteShapeCommand}" />

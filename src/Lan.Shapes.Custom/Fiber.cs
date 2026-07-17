@@ -170,6 +170,11 @@ namespace Lan.Shapes.Custom
 
         public void FromData(FiberData data)
         {
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
             _enableTranslation = data.EnableTranslation;
             _fiberAngle = data.FiberAngleInDeg;
             _filletRadius = data.FilletRadius;
@@ -182,23 +187,28 @@ namespace Lan.Shapes.Custom
             Vector widthVector = new Vector(Math.Sin(angle), Math.Cos(angle)) * halfWidth;
             Vector topToBottomVector = new Vector(-Math.Cos(angle), Math.Sin(angle)) * halfHeight;
 
-            RectTopLeft = center - widthVector - topToBottomVector;
-            RectTopRight = center + widthVector - topToBottomVector;
-            RectBottomLeft = center - widthVector + topToBottomVector;
-            RectBottomRight = center + widthVector + topToBottomVector;
-            
+            // Assign fields without per-corner UpdateGeometry thrashing.
+            _rectTopLeft = center - widthVector - topToBottomVector;
+            _rectTopRight = center + widthVector - topToBottomVector;
+            _rectBottomLeft = center - widthVector + topToBottomVector;
+            _rectBottomRight = center + widthVector + topToBottomVector;
+
             UpdateGeometry();
 
+            // Correct residual fillet-center drift after geometry rebuild.
             Point currentCenter = _filletGeometry.Center;
             Vector vec = new Vector(data.FilletCenter.X - currentCenter.X, data.FilletCenter.Y - currentCenter.Y);
+            if (vec.LengthSquared > 0)
+            {
+                _rectTopLeft += vec;
+                _rectTopRight += vec;
+                _rectBottomLeft += vec;
+                _rectBottomRight += vec;
+                UpdateGeometry();
+            }
 
-            RectTopLeft = new Point(RectTopLeft.X + vec.X, RectTopLeft.Y + vec.Y);
-            RectTopRight = new Point(RectTopRight.X + vec.X, RectTopRight.Y + vec.Y);
-            RectBottomLeft = new Point(RectBottomLeft.X + vec.X, RectBottomLeft.Y + vec.Y);
-            RectBottomRight = new Point(RectBottomRight.X + vec.X, RectBottomRight.Y + vec.Y);
-
-            UpdateGeometry();
             IsGeometryRendered = true;
+            UpdateVisual();
         }
 
         public FiberData GetMetaData()

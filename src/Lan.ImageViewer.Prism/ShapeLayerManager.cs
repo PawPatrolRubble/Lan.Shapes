@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Media;
 using Lan.Shapes;
 using Lan.Shapes.Interfaces;
+using Lan.Shapes.Styler;
 using Newtonsoft.Json;
 
 namespace Lan.ImageViewer.Prism
@@ -19,6 +20,7 @@ namespace Lan.ImageViewer.Prism
         #region fields
 
         private string _path;
+        private readonly IShapeStylerFactory _stylerFactory;
 
         #endregion
 
@@ -53,30 +55,37 @@ namespace Lan.ImageViewer.Prism
 
         public void ReadShapeLayers(string configurationFilePath)
         {
-            if (!string.IsNullOrEmpty(configurationFilePath))
+            if (string.IsNullOrEmpty(configurationFilePath))
             {
+                return;
+            }
 
-                using (var file = new StreamReader(configurationFilePath))
+            using (var file = new StreamReader(configurationFilePath))
+            {
+                var shapeLayerParameters =
+                    JsonConvert.DeserializeObject<List<ShapeLayerParameter>>(file.ReadToEnd())
+                    ?? throw new InvalidOperationException(
+                        $"Shape layer configuration '{configurationFilePath}' is empty or invalid.");
+
+                foreach (var parameter in shapeLayerParameters)
                 {
-                    var shapeLayerParameters = JsonConvert.DeserializeObject<List<ShapeLayerParameter>>(file.ReadToEnd());
-                    CollectionExtension.AddRange(Layers, shapeLayerParameters.Select(x => new ShapeLayer(x)));
+                    // Fail fast before mutating the live collection.
+                    ShapeLayer.EnsureRequiredStylerStates(
+                        parameter.StyleSchema,
+                        parameter.Name,
+                        parameter.LayerId);
                 }
 
-                _path = configurationFilePath;
+                CollectionExtension.AddRange(
+                    Layers,
+                    shapeLayerParameters.Select(x => new ShapeLayer(x, _stylerFactory)));
             }
+
+            _path = configurationFilePath;
         }
 
         public ObservableCollection<ShapeLayer> Layers { get; private set; } = new ObservableCollection<ShapeLayer>();
 
-        public static readonly DependencyProperty ShapesProperty = DependencyProperty.Register(nameof(Shapes),
-            typeof(ObservableCollection<ShapeVisualBase>), typeof(ShapeLayerManager),
-            new PropertyMetadata(default(ObservableCollection<ShapeVisualBase>)));
-
-        public ObservableCollection<ShapeVisualBase> Shapes
-        {
-            get => (ObservableCollection<ShapeVisualBase>)GetValue(ShapesProperty);
-            set { SetValue(ShapesProperty, value); }
-        }
 
         #endregion
 
@@ -84,9 +93,13 @@ namespace Lan.ImageViewer.Prism
         #region constructor
 
         public ShapeLayerManager()
+            : this(new ShapeStylerFactory())
         {
-            this.Shapes = new ObservableCollection<ShapeVisualBase>();
-            this.SetValue(ShapesProperty, new ObservableCollection<ShapeVisualBase>());
+        }
+
+        public ShapeLayerManager(IShapeStylerFactory stylerFactory)
+        {
+            _stylerFactory = stylerFactory ?? throw new ArgumentNullException(nameof(stylerFactory));
         }
 
         #endregion

@@ -8,10 +8,13 @@ using System.Windows;
 namespace Lan.Shapes.Interfaces
 {
     /// <summary>
-    /// Defines the WPF-agnostic contract for managing shape data on a sketch board.
-    /// Depend on this interface when you do not need access to WPF visual-collection
-    /// infrastructure (e.g. ViewModels, unit tests, non-WPF renderers).
-    /// For the combined data + visual-host contract, see <see cref="ISketchBoardDataManager"/>.
+    /// Shape-data contract for a WPF sketch board: collections, selection, layers,
+    /// geometry-type selection, CRUD, and lifecycle events.
+    /// Prefer this over <see cref="ISketchBoardDataManager"/> when the consumer only
+    /// needs shape state (ViewModels, services, tests) and does not touch the
+    /// <see cref="System.Windows.Media.VisualCollection"/> or board host wiring.
+    /// This library targets WPF only; the split is for interface segregation inside
+    /// the WPF stack, not for non-WPF platforms.
     /// </summary>
     public interface IShapeRepository
     {
@@ -19,9 +22,6 @@ namespace Lan.Shapes.Interfaces
 
         /// <summary>Observable, bindable list of all shapes on the board.</summary>
         ObservableCollection<ShapeVisualBase> Shapes { get; }
-
-        /// <summary>Returns all shapes. Equivalent to <see cref="Shapes"/>.</summary>
-        IEnumerable<ShapeVisualBase> GetSketchBoardVisuals();
 
         /// <summary>Total number of shapes currently on the board.</summary>
         int ShapeCount { get; }

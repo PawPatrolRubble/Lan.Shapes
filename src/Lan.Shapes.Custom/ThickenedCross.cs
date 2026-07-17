@@ -18,7 +18,7 @@ namespace Lan.Shapes.Custom
     {
         #region fields
 
-        //Ë®Æ½Óë
+        //Ë®Æ½ï¿½ï¿½
         private const int MinPixelDistance = 1;
 
         private readonly bool _isSquare;
@@ -34,7 +34,7 @@ namespace Lan.Shapes.Custom
 
         #endregion
 
-        #region Propeties
+        #region Properties
 
         public override Geometry RenderGeometry
         {
@@ -274,73 +274,63 @@ namespace Lan.Shapes.Custom
         #region implementations
 
         /// <summary>
-        /// ÐèÒª4¸öµã
+        /// Loads a thickened cross from four corners:
+        /// [0] VerticalTopLeft, [1] VerticalBottomRight,
+        /// [2] HorizontalTopLeft, [3] HorizontalBottomRight.
         /// </summary>
-        /// <param name="data"></param>
         public void FromData(PointsData data)
         {
-            if (data.DataPoints.Count != 4)
+            if (data == null)
             {
-                throw new Exception($"{nameof(PointsData)} must have 2 elements in  DataPoints");
+                throw new ArgumentNullException(nameof(data));
             }
 
+            if (data.DataPoints == null || data.DataPoints.Count != 4)
+            {
+                throw new ArgumentException(
+                    $"{nameof(PointsData)} must have exactly 4 elements in {nameof(PointsData.DataPoints)} " +
+                    "(VerticalTopLeft, VerticalBottomRight, HorizontalTopLeft, HorizontalBottomRight).",
+                    nameof(data));
+            }
 
-            VerticalTopLeft = data.DataPoints[0];
-            VerticalBottomRight = data.DataPoints[1];
-            HorizontalTopLeft = data.DataPoints[2];
-            HorizontalBottomRight = data.DataPoints[3];
+            // Assign fields directly â€” property setters run drag-side-effect geometry rebuilds.
+            _verticalTopLeft = data.DataPoints[0];
+            _verticalBottomRight = data.DataPoints[1];
+            _horizontalTopLeft = data.DataPoints[2];
+            _horizontalBottomRight = data.DataPoints[3];
+
+            _vRectangleGeometry.Rect = new Rect(_verticalTopLeft, _verticalBottomRight);
+            _hRectangleGeometry.Rect = new Rect(_horizontalTopLeft, _horizontalBottomRight);
+
+            // Write center field only; CenterPoint setter rewrites horizontal corners.
+            _centerPoint = new Point(
+                (_verticalTopLeft.X + _verticalBottomRight.X) / 2,
+                (_verticalTopLeft.Y + _verticalBottomRight.Y) / 2);
+
+            // Handles must exist before StrokeThickness (OnStrokeThicknessChanges indexes them).
+            CreateHandles();
             StrokeThickness = data.StrokeThickness;
+            UpdateHandleLocation();
 
             IsGeometryRendered = true;
+            UpdateVisual();
         }
 
-
         /// <summary>
-        /// first point horizontal top left, cw
+        /// Exports four corners matching <see cref="FromData"/>:
+        /// VerticalTopLeft, VerticalBottomRight, HorizontalTopLeft, HorizontalBottomRight.
         /// </summary>
-        /// <returns></returns>
         public PointsData GetMetaData()
         {
-            var points = new List<Point>();
-
-            //0
-            points.Add(HorizontalTopLeft);
-
-            //1
-            points.Add(new Point(VerticalTopLeft.X, HorizontalTopLeft.Y));
-
-            //2
-            points.Add(VerticalTopLeft);
-
-            //3
-            points.Add(new Point(VerticalBottomRight.X, VerticalTopLeft.Y));
-
-            //4
-            points.Add(new Point(VerticalBottomRight.X, HorizontalTopLeft.Y));
-
-            //5
-            points.Add(new Point(HorizontalBottomRight.X, HorizontalTopLeft.Y));
-
-            //6
-            points.Add(HorizontalBottomRight);
-
-            //7
-            points.Add(new Point(VerticalBottomRight.X, HorizontalBottomRight.Y));
-
-
-            //8
-            points.Add(VerticalBottomRight);
-
-            //9
-            points.Add(new Point(VerticalTopLeft.X, VerticalBottomRight.Y));
-
-            //10
-            points.Add(new Point(VerticalTopLeft.X, HorizontalBottomRight.Y));
-
-            //11
-            points.Add(new Point(HorizontalTopLeft.X, HorizontalBottomRight.Y));
-
-            return new PointsData(StrokeThickness, points);
+            return new PointsData(
+                StrokeThickness,
+                new List<Point>
+                {
+                    VerticalTopLeft,
+                    VerticalBottomRight,
+                    HorizontalTopLeft,
+                    HorizontalBottomRight
+                });
         }
 
         #endregion
@@ -349,7 +339,10 @@ namespace Lan.Shapes.Custom
 
         protected override void OnStrokeThicknessChanges(double strokeThickness)
         {
-            _dragHandles[DragLocations.ResizeHandle].GeometryCenter = GetResizeHandleLocation();
+            if (_dragHandles.TryGetValue(DragLocations.ResizeHandle, out var resizeHandle))
+            {
+                resizeHandle.GeometryCenter = GetResizeHandleLocation();
+            }
         }
 
         protected override void CreateHandles()
@@ -429,7 +422,7 @@ namespace Lan.Shapes.Custom
 
 
         /// <summary>
-        ///     Êó±êµã»÷ÒÆ¶¯
+        ///     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¶ï¿½
         /// </summary>
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {

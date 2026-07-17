@@ -70,7 +70,7 @@ namespace Lan.Shapes.SimpleApp
                 .ReadFrom.Configuration(configuration)
                 .Enrich.WithThreadId()
                 .Enrich.WithThreadName()
-                .Enrich.WithProperty(ThreadNameEnricher.ThreadNamePropertyName, "MainUi")
+                .Enrich.WithProperty("ThreadName", "MainUi")
                 .CreateLogger();
         }
 
@@ -79,7 +79,8 @@ namespace Lan.Shapes.SimpleApp
         {
             var variables = Environment.GetEnvironmentVariables();
 
-            if (variables.Contains("UseLocalDir") && variables["UseLocalDir"].Equals("true"))
+            if (variables["UseLocalDir"] is string useLocalDir &&
+                useLocalDir.Equals("true", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
