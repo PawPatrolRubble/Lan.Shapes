@@ -2,9 +2,11 @@
 
 
 	  <PropertyGroup>
-		  <TargetFrameworks>net6.0-windows;net8.0-windows</TargetFrameworks>
+		  <TargetFramework>net8.0-windows</TargetFramework>
 		  <UseWPF>true</UseWPF>
-		  <Description>add create shape method in sketchboard manager interface</Description>
+		  <Description>WPF image viewer and sketch chrome for Lan.Shapes: zoom/pan control, geometry palette icons, and viewer host surface.</Description>
+		  <Authors>Lan</Authors>
+		  <PackageTags>wpf;image-viewer;sketch;annotation</PackageTags>
 		  <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
 		  <IncludeReferencedProjects>true</IncludeReferencedProjects>
 		  <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -15,6 +17,14 @@
 	</PropertyGroup>
 	
 	
+	<!--
+	  Fat-package packaging (intentional):
+	  Project references use PrivateAssets=All so restore does not emit separate
+	  NuGet dependencies for Lan.Shapes / Lan.SketchBoard. CopyProjectReferencesToPackage
+	  then embeds those project outputs into this package so a single nupkg can
+	  ship the viewer stack. Do not remove without switching to multi-package
+	  dependency publishing.
+	-->
 	<PropertyGroup>
 		<TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
 	</PropertyGroup>
@@ -35,6 +45,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\Lan.Shapes\Lan.Shapes.csproj" PrivateAssets="All" />
 	  <ProjectReference Include="..\Lan.SketchBoard\Lan.SketchBoard.csproj" PrivateAssets="All" />
 	</ItemGroup>
 

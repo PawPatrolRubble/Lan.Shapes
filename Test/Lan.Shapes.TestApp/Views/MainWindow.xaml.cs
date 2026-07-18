@@ -5,6 +5,7 @@ using Lan.Shapes.Interfaces;
 using Lan.Shapes.Models;
 using Lan.Shapes.Shapes;
 using Microsoft.Extensions.DependencyInjection;
+using ImageViewerControlViewModel = Lan.ImageViewer.Prism.ImageViewerControlViewModel;
 
 namespace Lan.Shapes.App
 {
@@ -22,7 +23,7 @@ namespace Lan.Shapes.App
             {
                 if (imageViewerControl.DataContext is ImageViewerControlViewModel vm)
                 {
-                    vm.SketchBoardDataManager.LoadShape<Cross, CrossData>(new CrossData()
+                    vm.ShapeRepository.LoadShape<Cross, CrossData>(new CrossData()
                     {
                         Center = new Point(40, 40),
                         Height = 50,
@@ -31,7 +32,7 @@ namespace Lan.Shapes.App
                     });
 
 
-                    vm.SketchBoardDataManager.LoadShape<Circle, EllipseData>(new EllipseData()
+                    vm.ShapeRepository.LoadShape<Circle, EllipseData>(new EllipseData()
                     {
                         Center = new Point(300, 350),
                         RadiusX = 20,

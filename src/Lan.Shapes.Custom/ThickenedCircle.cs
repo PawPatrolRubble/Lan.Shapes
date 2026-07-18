@@ -215,10 +215,16 @@ namespace Lan.Shapes.Custom
 
         public void FromData(EllipseData data)
         {
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
             Center = data.Center;
             Radius = data.RadiusX;
             StrokeThickness = data.StrokeThickness;
             IsGeometryRendered = true;
+            UpdateVisual();
         }
 
         public EllipseData GetMetaData()

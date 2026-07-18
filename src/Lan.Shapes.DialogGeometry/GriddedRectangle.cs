@@ -10,13 +10,15 @@ using Lan.Shapes.Shapes;
 
 #endregion
 
+#nullable enable
+
 namespace Lan.Shapes.DialogGeometry
 {
     public class GridData : NotifiableObject
     {
         private int _id;
 
-        #region Propeties
+        #region Properties
 
         public Point BottomRight { get; set; }
 
@@ -43,7 +45,7 @@ namespace Lan.Shapes.DialogGeometry
 
         #endregion
 
-        #region Propeties
+        #region Properties
 
         private int _columnGap;
         private int _rowGap;

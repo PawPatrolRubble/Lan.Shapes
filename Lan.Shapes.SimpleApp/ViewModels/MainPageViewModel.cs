@@ -113,7 +113,7 @@ namespace Lan.Shapes.SimpleApp.ViewModels
             set { SetProperty(ref _currentRoi, value); }
         }
 
-        private void OnRoiUpdateHandler(object sender, PropertyChangedEventArgs e)
+        private void OnRoiUpdateHandler(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName != null && (e.PropertyName.Equals(nameof(Rectangle.TopLeft)) || e.PropertyName.Equals(nameof(Rectangle.BottomRight))))
             {
@@ -174,7 +174,7 @@ namespace Lan.Shapes.SimpleApp.ViewModels
         {
             if (SelectedImageViewModel != null)
             {
-                SelectedImageViewModel.SketchBoardDataManager.ClearAllShapes();
+                SelectedImageViewModel.ShapeRepository.ClearAllShapes();
             }
         }
 
@@ -187,7 +187,7 @@ namespace Lan.Shapes.SimpleApp.ViewModels
             set
             {
                 SetProperty(ref _x, value);
-                var cross = Camera1.SketchBoardDataManager.Shapes.FirstOrDefault(x =>
+                var cross = Camera1.ShapeRepository.Shapes.FirstOrDefault(x =>
                     x.GetType() == typeof(Cross));
                 if (cross is Cross cr)
                 {
@@ -205,7 +205,7 @@ namespace Lan.Shapes.SimpleApp.ViewModels
             set
             {
                 SetProperty(ref _y, value);
-                var cross = Camera1.SketchBoardDataManager.Shapes.FirstOrDefault(x =>
+                var cross = Camera1.ShapeRepository.Shapes.FirstOrDefault(x =>
                     x.GetType() == typeof(Cross));
                 if (cross is Cross cr)
                 {
@@ -216,7 +216,7 @@ namespace Lan.Shapes.SimpleApp.ViewModels
         }
 
 
-        private string _imagePath;
+        private string _imagePath = string.Empty;
 
         public string ImagePath
         {
@@ -295,9 +295,9 @@ namespace Lan.Shapes.SimpleApp.ViewModels
         {
             try
             {
-                if (SelectedImageViewModel?.SketchBoardDataManager.SelectedGeometry != null)
+                if (SelectedImageViewModel?.SelectedShape != null)
                 {
-                    SelectedImageViewModel.SketchBoardDataManager.SelectedGeometry.Tag = "absdasdasd";
+                    SelectedImageViewModel.SelectedShape.Tag = "absdasdasd";
                 }
             }
             catch (Exception e)
@@ -315,7 +315,7 @@ namespace Lan.Shapes.SimpleApp.ViewModels
             //})); 
 
 
-            Camera1.SketchBoardDataManager.LoadShape<TextGeometry, TextGeometryData>(
+            Camera1.ShapeRepository.LoadShape<TextGeometry, TextGeometryData>(
                 new TextGeometryData(new Point(400, 400), "Hello world", 50));
 
 
@@ -371,7 +371,7 @@ namespace Lan.Shapes.SimpleApp.ViewModels
 
         private void LoadFiberFromDataCommandImpl()
         {
-            SelectedImageViewModel?.SketchBoardDataManager.LoadShape<Fiber, FiberData>(new FiberData
+            SelectedImageViewModel?.ShapeRepository.LoadShape<Fiber, FiberData>(new FiberData
             {
                 FilletCenter = new Point(700, 450),
                 FiberAngleInDeg = 145,
@@ -384,12 +384,12 @@ namespace Lan.Shapes.SimpleApp.ViewModels
 
         private void LockEditCommandImpl()
         {
-            SelectedImageViewModel?.SketchBoardDataManager.SelectedGeometry?.Lock();
+            SelectedImageViewModel?.SelectedShape?.Lock();
         }
 
         private void UnlockEditCommandImpl()
         {
-            SelectedImageViewModel?.SketchBoardDataManager.Shapes.Last().UnLock();
+            SelectedImageViewModel?.ShapeRepository.Shapes.Last().UnLock();
         }
 
         private void FilterShapeTypeCommandImpl()

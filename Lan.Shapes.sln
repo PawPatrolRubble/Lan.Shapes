@@ -28,6 +28,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lan.ImageViewer.Halcon", "L
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lan.Shapes.SimpleApp", "Lan.Shapes.SimpleApp\Lan.Shapes.SimpleApp.csproj", "{7C857F1D-C112-4562-B23F-1F797EBD8119}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{05F1AC31-82FE-479B-8863-E9AB237E203E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lan.SketchBoard.Tests", "Test\Lan.SketchBoard.Tests\Lan.SketchBoard.Tests.csproj", "{6264D64D-F697-4FF4-BD05-E65DDC81FE2F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -70,6 +74,10 @@ Global
 		{7C857F1D-C112-4562-B23F-1F797EBD8119}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7C857F1D-C112-4562-B23F-1F797EBD8119}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7C857F1D-C112-4562-B23F-1F797EBD8119}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6264D64D-F697-4FF4-BD05-E65DDC81FE2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6264D64D-F697-4FF4-BD05-E65DDC81FE2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6264D64D-F697-4FF4-BD05-E65DDC81FE2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6264D64D-F697-4FF4-BD05-E65DDC81FE2F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -82,6 +90,7 @@ Global
 		{C3A182D6-E5B6-40CB-898E-647C7EED4528} = {72CD207F-85D8-4F06-90A0-8BCCF15D9E16}
 		{BD976BF8-49FA-479C-9B1F-59A561F9776E} = {72CD207F-85D8-4F06-90A0-8BCCF15D9E16}
 		{E10DD370-D1E3-4E23-BE7D-11A1555257C8} = {72CD207F-85D8-4F06-90A0-8BCCF15D9E16}
+		{6264D64D-F697-4FF4-BD05-E65DDC81FE2F} = {05F1AC31-82FE-479B-8863-E9AB237E203E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B85921A7-54EA-4457-A6A5-6FA9797B8176}

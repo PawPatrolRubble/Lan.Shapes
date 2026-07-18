@@ -3,6 +3,7 @@ using Lan.Shapes.Interfaces;
 using Lan.Shapes.Models;
 using Lan.Shapes.Shapes;
 using Lan.Shapes.SimpleApp.ViewModels;
+using ImageViewerControlViewModel = Lan.ImageViewer.Prism.ImageViewerControlViewModel;
 
 using Prism.Ioc;
 
@@ -25,7 +26,7 @@ namespace Lan.Shapes.App
             {
                 if (imageViewerControl.DataContext is ImageViewerControlViewModel vm)
                 {
-                    vm.SketchBoardDataManager.LoadShape<Cross, CrossData>(new CrossData()
+                    vm.ShapeRepository.LoadShape<Cross, CrossData>(new CrossData()
                     {
                         Center = new Point(40, 40),
                         Height = 50,

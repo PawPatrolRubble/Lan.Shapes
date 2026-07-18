@@ -1,8 +1,7 @@
-using System.Collections.Generic;
+using System;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Shapes;
 using Lan.Shapes.DialogGeometry.Dialog;
 using Lan.Shapes.Interfaces;
 using Lan.Shapes.Models;
@@ -10,14 +9,14 @@ using Lan.Shapes.Shapes;
 
 namespace Lan.Shapes.DialogGeometry
 {
-    public class GridGeometry : ShapeVisualBase, IDataExport<PointsData>
+    public class GridGeometry : ShapeVisualBase, IDataExport<GridGeometryData>
     {
         #region fields
 
         private readonly RectangleGeometry _boundGeometry = new RectangleGeometry();
         private Point _topLeft;
         private Point _bottomRight;
-        private LineGeometry[,] _lines;
+        private LineGeometry[,]? _lines;
 
         #endregion
 
@@ -44,8 +43,9 @@ namespace Lan.Shapes.DialogGeometry
 
         private void OnTopLeftPointChanges(Point topLeft)
         {
-
-            _boundGeometry.Rect = new Rect(topLeft, (BottomRight.X == 0 && BottomRight.Y == 0) ? topLeft : BottomRight);
+            _boundGeometry.Rect = new Rect(
+                topLeft,
+                (BottomRight.X == 0 && BottomRight.Y == 0) ? topLeft : BottomRight);
             UpdateVisual();
         }
 
@@ -65,33 +65,54 @@ namespace Lan.Shapes.DialogGeometry
             UpdateVisual();
         }
 
-        public int RowCount { get; set; }
-        public int ColumnCount { get; set; }
+        public int RowCount { get; set; } = 1;
+        public int ColumnCount { get; set; } = 1;
 
         public int RowGap { get; set; }
         public int ColumnGap { get; set; }
 
-        /// <summary>
-        /// </summary>
-        public override Rect BoundsRect { get; }
+        public override Rect BoundsRect => _boundGeometry.Bounds;
 
         #endregion
 
         #region interface implementations
 
-        public void FromData(PointsData data)
+        public void FromData(GridGeometryData data)
         {
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
 
+            RowCount = Math.Max(1, data.RowCount);
+            ColumnCount = Math.Max(1, data.ColumnCount);
+            _topLeft = data.TopLeft;
+            _bottomRight = data.BottomRight;
+            Tag = data.Tag;
+
+            _boundGeometry.Rect = new Rect(TopLeft, BottomRight);
+            RebuildGapsFromBounds();
+            RebuildLineGeometries();
+            IsGeometryRendered = true;
+            UpdateVisual();
         }
 
-        public PointsData GetMetaData()
+        public GridGeometryData GetMetaData()
         {
-            return new PointsData(1, new List<Point>());
+            return new GridGeometryData
+            {
+                TopLeft = TopLeft,
+                BottomRight = BottomRight,
+                RowCount = RowCount,
+                ColumnCount = ColumnCount,
+                StrokeThickness = ShapeStyler?.SketchPen.Thickness ?? 1,
+                Tag = Tag
+            };
         }
 
         #endregion
 
-        #region all other members
+        #region interaction
 
         protected override void CreateHandles()
         {
@@ -105,66 +126,47 @@ namespace Lan.Shapes.DialogGeometry
         {
         }
 
-        /// <summary>
-        ///     未选择状�?
-        /// </summary>
         public override void OnDeselected()
         {
         }
 
-        /// <summary>
-        ///     选择�?
-        /// </summary>
         public override void OnSelected()
         {
         }
 
-
-        /// <summary>
-        ///     left mouse button down event
-        /// </summary>
-        /// <param name="mousePoint"></param>
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
             base.OnMouseLeftButtonDown(mousePoint);
-            if (IsGeometryRendered == false) TopLeft = mousePoint;
+            if (!IsGeometryRendered)
+            {
+                TopLeft = mousePoint;
+            }
         }
 
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
-            if (IsGeometryRendered == false)
+            if (!IsGeometryRendered)
             {
                 BottomRight = point;
             }
         }
 
-
-        /// <summary>
-        ///     when mouse left button up
-        /// </summary>
-        /// <param name="newPoint"></param>
         public override void OnMouseLeftButtonUp(Point newPoint)
         {
-            if (IsGeometryRendered == false)
+            if (!IsGeometryRendered)
             {
                 var dialog = new DialogService();
                 dialog.ShowDialog<GridDialog, GridDialogDialogViewModel>(() => new GridDialogDialogViewModel(), x =>
                 {
                     if (x.Result == DialogResult.Ok)
                     {
-                        RowCount = x.RowCount;
-                        ColumnCount = x.ColCount;
-                        RowGap = x.VerticalGap;
-                        ColumnGap = x.HorizontalGap;
-
+                        RowCount = Math.Max(1, x.RowCount);
+                        ColumnCount = Math.Max(1, x.ColCount);
                         BottomRight = newPoint;
                         _boundGeometry.Rect = new Rect(TopLeft, BottomRight);
+                        RebuildGapsFromBounds();
+                        RebuildLineGeometries();
                         IsGeometryRendered = true;
-
-                        RowGap = (int)((BottomRight.Y - TopLeft.Y) / RowCount);
-                        ColumnGap = (int)((BottomRight.X - TopLeft.X) / ColumnCount);
-
-                        UpdateOrAddLineGeometries(true);
                     }
                 });
             }
@@ -172,32 +174,47 @@ namespace Lan.Shapes.DialogGeometry
             UpdateVisual();
         }
 
-        private void UpdateOrAddLineGeometries(bool addNew)
+        private void RebuildGapsFromBounds()
         {
-            if (_lines == null)
+            var height = BottomRight.Y - TopLeft.Y;
+            var width = BottomRight.X - TopLeft.X;
+            RowGap = RowCount > 0 ? (int)(height / RowCount) : 0;
+            ColumnGap = ColumnCount > 0 ? (int)(width / ColumnCount) : 0;
+        }
+
+        private void RebuildLineGeometries()
+        {
+            if (_lines != null)
             {
-                _lines = new LineGeometry[RowCount, ColumnCount];
-
-            }
-
-            for (var rowIndex = 0; rowIndex < RowCount; rowIndex++)
-            {
-
-                for (var colIndex = 0; colIndex < ColumnCount; colIndex++)
+                for (var rowIndex = 0; rowIndex < _lines.GetLength(0); rowIndex++)
                 {
-                    if (_lines[rowIndex, colIndex] == null)
+                    for (var colIndex = 0; colIndex < _lines.GetLength(1); colIndex++)
                     {
-
-                        _lines[rowIndex, colIndex] ??= new LineGeometry();
-                        RenderGeometryGroup.Children.Add(_lines[rowIndex, colIndex]);
+                        var line = _lines[rowIndex, colIndex];
+                        if (line != null)
+                        {
+                            RenderGeometryGroup.Children.Remove(line);
+                        }
                     }
-                    var topLeft = TopLeft + new Vector(colIndex * ColumnGap, rowIndex * RowGap);
-                    _lines[rowIndex, colIndex].StartPoint = topLeft;
-                    _lines[rowIndex, colIndex].EndPoint = topLeft + new Vector(ColumnGap, RowGap);
-
                 }
             }
 
+            _lines = new LineGeometry[RowCount, ColumnCount];
+
+            for (var rowIndex = 0; rowIndex < RowCount; rowIndex++)
+            {
+                for (var colIndex = 0; colIndex < ColumnCount; colIndex++)
+                {
+                    var topLeft = TopLeft + new Vector(colIndex * ColumnGap, rowIndex * RowGap);
+                    var line = new LineGeometry
+                    {
+                        StartPoint = topLeft,
+                        EndPoint = topLeft + new Vector(ColumnGap, RowGap)
+                    };
+                    _lines[rowIndex, colIndex] = line;
+                    RenderGeometryGroup.Children.Add(line);
+                }
+            }
         }
 
         #endregion

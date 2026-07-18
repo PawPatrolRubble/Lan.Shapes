@@ -33,7 +33,7 @@ namespace Lan.Shapes.Custom
 
         #endregion
 
-        #region Propeties
+        #region Properties
 
         public Point End
         {
@@ -149,7 +149,7 @@ namespace Lan.Shapes.Custom
         }
 
         /// <summary>
-        /// Êó±êµã»÷ÒÆ¶¯
+        /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¶ï¿½
         /// </summary>
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
@@ -308,10 +308,12 @@ namespace Lan.Shapes.Custom
                 Start = data.DataPoints[0];
                 End = data.DataPoints[1];
                 StrokeThickness = data.StrokeThickness;
+                IsGeometryRendered = true;
+                UpdateVisual();
             }
             else
             {
-                throw new Exception($"Ìá¹©µÄµãÊý¾Ý²»×ã£¬±ØÐë´óÓÚ2¸öµã¡£");
+                throw new Exception($"ï¿½á¹©ï¿½Äµï¿½ï¿½ï¿½ï¿½Ý²ï¿½ï¿½ã£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½2ï¿½ï¿½ï¿½ã¡£");
             }
 
         }

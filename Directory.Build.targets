@@ -1,0 +1,8 @@
+<Project>
+  <!-- The repository's packaging targets copy project outputs into the package.
+       When pack is invoked without building, resolve references from the already
+       built outputs instead of trying to invoke Build again. -->
+  <PropertyGroup Condition="'$(NoBuild)' == 'true'">
+    <BuildProjectReferences>false</BuildProjectReferences>
+  </PropertyGroup>
+</Project>

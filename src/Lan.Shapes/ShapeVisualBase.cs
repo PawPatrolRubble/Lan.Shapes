@@ -207,6 +207,27 @@ namespace Lan.Shapes
         {
         }
 
+        /// <summary>
+        /// Re-reads stroke/handle sizes from the current layer styler and redraws.
+        /// Called by the board when zoom scale changes after stylers are updated.
+        /// </summary>
+        public void RefreshScaleDependentVisuals()
+        {
+            if (ShapeLayer == null)
+            {
+                return;
+            }
+
+            DragHandleSize = ShapeStyler?.DragHandleSize ?? DefaultDragHandleSize;
+            OnDragHandleSizeChanges(DragHandleSize);
+
+            if (IsGeometryRendered)
+            {
+                UpdateVisual();
+            }
+        }
+
+
         protected abstract void CreateHandles();
 
         /// <inheritdoc cref="RectDragHandle.CreateRectDragHandleFromStyler(IShapeStyler, Point, int)"/>

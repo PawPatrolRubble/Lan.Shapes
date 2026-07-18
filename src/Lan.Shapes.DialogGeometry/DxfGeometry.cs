@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,8 +27,15 @@ namespace Lan.Shapes.DialogGeometry
     {
         #region constructor
 
-        public DxfGeometry(ShapeLayer layer) : base(layer)
+        private readonly IDxfDocumentService _dxfDocumentService;
+
+        public DxfGeometry(ShapeLayer layer) : this(layer, DxfDocumentService.Default)
         {
+        }
+
+        public DxfGeometry(ShapeLayer layer, IDxfDocumentService dxfDocumentService) : base(layer)
+        {
+            _dxfDocumentService = dxfDocumentService ?? throw new ArgumentNullException(nameof(dxfDocumentService));
         }
 
         #endregion
@@ -249,12 +258,10 @@ namespace Lan.Shapes.DialogGeometry
 
         public override void OnDeselected()
         {
-            throw new NotImplementedException();
         }
 
         public override void OnSelected()
         {
-            throw new NotImplementedException();
         }
 
         public override void OnMouseRightButtonUp(Point mousePosition)
@@ -284,7 +291,7 @@ namespace Lan.Shapes.DialogGeometry
 
                                 if (saveFileDialog.ShowDialog() == true)
                                 {
-                                    doc.Save(saveFileDialog.FileName);
+                                    _dxfDocumentService.Save(doc, saveFileDialog.FileName);
                                     MessageBox.Show("Export to DXF completed!");
                                 }
                             }
@@ -505,8 +512,8 @@ namespace Lan.Shapes.DialogGeometry
 
         private void ReadDxfFile(string filePath, Point offset, double pixelToMmFactor = 1.0)
         {
-            var doc = DxfDocument.Load(filePath);
-            _originalDxfDoc = DxfDocument.Load(filePath);
+            var doc = _dxfDocumentService.Load(filePath);
+            _originalDxfDoc = _dxfDocumentService.Load(filePath);
             _initialOffset = offset;
             _accumulatedWpfTransform = Matrix.Identity;
             var dpiScale = 1.0;

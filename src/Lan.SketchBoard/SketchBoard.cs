@@ -3,7 +3,6 @@
 #region
 
 using System;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -33,7 +32,7 @@ namespace Lan.SketchBoard
 
         #endregion
 
-        #region Propeties
+        #region Properties
 
 
         public ImageSource Image
@@ -53,7 +52,9 @@ namespace Lan.SketchBoard
 
         public SketchBoard()
         {
-            SizeChanged += SketchBoard_SizeChanged;
+            // Stroke/handle sizing is driven solely by ImageViewer LocalScale →
+            // SketchBoardDataManager.OnImageViewerPropertyChanged. Window resize
+            // alone must not fight zoom-driven thickness (Phase 2 scale policy).
         }
 
         /// <summary>Invoked when an unhandled <see cref="E:System.Windows.Input.Keyboard.KeyDown" /> attached event reaches an element in its route that is derived from this class. Implement this method to add class handling for this event.</summary>
@@ -67,20 +68,6 @@ namespace Lan.SketchBoard
             }
         }
 
-        private void SketchBoard_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (SketchBoardDataManager == null) return;
-
-            var scaleFactor = Lan.Shapes.Scaling.ViewportScalingService.CalculateStrokeThicknessFromViewportSize(ActualWidth, ActualHeight);
-            var stylers = SketchBoardDataManager.CurrentShapeLayer.Stylers;
-
-            foreach (var shapeStyler in stylers)
-            {
-                shapeStyler.Value.SetStrokeThickness(2 * scaleFactor);
-                shapeStyler.Value.DragHandleSize = 10 * scaleFactor;
-            }
-        }
-
         #region others
 
         private static void OnSketchBoardDataManagerChangedCallBack(DependencyObject d,
@@ -88,18 +75,7 @@ namespace Lan.SketchBoard
         {
             if (d is SketchBoard sketchBoard && e.NewValue is ISketchBoardDataManager dataManager)
             {
-                // Take a snapshot BEFORE InitializeVisualCollection clears Shapes.
-                var existingShapes = dataManager.Shapes?.ToList();
-
                 dataManager.InitializeVisualCollection(sketchBoard);
-
-                if (existingShapes != null)
-                {
-                    foreach (var shape in existingShapes)
-                    {
-                        dataManager.AddShape(shape);
-                    }
-                }
             }
         }
 

@@ -15,10 +15,13 @@ namespace Lan.Shapes.Styler
 
         public IShapeStyler Clone()
         {
-            return new ShapeStyler(FillColor, _sketchPen.Brush, _sketchPen.DashStyle, DragHandleSize)
+            var clone = new ShapeStyler(FillColor, _sketchPen.Brush, _sketchPen.DashStyle, DragHandleSize)
             {
-                TagColor = TagColor
+                TagColor = TagColor,
+                Name = Name
             };
+            clone.SetStrokeThickness(_sketchPen.Thickness);
+            return clone;
         }
 
         public ShapeStylerParameter ToStylerParameter()
@@ -63,14 +66,21 @@ namespace Lan.Shapes.Styler
 
         public ShapeStyler(ShapeStylerParameter parameter)
         {
+            if (parameter == null)
+            {
+                throw new ArgumentNullException(nameof(parameter));
+            }
+
             FillColor = parameter.FillColor;
-            _sketchPen.Thickness = 1;
+            _sketchPen.Thickness = parameter.StrokeThickness > 0 ? parameter.StrokeThickness : 1;
             _sketchPen.Brush = parameter.StrokeColor;
-            _sketchPen.DashStyle = ConvertStringToDashStyle(parameter.DashStyle) ;
-            
+            _sketchPen.DashStyle = ConvertStringToDashStyle(parameter.DashStyle);
             _dashStyle = parameter.DashStyle;
             DragHandleSize = parameter.DragHandleSize;
-            FillColor.Opacity = parameter.FillOpacity;
+            if (FillColor != null)
+            {
+                FillColor.Opacity = parameter.FillOpacity;
+            }
         }
 
         private DashStyle ConvertStringToDashStyle(string dashStyleName)

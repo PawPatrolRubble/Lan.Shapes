@@ -75,13 +75,16 @@ namespace Lan.ImageViewer.Halcon
             if (_image == null)
             {
                 _image = GetTemplateChild("ImageViewer") as HSmartWindowControlWPF;
-                _image.MouseMove += (s, e) =>
+                if (_image != null)
                 {
-                    if (e.LeftButton == MouseButtonState.Pressed)
+                    _image.MouseMove += (s, e) =>
                     {
-                        ImagePart = _image.HImagePart;
-                    }
-                };
+                        if (e.LeftButton == MouseButtonState.Pressed)
+                        {
+                            ImagePart = _image.HImagePart;
+                        }
+                    };
+                }
             }
 
             _gridContainer ??= GetTemplateChild("GridContainer") as Grid;

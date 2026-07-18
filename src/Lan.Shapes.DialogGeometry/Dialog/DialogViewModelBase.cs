@@ -7,6 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
+#nullable enable
+
 namespace Lan.Shapes.DialogGeometry.Dialog
 {
     public enum DialogResult
@@ -19,7 +21,7 @@ namespace Lan.Shapes.DialogGeometry.Dialog
 
     public class DialogViewModelBase : INotifyPropertyChanged
     {
-        public Action RequestClose { get; set; }
+        public Action? RequestClose { get; set; }
         public DialogResult Result { get; set; } = DialogResult.None;
 
         public event PropertyChangedEventHandler? PropertyChanged;

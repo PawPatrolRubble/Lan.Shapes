@@ -1,13 +1,25 @@
+#nullable enable
+using System;
 using System.Windows.Media;
 
 namespace Lan.Shapes.Styler
 {
     public class ShapeStylerFactory : IShapeStylerFactory
     {
-        private IShapeStyler _defaultStyler;
-        private IShapeStyler _dottedLineStyler;
-        private IShapeStyler _selectedStyler;
+        private IShapeStyler? _defaultStyler;
+        private IShapeStyler? _dottedLineStyler;
+        private IShapeStyler? _selectedStyler;
 
+        /// <inheritdoc />
+        public IShapeStyler CreateStyler(ShapeStylerParameter parameter)
+        {
+            if (parameter == null)
+            {
+                throw new ArgumentNullException(nameof(parameter));
+            }
+
+            return new ShapeStyler(parameter);
+        }
 
         public IShapeStyler ShapeUnselectedVisualState()
         {
@@ -59,18 +71,16 @@ namespace Lan.Shapes.Styler
             return _dottedLineStyler;
         }
 
-
         public IShapeStyler CustomShapeStyler(Brush fillColor, Brush strokeColor, double strokeThickness)
         {
             var customStyler = new ShapeStyler();
             customStyler.SetFillColor(fillColor);
             customStyler.SetStrokeColor(strokeColor);
             customStyler.SetStrokeThickness(strokeThickness);
-
             return customStyler;
-        }   
-        
-        public IShapeStyler CustomShapeStyler(Brush fillColor, Brush strokeColor, double strokeThickness,double dragHandleSize)
+        }
+
+        public IShapeStyler CustomShapeStyler(Brush fillColor, Brush strokeColor, double strokeThickness, double dragHandleSize)
         {
             var customStyler = new ShapeStyler();
             customStyler.SetFillColor(fillColor);

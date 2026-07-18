@@ -78,45 +78,28 @@ namespace Lan.Shapes.Shapes
         public override Rect BoundsRect { get; }
         protected override void CreateHandles()
         {
-            //throw new NotImplementedException();
         }
 
         protected override void HandleResizing(Point point)
         {
-            //throw new NotImplementedException();
         }
 
         protected override void HandleTranslate(Point newPoint)
         {
-            //throw new NotImplementedException();
         }
-
-        public override void OnDeselected()
-        {
-            //throw new NotImplementedException();
-        }
-
-        public override void OnSelected()
-        {
-            //throw new NotImplementedException();
-        }
-
 
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
-            //base.OnMouseLeftButtonDown(mousePoint);
-            //if (!IsGeometryRendered)
-            //{
-                
-            //}
         }
-        
+
         public void FromData(CrossData data)
         {
             Center = data.Center;
             Width = data.Width;
             Height = data.Height;
-            ShapeStyler.SetStrokeThickness(data.StrokeThickness);
+            ShapeStyler?.SetStrokeThickness(data.StrokeThickness);
+            IsGeometryRendered = true;
+            UpdateVisual();
         }
 
         public CrossData GetMetaData()

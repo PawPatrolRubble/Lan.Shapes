@@ -29,7 +29,7 @@ namespace Lan.Shapes.Custom
 
         #endregion
 
-        #region Propeties
+        #region Properties
 
         /// <summary>
         /// 
@@ -62,7 +62,7 @@ namespace Lan.Shapes.Custom
         public CustomGeometryBase(ShapeLayer shapeLayer) : base(shapeLayer)
         {
             DistanceResizeHandle = new RectDragHandle(new Size(DragHandleSize, DragHandleSize), new Point(), 10, 99);
-            DragHandlePen = ShapeStyler.SketchPen;
+            DragHandlePen = ShapeStyler?.SketchPen ?? new Pen(Brushes.Red, 1);
             MaxStrokeThickness = shapeLayer.MaximumThickenedShapeWidth;
         }
 
@@ -76,29 +76,25 @@ namespace Lan.Shapes.Custom
 
         protected override void HandleResizing(Point point)
         {
-            throw new NotImplementedException();
         }
 
         protected override void HandleTranslate(Point newPoint)
         {
-            throw new NotImplementedException();
         }
 
         /// <summary>
-        /// 未选择状态
+        /// 未选择状态 — base no-op; selection styling is driven by State.
         /// </summary>
         public override void OnDeselected()
         {
-            throw new NotImplementedException();
         }
 
 
         /// <summary>
-        /// 选择时
+        /// 选择时 — base no-op; selection styling is driven by State.
         /// </summary>
         public override void OnSelected()
         {
-            throw new NotImplementedException();
         }
 
         protected override void OnDragHandleSizeChanges(double dragHandleSize)
