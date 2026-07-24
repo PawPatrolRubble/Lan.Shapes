@@ -4,6 +4,7 @@
 	  <PropertyGroup>
 		  <TargetFramework>net8.0-windows</TargetFramework>
 		  <UseWPF>true</UseWPF>
+		  <PackageVersion>1.1.10</PackageVersion>
 		  <Description>WPF image viewer and sketch chrome for Lan.Shapes: zoom/pan control, geometry palette icons, and viewer host surface.</Description>
 		  <Authors>Lan</Authors>
 		  <PackageTags>wpf;image-viewer;sketch;annotation</PackageTags>
