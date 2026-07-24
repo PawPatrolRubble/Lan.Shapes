@@ -347,24 +347,22 @@ namespace Lan.Shapes.Custom
 
         protected override void CreateHandles()
         {
-            if (Handles.Count == 0)
+            if (_dragHandles.Count == 0)
             {
-                Handles.Add(new RectDragHandle(DragHandleSize, _hRectangleGeometry.Rect.Location,
+                RegisterHandle(new RectDragHandle(DragHandleSize, _hRectangleGeometry.Rect.Location,
                     (int)DragLocations.HTopLeft));
-                Handles.Add(new RectDragHandle(DragHandleSize, _hRectangleGeometry.Rect.BottomRight,
+                RegisterHandle(new RectDragHandle(DragHandleSize, _hRectangleGeometry.Rect.BottomRight,
                     (int)DragLocations.HBottomRight));
 
-                Handles.Add(new RectDragHandle(DragHandleSize, _vRectangleGeometry.Rect.BottomRight,
+                RegisterHandle(new RectDragHandle(DragHandleSize, _vRectangleGeometry.Rect.BottomRight,
                     (int)DragLocations.VBottomRight));
-                Handles.Add(new RectDragHandle(DragHandleSize, _vRectangleGeometry.Rect.TopLeft,
+                RegisterHandle(new RectDragHandle(DragHandleSize, _vRectangleGeometry.Rect.TopLeft,
                     (int)DragLocations.VTopLeft));
 
-                Handles.Add(new RectDragHandle(DragHandleSize, GetResizeHandleLocation(),
+                RegisterHandle(new RectDragHandle(DragHandleSize, GetResizeHandleLocation(),
                     (int)DragLocations.ResizeHandle));
 
                 _dragHandles = Handles.ToDictionary(x => (DragLocations)x.Id);
-
-                RenderGeometryGroup.Children.AddRange(Handles.Select(x => x.HandleGeometry));
             }
         }
 
@@ -389,15 +387,6 @@ namespace Lan.Shapes.Custom
                 UpdateHandleLocation();
                 UpdateVisual();
                 OldPointForTranslate = newPoint;
-            }
-        }
-
-        protected override void OnDragHandleSizeChanges(double dragHandleSize)
-        {
-            base.OnDragHandleSizeChanges(dragHandleSize);
-            foreach (var handle in Handles)
-            {
-                handle.HandleSize = new Size(dragHandleSize, dragHandleSize);
             }
         }
 
@@ -544,7 +533,7 @@ namespace Lan.Shapes.Custom
             }
 
             AddTagText(renderContext, VerticalTopLeft - new Vector(0, ShapeLayer.TagFontSize + StrokeThickness));
-            renderContext.DrawGeometry(DragHandleFillColor, DragHandlePen, RenderGeometryGroup);
+            DrawDragHandles(renderContext);
             renderContext.Close();
         }
 

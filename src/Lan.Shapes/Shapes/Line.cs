@@ -20,14 +20,11 @@ namespace Lan.Shapes.Shapes
         {
 
             DragHandleSize = ShapeStyler.DragHandleSize;
-            _leftDragHandle = new RectDragHandle(DragHandleSize, default, 1);
-            _rightDragHandle = new RectDragHandle(DragHandleSize, default, 2);
-            _panHandle = new RectDragHandle(DragHandleSize, default, 2);
+            _leftDragHandle = RegisterHandle(new RectDragHandle(DragHandleSize, default, 1));
+            _rightDragHandle = RegisterHandle(new RectDragHandle(DragHandleSize, default, 2));
+            _panHandle = RegisterHandle(new RectDragHandle(DragHandleSize, default, 2));
 
             RenderGeometryGroup.Children.Add(_lineGeometry);
-            RenderGeometryGroup.Children.Add(_leftDragHandle.HandleGeometry);
-            RenderGeometryGroup.Children.Add(_rightDragHandle.HandleGeometry);
-            RenderGeometryGroup.Children.Add(_panHandle.HandleGeometry);
 
         }
 
@@ -110,23 +107,6 @@ namespace Lan.Shapes.Shapes
             }
         }
 
-        protected override void OnDragHandleSizeChanges(double dragHandleSize)
-        {
-            if (_leftDragHandle != null)
-            {
-                _leftDragHandle.HandleSize = new Size(dragHandleSize, dragHandleSize);
-            }
-            if (_rightDragHandle != null)
-            {
-                _rightDragHandle.HandleSize = new Size(dragHandleSize, dragHandleSize);
-            }
-            if (_panHandle != null)
-            {
-                _panHandle.HandleSize = new Size(dragHandleSize, dragHandleSize);
-            }
-        }
-
-
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
             base.OnMouseLeftButtonDown(mousePoint);
@@ -145,18 +125,7 @@ namespace Lan.Shapes.Shapes
 
         public override void FindSelectedHandle(Point p)
         {
-            switch (p)
-            {
-                case var point when _leftDragHandle.FillContains(point):
-                    SelectedDragHandle = _leftDragHandle;
-                    break;
-                case var point when _rightDragHandle.FillContains(point):
-                    SelectedDragHandle = _rightDragHandle;
-                    break;
-                case var point when _panHandle.FillContains(point):
-                    SelectedDragHandle = _panHandle;
-                    break;
-            }
+            base.FindSelectedHandle(p);
         }
 
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
@@ -236,6 +205,7 @@ namespace Lan.Shapes.Shapes
 
             var renderContext = RenderOpen();
             renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometryGroup);
+            DrawDragHandles(renderContext);
             DrawLengthText(renderContext);
             renderContext.Close();
         }

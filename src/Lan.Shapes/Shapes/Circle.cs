@@ -21,8 +21,7 @@ namespace Lan.Shapes.Shapes
         public Circle(ShapeLayer shapeLayer) : base(shapeLayer)
         {
             DragHandleSize = ShapeStyler.DragHandleSize;
-            _dragHandle = new RectDragHandle(DragHandleSize, default, 1);
-            RenderGeometryGroup.Children.Add(_dragHandle.HandleGeometry);
+            _dragHandle = RegisterHandle(new RectDragHandle(DragHandleSize, default, 1));
             RenderGeometryGroup.Children.Add(_ellipseGeometry);
         }
 
@@ -195,15 +194,6 @@ namespace Lan.Shapes.Shapes
             OldPointForTranslate = newPoint;
         }
 
-        protected override void OnDragHandleSizeChanges(double dragHandleSize)
-        {
-            if (_dragHandle != null)
-            {
-                _dragHandle.HandleSize = new Size(dragHandleSize, dragHandleSize);
-            }
-        }
-
-
         /// <summary>
         ///     left mouse button down event
         /// </summary>
@@ -225,12 +215,12 @@ namespace Lan.Shapes.Shapes
 
         public override void FindSelectedHandle(Point p)
         {
-            SelectedDragHandle = _dragHandle.FillContains(p) ? _dragHandle : null;
+            base.FindSelectedHandle(p);
         }
 
 
         /// <summary>
-        ///     Êó±êµã»÷ÒÆ¶¯
+        ///     é¼ æ ‡ç‚¹å‡»ç§»åŠ¨
         /// </summary>
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
@@ -316,10 +306,7 @@ namespace Lan.Shapes.Shapes
                 renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometry);
                 renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, _verticalLine);
                 renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, _horizontalLine);
-                if (_dragHandle?.HandleGeometry != null)
-                {
-                    renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, _dragHandle.HandleGeometry);
-                }
+                DrawDragHandles(renderContext);
 
                 AddTagText(renderContext, Center);
                 AddRadiusText(renderContext);

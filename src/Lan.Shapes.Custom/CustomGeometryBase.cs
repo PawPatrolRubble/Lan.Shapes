@@ -97,13 +97,9 @@ namespace Lan.Shapes.Custom
         {
         }
 
-        protected override void OnDragHandleSizeChanges(double dragHandleSize)
-        {
-            if (DistanceResizeHandle != null)
-            {
-                DistanceResizeHandle.HandleSize = new Size(dragHandleSize, dragHandleSize);
-            }
-        }
+        protected override Brush? GetDragHandleFill() => DragHandleFillColor;
+
+        protected override Pen? GetDragHandlePen() => DragHandlePen;
 
         protected abstract void OnStrokeThicknessChanges(double strokeThickness);
 

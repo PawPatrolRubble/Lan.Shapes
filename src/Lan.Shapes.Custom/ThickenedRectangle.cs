@@ -71,6 +71,7 @@ namespace Lan.Shapes.Custom
         public ThickenedRectangle(ShapeLayer shapeLayer) : base(shapeLayer)
         {
             RenderGeometryGroup.Children.Add(_middleRectangleGeometry);
+            RegisterHandle(DistanceResizeHandle);
         }
 
         #endregion
@@ -119,10 +120,15 @@ namespace Lan.Shapes.Custom
 
         protected override void CreateHandles()
         {
-            Handles.Add(new RectDragHandle(new Size(ShapeStyler.DragHandleSize, ShapeStyler.DragHandleSize), default, 10, (int)DragLocation.TopLeft));
-            Handles.Add(new RectDragHandle(new Size(ShapeStyler.DragHandleSize, ShapeStyler.DragHandleSize), default, 10, (int)DragLocation.TopRight));
-            Handles.Add(new RectDragHandle(new Size(ShapeStyler.DragHandleSize, ShapeStyler.DragHandleSize), default, 10, (int)DragLocation.BottomLeft));
-            Handles.Add(new RectDragHandle(new Size(ShapeStyler.DragHandleSize, ShapeStyler.DragHandleSize), default, 10, (int)DragLocation.BottomRight));
+            if (Handles.Count > 1)
+            {
+                return;
+            }
+
+            RegisterHandle(new RectDragHandle(new Size(ShapeStyler.DragHandleSize, ShapeStyler.DragHandleSize), default, 10, (int)DragLocation.TopLeft));
+            RegisterHandle(new RectDragHandle(new Size(ShapeStyler.DragHandleSize, ShapeStyler.DragHandleSize), default, 10, (int)DragLocation.TopRight));
+            RegisterHandle(new RectDragHandle(new Size(ShapeStyler.DragHandleSize, ShapeStyler.DragHandleSize), default, 10, (int)DragLocation.BottomLeft));
+            RegisterHandle(new RectDragHandle(new Size(ShapeStyler.DragHandleSize, ShapeStyler.DragHandleSize), default, 10, (int)DragLocation.BottomRight));
 
             _dragHandleDict = Handles.ToDictionary(x => (DragLocation)x.Id);
         }
@@ -134,12 +140,6 @@ namespace Lan.Shapes.Custom
 
         public override void FindSelectedHandle(Point p)
         {
-            if (DistanceResizeHandle.FillContains(p))
-            {
-                SelectedDragHandle = DistanceResizeHandle;
-                return;
-            }
-
             base.FindSelectedHandle(p);
         }
 
@@ -241,15 +241,6 @@ namespace Lan.Shapes.Custom
             UpdateVisual();
         }
 
-        protected override void OnDragHandleSizeChanges(double dragHandleSize)
-        {
-            base.OnDragHandleSizeChanges(dragHandleSize);
-            foreach (var handle in Handles)
-            {
-                handle.HandleSize = new Size(dragHandleSize, dragHandleSize);
-            }
-        }
-
 
         private void ResizeByCornerPoint(DragLocation location, Point point)
         {
@@ -297,10 +288,7 @@ namespace Lan.Shapes.Custom
                 renderContext.DrawGeometry(ShapeStyler.FillColor, Pen, RenderGeometry);
             }
 
-            renderContext.DrawGeometry(DragHandleFillColor, DragHandlePen, DistanceResizeHandle.HandleGeometry);
-
-            foreach (var dragHandle in Handles)
-                renderContext.DrawGeometry(DragHandleFillColor, DragHandlePen, dragHandle.HandleGeometry);
+            DrawDragHandles(renderContext);
 
             AddTagText(renderContext, TopLeft - new Vector(0, ShapeLayer.TagFontSize + StrokeThickness));
             renderContext.Close();

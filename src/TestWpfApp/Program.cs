@@ -83,6 +83,15 @@ ShapeLayer CreateDefaultShapeLayer(
                 DashStyle = "Solid",
                 DragHandleSize = 8,
                 FillOpacity = 0.2
+            },
+            [ShapeVisualState.Selected] = new ShapeStylerParameter
+            {
+                FillColor = new SolidColorBrush(Color.FromRgb(0, 191, 255)),
+                StrokeColor = new SolidColorBrush(Colors.Blue),
+                StrokeThickness = 2.0,
+                DashStyle = "Solid",
+                DragHandleSize = 8,
+                FillOpacity = 0.2
             }
         }
     };
@@ -176,8 +185,8 @@ RunTest("FiberData round-trip preserves geometry", () =>
     var data = fiber.GetMetaData();
 
     // Verify data is in micrometers
-    AssertTrue(data.Width > 50000, $"Width in um > 50000 (got {data.Width:F0})");
-    AssertTrue(data.Height > 20000, $"Height in um > 20000 (got {data.Height:F0})");
+    AssertTrue(Math.Abs(data.Width - 58.65) < 0.01, $"Width in um is ~58.65 (got {data.Width:F2})");
+    AssertTrue(Math.Abs(data.Height - 29.33) < 0.01, $"Height in um is ~29.33 (got {data.Height:F2})");
 
     // Reconstruct
     var fiber2 = new Fiber(layer);
@@ -200,8 +209,8 @@ RunTest("FromData converts micrometers to pixels", () =>
 
     var data = new FiberData
     {
-        Width = 58651,   // ~200 px
-        Height = 29325,  // ~100 px
+        Width = 58.651,  // ~200 px
+        Height = 29.325, // ~100 px
         FilletCenter = new Point(200, 100),
         FilletRadius = 30,
         FiberAngleInDeg = 0,
@@ -213,7 +222,7 @@ RunTest("FromData converts micrometers to pixels", () =>
     double w = Math.Sqrt(Math.Pow(fiber.RectTopRight.X - fiber.RectTopLeft.X, 2) +
                         Math.Pow(fiber.RectTopRight.Y - fiber.RectTopLeft.Y, 2));
 
-    AssertTrue(Math.Abs(w - 200) < 1.0, $"Width from 58651 um = ~200 px (got {w:F2})");
+    AssertTrue(Math.Abs(w - 200) < 1.0, $"Width from 58.651 um = ~200 px (got {w:F2})");
 });
 
 // ===== Test 8: Different unit scales produce different pixel geometry =====
@@ -224,8 +233,8 @@ RunTest("Different unit scales affect pixel geometry", () =>
 
     var data = new FiberData
     {
-        Width = 50000,
-        Height = 25000,
+        Width = 50,
+        Height = 25,
         FilletCenter = new Point(200, 100),
         FilletRadius = 30,
         FiberAngleInDeg = 0,
@@ -242,7 +251,7 @@ RunTest("Different unit scales affect pixel geometry", () =>
     double wB = Math.Sqrt(Math.Pow(fiberB.RectTopRight.X - fiberB.RectTopLeft.X, 2) +
                          Math.Pow(fiberB.RectTopRight.Y - fiberB.RectTopLeft.Y, 2));
 
-    AssertTrue(wB < wA, $"Higher PixelPerUnit → smaller pixels (wB={wB:F1} < wA={wA:F1})");
+    AssertTrue(wB < wA, $"Lower PixelPerUnit produces fewer pixels (wB={wB:F1} < wA={wA:F1})");
 });
 
 // ===== Report =====

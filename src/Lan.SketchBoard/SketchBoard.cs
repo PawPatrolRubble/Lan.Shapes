@@ -144,10 +144,17 @@ namespace Lan.SketchBoard
             {
                 SketchBoardDataManager.SelectedGeometry?.OnMouseLeftButtonDown(position);
             }
+
+            // Keep forwarding the drag after the pointer leaves the board or
+            // crosses a child visual. Without capture, WPF stops raising move/up
+            // events and the shape remains in a half-dragged state.
+            _leftDragMouseCaptured = CaptureMouse();
         }
 
 
         private bool _mouseDownHitExistingShape;
+        private bool _leftDragMouseCaptured;
+
         private ShapeVisualBase? GetHitTestShape(Point mousePosition)
         {
             if (SketchBoardDataManager == null) return null;
@@ -161,47 +168,85 @@ namespace Lan.SketchBoard
             var hitTestResult = VisualTreeHelper.HitTest(this, mousePosition);
             var shape = hitTestResult?.VisualHit as ShapeVisualBase;
 
-            return (shape?.IsLocked ?? true) ? null : shape;
+            if (shape != null)
+            {
+                return shape.IsLocked ? null : shape;
+            }
+
+            // WPF's visual hit test only sees rendered geometry. Probe the shared
+            // logical handle regions as a fallback so DetectionRange remains useful
+            // just outside a visible handle.
+            for (var i = SketchBoardDataManager.Shapes.Count - 1; i >= 0; i--)
+            {
+                var candidate = SketchBoardDataManager.Shapes[i];
+                if (!candidate.IsLocked && candidate.HasDragHandleAt(mousePosition))
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
         }
 
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
+            var position = e.GetPosition(this);
             if (e.LeftButton == MouseButtonState.Pressed)
             {
                 if (SketchBoardDataManager?.CurrentGeometryInEdit != null)
                 {
-                    SketchBoardDataManager.CurrentGeometryInEdit.OnMouseMove(e.GetPosition(this), e.LeftButton);
+                    SketchBoardDataManager.CurrentGeometryInEdit.OnMouseMove(position, e.LeftButton);
                 }
                 else
                 {
-                    SketchBoardDataManager?.SelectedGeometry?.OnMouseMove(e.GetPosition(this), e.LeftButton);
+                    SketchBoardDataManager?.SelectedGeometry?.OnMouseMove(position, e.LeftButton);
+                }
+            }
+            else
+            {
+                var shape = GetHitTestShape(position);
+                shape?.UpdateMouseCursorForPoint(position);
+                if (shape == null)
+                {
+                    Mouse.SetCursor(Cursors.Arrow);
                 }
             }
         }
 
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
-            if (SketchBoardDataManager == null) return;
-
-            var geometry = SketchBoardDataManager.SelectedGeometry;
-            if (geometry == null) return;
-
-            var position = e.GetPosition(this);
-            if (!geometry.IsGeometryRendered)
+            try
             {
-                SketchBoardDataManager.RaiseNewShapeSketched(geometry);
-            }
+                if (SketchBoardDataManager == null) return;
 
-            geometry.OnMouseLeftButtonUp(position);
+                var geometry = SketchBoardDataManager.SelectedGeometry;
+                if (geometry == null) return;
 
-            if (geometry.IsGeometryRendered)
-            {
-                if (!_mouseDownHitExistingShape)
+                var position = e.GetPosition(this);
+                if (!geometry.IsGeometryRendered)
                 {
-                    SketchBoardDataManager.UnselectGeometry();
+                    SketchBoardDataManager.RaiseNewShapeSketched(geometry);
                 }
-                SketchBoardDataManager.UnselectGeometryType();
+
+                geometry.OnMouseLeftButtonUp(position);
+
+                if (geometry.IsGeometryRendered)
+                {
+                    if (!_mouseDownHitExistingShape)
+                    {
+                        SketchBoardDataManager.UnselectGeometry();
+                    }
+                    SketchBoardDataManager.UnselectGeometryType();
+                }
+            }
+            finally
+            {
+                if (_leftDragMouseCaptured)
+                {
+                    ReleaseMouseCapture();
+                    _leftDragMouseCaptured = false;
+                }
             }
         }
 

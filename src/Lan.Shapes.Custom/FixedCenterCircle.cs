@@ -69,8 +69,8 @@ namespace Lan.Shapes.Custom
         {
             _baseEllipseGeometry = new EllipseGeometry(new Point(), 100, 100);
             RenderGeometryGroup.Children.Add(_baseEllipseGeometry);
-            _rightDragHandle = new RectDragHandle(DragHandleSize, default, 1);
-            _topDragHandle = new RectDragHandle(DragHandleSize, default, 2);
+            _rightDragHandle = RegisterHandle(new RectDragHandle(DragHandleSize, default, 1));
+            _topDragHandle = RegisterHandle(new RectDragHandle(DragHandleSize, default, 2));
         }
 
         #endregion
@@ -111,15 +111,7 @@ namespace Lan.Shapes.Custom
 
         public override void FindSelectedHandle(Point p)
         {
-            if (_rightDragHandle.FillContains(p))
-            {
-                SelectedDragHandle = _rightDragHandle;
-            }
-
-            if (_topDragHandle.FillContains(p))
-            {
-                SelectedDragHandle = _topDragHandle;
-            }
+            base.FindSelectedHandle(p);
         }
 
         protected override void HandleResizing(Point point)
@@ -216,18 +208,6 @@ namespace Lan.Shapes.Custom
             Center = new Point(boardWidth / 2, boardHeight / 2);
         }
 
-        protected override void OnDragHandleSizeChanges(double dragHandleSize)
-        {
-            if (_rightDragHandle != null)
-            {
-                _rightDragHandle.HandleSize = new Size(dragHandleSize, dragHandleSize);
-            }
-            if (_topDragHandle != null)
-            {
-                _topDragHandle.HandleSize = new Size(dragHandleSize, dragHandleSize);
-            }
-        }
-
         private void UpdateHandlePosition(Point center, double radius)
         {
             _topDragHandle.GeometryCenter = center + new Vector(0, -radius);
@@ -241,12 +221,9 @@ namespace Lan.Shapes.Custom
             if (ShapeStyler != null && _rightDragHandle != null && _topDragHandle != null)
             {
                 renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometry);
-                renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen,
-                    _rightDragHandle.HandleGeometry);
 
                 AddTagText(renderContext, Center);
-
-                renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, _topDragHandle.HandleGeometry);
+                DrawDragHandles(renderContext);
             }
 
             renderContext.Close();

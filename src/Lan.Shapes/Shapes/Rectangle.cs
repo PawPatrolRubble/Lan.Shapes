@@ -119,7 +119,15 @@ namespace Lan.Shapes.Shapes
 
         protected override void CreateHandles()
         {
-            Handles.AddRange(Enumerable.Range(1, 4).Select(x => new RectDragHandle(DragHandleSize, default, x)));
+            if (Handles.Count > 0)
+            {
+                return;
+            }
+
+            foreach (var id in Enumerable.Range(1, 4))
+            {
+                RegisterHandle(new RectDragHandle(DragHandleSize, default, id));
+            }
         }
 
         protected override void HandleResizing(Point point)
@@ -158,14 +166,6 @@ namespace Lan.Shapes.Shapes
             }
         }
 
-        protected override void OnDragHandleSizeChanges(double dragHandleSize)
-        {
-            foreach (var handle in Handles)
-            {
-                handle.HandleSize = new Size(dragHandleSize, dragHandleSize);
-            }
-        }
-
         /// <summary>
         /// left mouse button down event
         /// </summary>
@@ -188,7 +188,7 @@ namespace Lan.Shapes.Shapes
 
 
         /// <summary>
-        /// Êó±êµã»÷ÒÆ¶¯
+        /// é¼ æ ‡ç‚¹å‡»ç§»åŠ¨
         /// </summary>
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
@@ -258,10 +258,8 @@ namespace Lan.Shapes.Shapes
             {
                 AddTagText(renderContext, GetTagPosition());
 
-                renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, _rectangleGeometry);
                 renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometryGroup);
-                foreach (var dragHandle in Handles)
-                    renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, dragHandle.HandleGeometry);
+                DrawDragHandles(renderContext);
             }
 
             renderContext.Close();

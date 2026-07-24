@@ -77,8 +77,8 @@ namespace Lan.Shapes.Shapes
         public Ellipse(ShapeLayer shapeLayer) : base(shapeLayer)
         {
             RenderGeometryGroup.Children.Add(_ellipseGeometry);
-            _rightDragHandle = new RectDragHandle(DragHandleSize, default, 1);
-            _topDragHandle = new RectDragHandle(DragHandleSize, default, 2);
+            _rightDragHandle = RegisterHandle(new RectDragHandle(DragHandleSize, default, 1));
+            _topDragHandle = RegisterHandle(new RectDragHandle(DragHandleSize, default, 2));
         }
 
         #endregion
@@ -124,18 +124,6 @@ namespace Lan.Shapes.Shapes
             MouseDownPoint = newPoint;
         }
 
-        protected override void OnDragHandleSizeChanges(double dragHandleSize)
-        {
-            if (_rightDragHandle != null)
-            {
-                _rightDragHandle.HandleSize = new Size(dragHandleSize, dragHandleSize);
-            }
-            if (_topDragHandle != null)
-            {
-                _topDragHandle.HandleSize = new Size(dragHandleSize, dragHandleSize);
-            }
-        }
-
         /// <summary>
         /// Handle mouse left button up - clean up state
         /// </summary>
@@ -160,12 +148,9 @@ namespace Lan.Shapes.Shapes
             if (ShapeStyler != null && _rightDragHandle != null && _topDragHandle != null)
             {
                 renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometry);
-                renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen,
-                    _rightDragHandle.HandleGeometry);
 
                 AddTagText(renderContext, Center);
-
-                renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, _topDragHandle.HandleGeometry);
+                DrawDragHandles(renderContext);
             }
 
             renderContext.Close();

@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -83,8 +82,6 @@ namespace Lan.Shapes.Shapes
         {
             _pathFigure.IsClosed = true;
             IsGeometryRendered = true;
-            HandleGeometryGroup ??= new GeometryGroup();
-            HandleGeometryGroup?.Children.AddRange(Handles.Select(x => x.HandleGeometry));
         }
 
         protected override void CreateHandles()
@@ -120,11 +117,10 @@ namespace Lan.Shapes.Shapes
             //if the geometry is closed, handle and last point will not be added
             if (!_pathFigure.IsClosed)
             {
-                Handles.Add(new CircleDragHandle(ShapeStyler.DragHandleSize, newPoint, _points.Count));
+                RegisterHandle(new CircleDragHandle(ShapeStyler.DragHandleSize, newPoint, _points.Count));
                 _points.Add(_points.Count, newPoint);
             }
 
-            RenderGeometryGroup.Children.Add(Handles[Handles.Count - 1].HandleGeometry);
             UpdateVisual();
         }
 
@@ -234,15 +230,6 @@ namespace Lan.Shapes.Shapes
         {
             ClosePolygon();
         }
-
-        protected override void OnDragHandleSizeChanges(double dragHandleSize)
-        {
-            foreach (var handle in Handles)
-            {
-                handle.HandleSize = new Size(dragHandleSize, dragHandleSize);
-            }
-        }
-
 
         /// <summary>
         /// 

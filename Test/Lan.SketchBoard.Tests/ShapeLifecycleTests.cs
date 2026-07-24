@@ -48,6 +48,29 @@ public class ShapeLifecycleTests
     }
 
     [Fact]
+    public void LoadShape_RoundTrips_Rectangle2()
+    {
+        var manager = CreateManagerWithHost();
+        var data = new Rectangle2Data
+        {
+            Row = 40,
+            Column = 50,
+            Phi = 0.5,
+            Length1 = 20,
+            Length2 = 10
+        };
+
+        var shape = Assert.IsType<Rectangle2>(manager.LoadShape<Rectangle2, Rectangle2Data>(data));
+        var meta = shape.GetMetaData();
+
+        Assert.Equal(data.Row, meta.Row, 8);
+        Assert.Equal(data.Column, meta.Column, 8);
+        Assert.Equal(data.Phi, meta.Phi, 8);
+        Assert.Equal(data.Length1, meta.Length1, 8);
+        Assert.Equal(data.Length2, meta.Length2, 8);
+    }
+
+    [Fact]
     public void LoadShape_RoundTrips_Circle()
     {
         var manager = CreateManagerWithHost();
@@ -304,6 +327,35 @@ public class ShapeLifecycleTests
         Assert.Equal(5, meta.FilletRadius, 3);
         Assert.InRange(meta.FilletCenter.X, 49, 51);
         Assert.InRange(meta.FilletCenter.Y, 49, 51);
+    }
+
+    [Fact]
+    public void LoadShape_RoundTrips_Fiber_UsingConfiguredLayerUnits()
+    {
+        var layer = TestShapeLayer.Create();
+        layer.UnitsPerMillimeter = 1000;
+        layer.PixelPerUnit = 3410;
+        layer.UnitName = "um";
+
+        var manager = new SketchBoardDataManager();
+        manager.SetShapeLayer(layer);
+        manager.InitializeVisualCollection(new ContainerVisual());
+
+        var data = new FiberData
+        {
+            FilletCenter = new Point(200, 100),
+            FiberAngleInDeg = 0,
+            FilletRadius = 30,
+            Width = 125,
+            Height = 250,
+            EnableTranslation = true
+        };
+
+        var shape = Assert.IsType<Fiber>(manager.LoadShape<Fiber, FiberData>(data));
+        var meta = shape.GetMetaData();
+
+        Assert.Equal(data.Width, meta.Width, 3);
+        Assert.Equal(data.Height, meta.Height, 3);
     }
 
     [Fact]

@@ -10,8 +10,13 @@ namespace Lan.Shapes.Handle
     {
         private readonly RectangleGeometry _rectangleGeometry = new RectangleGeometry();
 
-        public RectDragHandle(Size handleSize, Point geometryCenter, double detectionRange, int id) :
-            base(handleSize, geometryCenter, detectionRange, id)
+        public RectDragHandle(
+            Size handleSize,
+            Point geometryCenter,
+            double detectionRange,
+            int id,
+            DragLocation? cursorLocation = null) :
+            base(handleSize, geometryCenter, detectionRange, id, cursorLocation)
         {
             // Base constructor already sets GeometryCenter which triggers SetCenter
         }
@@ -19,6 +24,11 @@ namespace Lan.Shapes.Handle
         public RectDragHandle(double widthAndHeight, Point center, int id) : this(new Size(widthAndHeight, widthAndHeight), center, 10, id)
         {
 
+        }
+
+        public RectDragHandle(double widthAndHeight, Point center, DragLocation id) :
+            this(new Size(widthAndHeight, widthAndHeight), center, 10, (int)id, id)
+        {
         }
 
 
@@ -43,7 +53,12 @@ namespace Lan.Shapes.Handle
         }
         public static RectDragHandle CreateRectDragHandleFromStyler(IShapeStyler shapeStyler, Point center, DragLocation id)
         {
-            return new RectDragHandle(shapeStyler.DragHandleSize, center, (int)id);
+            return new RectDragHandle(
+                new Size(shapeStyler.DragHandleSize, shapeStyler.DragHandleSize),
+                center,
+                10,
+                (int)id,
+                id);
         }
 
     }

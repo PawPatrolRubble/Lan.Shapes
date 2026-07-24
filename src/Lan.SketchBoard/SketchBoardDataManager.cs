@@ -36,6 +36,8 @@ namespace Lan.SketchBoard
         private ShapeVisualBase? _currentGeometryInEdit;
         private ShapeVisualBase? _selectedGeometry;
         private readonly ViewportScalingOptions _scalingOptions;
+        private readonly Dictionary<ShapeLayer, Dictionary<ShapeVisualState, double>> _configuredHandleSizes =
+            new Dictionary<ShapeLayer, Dictionary<ShapeVisualState, double>>();
         private double _viewportScale = 1.0;
 
 
@@ -56,7 +58,7 @@ namespace Lan.SketchBoard
             _scalingOptions = scalingOptions ?? ViewportScalingOptions.Default;
         }
 
-        /// <summary>Per-board base stroke/handle sizes used by the zoom scale path.</summary>
+        /// <summary>Per-board fallback stroke/handle sizes used when a shape has no configured baseline.</summary>
         public ViewportScalingOptions ScalingOptions => _scalingOptions;
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -299,6 +301,7 @@ namespace Lan.SketchBoard
             if (!ReferenceEquals(_currentShapeLayer, layer))
             {
                 _currentShapeLayer = layer.CreateIndependentCopy();
+                CaptureConfiguredHandleSizes(_currentShapeLayer);
             }
 
             ApplyScaleToOwnedLayers(_viewportScale, refreshShapes: false);
@@ -367,14 +370,22 @@ namespace Lan.SketchBoard
         private void ApplyScaleToOwnedLayers(double scale, bool refreshShapes)
         {
             var thickness = ViewportScalingService.CalculateStrokeThickness(scale, _scalingOptions);
-            var handleSize = ViewportScalingService.CalculateDragHandleSize(scale, _scalingOptions);
 
             foreach (var layer in GetLayersAffectedByScale())
             {
-                foreach (var shapeStyler in layer.Stylers.Values)
+                var configuredSizes = GetConfiguredHandleSizes(layer);
+                foreach (var entry in layer.Stylers)
                 {
+                    var configuredSize = configuredSizes.TryGetValue(entry.Key, out var size)
+                        ? size
+                        : 0;
+                    var handleSize = configuredSize > 0 || entry.Key == ShapeVisualState.Locked
+                        ? configuredSize
+                        : _scalingOptions.BaseDragHandleSize;
+
+                    var shapeStyler = entry.Value;
                     shapeStyler.SetStrokeThickness(thickness);
-                    shapeStyler.DragHandleSize = handleSize;
+                    shapeStyler.DragHandleSize = handleSize / NormalizeScale(scale);
                 }
             }
 
@@ -385,7 +396,7 @@ namespace Lan.SketchBoard
 
             foreach (var shape in Shapes)
             {
-                shape.RefreshScaleDependentVisuals();
+                shape.RefreshScaleDependentVisuals(_viewportScale);
             }
         }
 
@@ -406,6 +417,31 @@ namespace Lan.SketchBoard
             }
 
             return layers;
+        }
+
+        private void CaptureConfiguredHandleSizes(ShapeLayer layer)
+        {
+            if (_configuredHandleSizes.ContainsKey(layer))
+            {
+                return;
+            }
+
+            _configuredHandleSizes[layer] = layer.Stylers.ToDictionary(
+                entry => entry.Key,
+                entry => entry.Value.DragHandleSize);
+        }
+
+        private Dictionary<ShapeVisualState, double> GetConfiguredHandleSizes(ShapeLayer layer)
+        {
+            CaptureConfiguredHandleSizes(layer);
+            return _configuredHandleSizes[layer];
+        }
+
+        private static double NormalizeScale(double scale)
+        {
+            return scale > 0 && !double.IsNaN(scale) && !double.IsInfinity(scale)
+                ? scale
+                : 1.0;
         }
 
         public void RaiseNewShapeSketched(ShapeVisualBase shape)
@@ -435,6 +471,9 @@ namespace Lan.SketchBoard
             _visualCollection?.Insert(index, shape);
             Shapes.Insert(index, shape);
             shape.ShapeCreationCancelled += OnShapeCreationCancelled;
+            // Shapes created after a zoom change must initialize adornment
+            // positions with the manager's current viewport scale.
+            shape.RefreshScaleDependentVisuals(_viewportScale);
             ShapeCreated?.Invoke(this, shape);
         }
 

@@ -36,6 +36,7 @@ namespace Lan.Shapes
                 { DragLocation.BottomMiddle, Cursors.SizeNS },
                 { DragLocation.BottomLeft, Cursors.SizeNESW },
                 { DragLocation.LeftMiddle, Cursors.SizeWE },
+                { DragLocation.Rotate, Cursors.Hand },
             };
 
         #endregion
@@ -48,8 +49,6 @@ namespace Lan.Shapes
         private bool _isLocked;
 
         private ShapeVisualState _state;
-
-        protected GeometryGroup? HandleGeometryGroup;
 
         protected readonly List<DragHandle> Handles = new List<DragHandle>();
 
@@ -68,6 +67,12 @@ namespace Lan.Shapes
         public abstract Rect BoundsRect { get; }
 
         protected double DragHandleSize { get; set; }
+
+        /// <summary>
+        /// Current canvas scale used by adornments whose distance from the model
+        /// geometry must remain constant in screen space.
+        /// </summary>
+        protected double ViewportScale { get; private set; } = 1.0;
 
         public Guid Id { get; }
 
@@ -115,12 +120,13 @@ namespace Lan.Shapes
                 _state = value;
                 if (oldState != value)
                 {
-                    UpdateVisualOnStateChanged();
                     if (ShapeLayer != null)
                     {
                         DragHandleSize = ShapeStyler?.DragHandleSize ?? DefaultDragHandleSize;
                         OnDragHandleSizeChanges(DragHandleSize);
                     }
+
+                    UpdateVisualOnStateChanged();
                 }
             }
         }
@@ -205,6 +211,67 @@ namespace Lan.Shapes
 
         protected virtual void OnDragHandleSizeChanges(double dragHandleSize)
         {
+            foreach (var handle in Handles)
+            {
+                handle.HandleSize = new Size(dragHandleSize, dragHandleSize);
+            }
+        }
+
+        /// <summary>
+        /// Gives derived shapes a chance to reposition scale-dependent adornments.
+        /// </summary>
+        protected virtual void OnViewportScaleChanged(double viewportScale)
+        {
+        }
+
+        /// <summary>
+        /// Registers a handle as an interaction adornment without adding it to model geometry.
+        /// The typed return value lets shape implementations retain specialized handle references.
+        /// </summary>
+        protected T RegisterHandle<T>(T handle) where T : DragHandle
+        {
+            if (handle == null)
+            {
+                throw new ArgumentNullException(nameof(handle));
+            }
+
+            if (!Handles.Contains(handle))
+            {
+                Handles.Add(handle);
+            }
+
+            return handle;
+        }
+
+        /// <summary>
+        /// Drag handles are visible and interactive while a shape is being created or selected.
+        /// </summary>
+        protected virtual bool AreDragHandlesActive =>
+            !IsLocked && (!IsGeometryRendered || State == ShapeVisualState.Selected);
+
+        protected virtual Brush? GetDragHandleFill() => ShapeStyler?.FillColor;
+
+        protected virtual Pen? GetDragHandlePen() => ShapeStyler?.SketchPen;
+
+        /// <summary>
+        /// Draws every registered handle exactly once, independently of model geometry.
+        /// </summary>
+        protected void DrawDragHandles(DrawingContext renderContext)
+        {
+            if (!AreDragHandlesActive)
+            {
+                return;
+            }
+
+            var fill = GetDragHandleFill();
+            var pen = GetDragHandlePen();
+            foreach (var handle in Handles)
+            {
+                if (handle.HandleGeometry != null)
+                {
+                    renderContext.DrawGeometry(fill, pen, handle.HandleGeometry);
+                }
+            }
         }
 
         /// <summary>
@@ -213,13 +280,25 @@ namespace Lan.Shapes
         /// </summary>
         public void RefreshScaleDependentVisuals()
         {
+            RefreshScaleDependentVisuals(ViewportScale);
+        }
+
+        public void RefreshScaleDependentVisuals(double viewportScale)
+        {
             if (ShapeLayer == null)
             {
                 return;
             }
 
+            ViewportScale = viewportScale > 0 &&
+                            !double.IsNaN(viewportScale) &&
+                            !double.IsInfinity(viewportScale)
+                ? viewportScale
+                : 1.0;
+
             DragHandleSize = ShapeStyler?.DragHandleSize ?? DefaultDragHandleSize;
             OnDragHandleSizeChanges(DragHandleSize);
+            OnViewportScaleChanged(ViewportScale);
 
             if (IsGeometryRendered)
             {
@@ -246,8 +325,13 @@ namespace Lan.Shapes
         {
         }
 
-        public DragHandle? FindDragHandleMouseOver(Point p)
+        public virtual DragHandle? FindDragHandleMouseOver(Point p)
         {
+            if (!AreDragHandlesActive)
+            {
+                return null;
+            }
+
             foreach (var handle in Handles)
             {
                 if (handle.FillContains(p))
@@ -257,6 +341,11 @@ namespace Lan.Shapes
             }
 
             return null;
+        }
+
+        public virtual bool HasDragHandleAt(Point p)
+        {
+            return FindDragHandleMouseOver(p) != null;
         }
 
         public virtual void FindSelectedHandle(Point p)
@@ -279,14 +368,7 @@ namespace Lan.Shapes
 
         public virtual void OnMouseLeftButtonDown(Point mousePoint)
         {
-            if (HandleGeometryGroup?.FillContains(mousePoint) ?? false)
-            {
-                FindSelectedHandle(mousePoint);
-            }
-            else
-            {
-                SelectedDragHandle = null;
-            }
+            FindSelectedHandle(mousePoint);
 
             OldPointForTranslate = mousePoint;
             MouseDownPoint = mousePoint;
@@ -324,13 +406,10 @@ namespace Lan.Shapes
                 State = ShapeVisualState.MouseOver;
             }
 
-            if (HandleGeometryGroup?.FillContains(point) ?? false)
+            var handle = FindDragHandleMouseOver(point);
+            if (handle != null)
             {
-                var handle = FindDragHandleMouseOver(point);
-                if (handle != null)
-                {
-                    TryUpdateMouseCursor(handle.Id);
-                }
+                TryUpdateMouseCursor(handle);
             }
 
             _canMoveWithHand = PanSensitiveArea.FillContains(point);
@@ -347,7 +426,7 @@ namespace Lan.Shapes
                 if (SelectedDragHandle != null)
                 {
                     IsBeingDraggedOrPanMoving = true;
-                    TryUpdateMouseCursor(SelectedDragHandle.Id);
+                    TryUpdateMouseCursor(SelectedDragHandle);
                     HandleResizing(point);
                 }
                 else if (_canMoveWithHand)
@@ -418,15 +497,47 @@ namespace Lan.Shapes
             {
                 Mouse.SetCursor(cursor);
             }
-            // Silently ignore unknown locations — same policy as TryUpdateMouseCursor.
+            // Unassigned or unknown roles are handled by the point-based hover path.
         }
 
-        private void TryUpdateMouseCursor(int handleId)
+        public void UpdateMouseCursorForPoint(Point point)
         {
-            if (DragCursorMap.TryGetValue((DragLocation)handleId, out var cursor))
+            if (!AreDragHandlesActive)
+            {
+                Mouse.SetCursor(PanSensitiveArea.FillContains(point) ? Cursors.Hand : Cursors.Arrow);
+                return;
+            }
+
+            var handle = FindDragHandleMouseOver(point);
+            if (handle != null)
+            {
+                if (!TryUpdateMouseCursor(handle))
+                {
+                    Mouse.SetCursor(Cursors.Hand);
+                }
+
+                return;
+            }
+
+            if (HasDragHandleAt(point))
+            {
+                Mouse.SetCursor(Cursors.Hand);
+                return;
+            }
+
+            Mouse.SetCursor(PanSensitiveArea.FillContains(point) ? Cursors.Hand : Cursors.Arrow);
+        }
+
+        protected virtual bool TryUpdateMouseCursor(DragHandle handle)
+        {
+            if (handle.CursorLocation.HasValue &&
+                DragCursorMap.TryGetValue(handle.CursorLocation.Value, out var cursor))
             {
                 Mouse.SetCursor(cursor);
+                return true;
             }
+
+            return false;
         }
 
         public virtual void UpdateVisual()
@@ -438,6 +549,7 @@ namespace Lan.Shapes
 
             var renderContext = RenderOpen();
             renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometry);
+            DrawDragHandles(renderContext);
             DrawText(renderContext);
             renderContext.Close();
         }

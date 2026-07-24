@@ -39,6 +39,15 @@ public class FiberDataPipelineTests
                     DashStyle = "Solid",
                     DragHandleSize = 8,
                     FillOpacity = 0.2
+                },
+                [ShapeVisualState.Selected] = new ShapeStylerParameter
+                {
+                    FillColor = "#00BFFF",
+                    StrokeColor = "#0000FF",
+                    StrokeThickness = 2.0,
+                    DashStyle = "Solid",
+                    DragHandleSize = 8,
+                    FillOpacity = 0.2
                 }
             }
         };
@@ -144,11 +153,11 @@ public class FiberDataPipelineTests
         var data = fiber.GetMetaData();
 
         // Width in pixels = 200, height in pixels = 100
-        // Conversion: micrometers = pixels * 1000 * UnitsPerMillimeter / PixelPerUnit
-        // = 200 * 1000 * 1000 / 3410 ≈ 58651
-        // = 100 * 1000 * 1000 / 3410 ≈ 29325
-        Assert.IsTrue(data.Width > 50000, $"Expected Width > 50000 um, got {data.Width}");
-        Assert.IsTrue(data.Height > 20000, $"Expected Height > 20000 um, got {data.Height}");
+        // Conversion: micrometers = pixels * UnitsPerMillimeter / PixelPerUnit
+        // = 200 * 1000 / 3410 ≈ 58.65
+        // = 100 * 1000 / 3410 ≈ 29.33
+        Assert.AreEqual(58.65, data.Width, 0.01);
+        Assert.AreEqual(29.33, data.Height, 0.01);
 
         // Reconstruct from data (micrometers → pixels)
         var fiber2 = new Fiber(layer);
@@ -173,8 +182,8 @@ public class FiberDataPipelineTests
         // Data with known micrometer values
         var data = new FiberData
         {
-            Width = 58651,   // ~200 px at 1000 um/mm, 3410 px/unit
-            Height = 29325,  // ~100 px
+            Width = 58.651,  // ~200 px at 1000 um/mm, 3410 px/mm
+            Height = 29.325, // ~100 px
             FilletCenter = new Point(200, 100),
             FilletRadius = 30,
             FiberAngleInDeg = 0,
@@ -198,8 +207,8 @@ public class FiberDataPipelineTests
 
         var data = new FiberData
         {
-            Width = 50000,
-            Height = 25000,
+            Width = 50,
+            Height = 25,
             FilletCenter = new Point(200, 100),
             FilletRadius = 30,
             FiberAngleInDeg = 0,
@@ -217,8 +226,8 @@ public class FiberDataPipelineTests
         double wB = Math.Sqrt(Math.Pow(fiberB.RectTopRight.X - fiberB.RectTopLeft.X, 2) +
                              Math.Pow(fiberB.RectTopRight.Y - fiberB.RectTopLeft.Y, 2));
 
-        // With 3410 px/unit, 50000 um → ~170.5 px
-        // With 1000 px/unit, 50000 um → ~50 px
+        // With 3410 px/mm, 50 um -> ~170.5 px
+        // With 1000 px/mm, 50 um -> ~50 px
         Assert.AreNotEqual(wA, wB, 1.0);
         Assert.IsTrue(wB < wA, $"Expected wB ({wB}) < wA ({wA})");
     }

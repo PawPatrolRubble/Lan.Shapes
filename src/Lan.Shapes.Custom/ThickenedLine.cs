@@ -62,8 +62,9 @@ namespace Lan.Shapes.Custom
         public ThickenedLine(ShapeLayer shapeLayer) : base(shapeLayer)
         {
             RenderGeometryGroup.Children.Add(_lineGeometry);
-            _leftDragHandle = new RectDragHandle(DragHandleSize, default, 1);
-            _rightDragHandle = new RectDragHandle(DragHandleSize, default, 2);
+            RegisterHandle(DistanceResizeHandle);
+            _leftDragHandle = RegisterHandle(new RectDragHandle(DragHandleSize, default, 1));
+            _rightDragHandle = RegisterHandle(new RectDragHandle(DragHandleSize, default, 2));
         }
 
         #endregion
@@ -72,19 +73,7 @@ namespace Lan.Shapes.Custom
 
         public override void FindSelectedHandle(Point p)
         {
-            if (_rightDragHandle.FillContains(p))
-            {
-                SelectedDragHandle = _rightDragHandle;
-                return;
-            }
-
-            if (_leftDragHandle.FillContains(p))
-            {
-                SelectedDragHandle = _leftDragHandle;
-                return;
-            }
-
-            if (DistanceResizeHandle.FillContains(p)) SelectedDragHandle = DistanceResizeHandle;
+            base.FindSelectedHandle(p);
         }
 
 
@@ -105,19 +94,6 @@ namespace Lan.Shapes.Custom
             _rightDragHandle.GeometryCenter = End;
             UpdateResizeHandleLocation();
             UpdateVisual();
-        }
-
-        protected override void OnDragHandleSizeChanges(double dragHandleSize)
-        {
-            base.OnDragHandleSizeChanges(dragHandleSize);
-            if (_leftDragHandle != null)
-            {
-                _leftDragHandle.HandleSize = new System.Windows.Size(dragHandleSize, dragHandleSize);
-            }
-            if (_rightDragHandle != null)
-            {
-                _rightDragHandle.HandleSize = new System.Windows.Size(dragHandleSize, dragHandleSize);
-            }
         }
 
         /// <summary>
@@ -278,9 +254,7 @@ namespace Lan.Shapes.Custom
             }
 
             render.DrawGeometry(ShapeStyler.FillColor, Pen, RenderGeometry);
-            render.DrawGeometry(DragHandleFillColor, DragHandlePen, DistanceResizeHandle.HandleGeometry);
-            render.DrawGeometry(DragHandleFillColor, DragHandlePen, _leftDragHandle.HandleGeometry);
-            render.DrawGeometry(DragHandleFillColor, DragHandlePen, _rightDragHandle.HandleGeometry);
+            DrawDragHandles(render);
 
             var angle = GetAngleBetweenPoints(Start, End);
 

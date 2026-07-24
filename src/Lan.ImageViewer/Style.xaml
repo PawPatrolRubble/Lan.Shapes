@@ -748,6 +748,20 @@
         </StackPanel>
     </DataTemplate>
 
+    <DataTemplate DataType="{x:Type shapes:Rectangle2}">
+        <StackPanel Orientation="Vertical">
+            <TextBlock Text="Rectangle2: " />
+            <TextBlock>
+                <Run Text="{Binding Id, Mode=OneWay}" />
+                <LineBreak />
+                <Run Text="{Binding Center, StringFormat='{}{0:f2}; '}" />
+                <Run Text="{Binding Phi, StringFormat='Phi={0:f3}; '}" />
+                <Run Text="{Binding Length1, StringFormat='L1={0:f2}; '}" />
+                <Run Text="{Binding Length2, StringFormat='L2={0:f2}'}" />
+            </TextBlock>
+        </StackPanel>
+    </DataTemplate>
+
     <DataTemplate DataType="{x:Type shapes:Ellipse}">
         <StackPanel Orientation="Vertical">
             <TextBlock Text="ellipse: " />

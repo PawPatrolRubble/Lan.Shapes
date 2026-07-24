@@ -345,13 +345,7 @@ namespace Lan.Shapes.DialogGeometry
                 renderContext.DrawLine(ShapeStyler.SketchPen, topCenter, handleCenter);
             }
 
-            foreach (var h in Handles)
-            {
-                if (h.HandleGeometry != null)
-                {
-                    renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, h.HandleGeometry);
-                }
-            }
+            DrawDragHandles(renderContext);
 
             renderContext.Close();
         }
@@ -539,22 +533,14 @@ namespace Lan.Shapes.DialogGeometry
             var dragHandleSize = ShapeStyler?.DragHandleSize ?? 10;
             var bounds = BoundsRect;
 
-            Handles.Add(new RectDragHandle(dragHandleSize, bounds.TopLeft, (int)DragLocation.TopLeft));
-            Handles.Add(new RectDragHandle(dragHandleSize, bounds.TopRight, (int)DragLocation.TopRight));
-            Handles.Add(new RectDragHandle(dragHandleSize, bounds.BottomRight, (int)DragLocation.BottomRight));
-            Handles.Add(new RectDragHandle(dragHandleSize, bounds.BottomLeft, (int)DragLocation.BottomLeft));
+            RegisterHandle(new RectDragHandle(dragHandleSize, bounds.TopLeft, DragLocation.TopLeft));
+            RegisterHandle(new RectDragHandle(dragHandleSize, bounds.TopRight, DragLocation.TopRight));
+            RegisterHandle(new RectDragHandle(dragHandleSize, bounds.BottomRight, DragLocation.BottomRight));
+            RegisterHandle(new RectDragHandle(dragHandleSize, bounds.BottomLeft, DragLocation.BottomLeft));
 
             // Add a rotation handle above the center
-            Handles.Add(new RectDragHandle(dragHandleSize, new Point((bounds.Left + bounds.Right) / 2, bounds.Top - 30),
+            RegisterHandle(new RectDragHandle(dragHandleSize, new Point((bounds.Left + bounds.Right) / 2, bounds.Top - 30),
                 100));
-
-            // foreach (var h in Handles)
-            // {
-            //     if (h.HandleGeometry != null)
-            //     {
-            //         RenderGeometryGroup.Children.Add(h.HandleGeometry);
-            //     }
-            // }
 
             RenderGeometryGroup.Children.Add(_dxfGeometryWrapper);
         }

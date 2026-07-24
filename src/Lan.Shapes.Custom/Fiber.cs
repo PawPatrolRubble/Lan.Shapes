@@ -140,23 +140,18 @@ namespace Lan.Shapes.Custom
 
             _fiberAngle = GetFiberAngleInDeg();
 
-            Handles.AddRange(new DragHandle[8]
+            foreach (var handle in new DragHandle[]
+                     {
+                         _topLeftHandle, _topRightHandle, _bottomLeftHandle, _bottomRightHandle,
+                         _triangleLeftBaseHandle, _triangleRightBaseHandle, _filletRadiusHandle, _rotationHandle
+                     })
             {
-                _topLeftHandle, _topRightHandle, _bottomLeftHandle, _bottomRightHandle,
-                _triangleLeftBaseHandle, _triangleRightBaseHandle, _filletRadiusHandle, _rotationHandle
-            });
+                RegisterHandle(handle);
+            }
 
             RenderGeometryGroup.Children.Add(_pathGeometry);
             RenderGeometryGroup.Children.Add(_centerMarkHorizontal);
             RenderGeometryGroup.Children.Add(_centerMarkVertical);
-            RenderGeometryGroup.Children.Add(_topLeftHandle.HandleGeometry);
-            RenderGeometryGroup.Children.Add(_topRightHandle.HandleGeometry);
-            RenderGeometryGroup.Children.Add(_bottomLeftHandle.HandleGeometry);
-            RenderGeometryGroup.Children.Add(_bottomRightHandle.HandleGeometry);
-            RenderGeometryGroup.Children.Add(_triangleLeftBaseHandle.HandleGeometry);
-            RenderGeometryGroup.Children.Add(_triangleRightBaseHandle.HandleGeometry);
-            RenderGeometryGroup.Children.Add(_filletRadiusHandle.HandleGeometry);
-            RenderGeometryGroup.Children.Add(_rotationHandle.HandleGeometry);
             RenderGeometryGroup.Children.Add(_filletGeometry);
         }
 
@@ -214,9 +209,9 @@ namespace Lan.Shapes.Custom
 
         public FiberData GetMetaData()
         {
-            double toMicrometers = 1000.0 * ShapeLayer.UnitsPerMillimeter / ShapeLayer.PixelPerUnit;
-            double w = Math.Sqrt(Math.Pow(RectTopRight.X - RectTopLeft.X, 2.0) + Math.Pow(RectTopRight.Y - RectTopLeft.Y, 2.0)) * toMicrometers;
-            double h = Math.Sqrt(Math.Pow(RectBottomLeft.X - RectTopLeft.X, 2.0) + Math.Pow(RectBottomLeft.Y - RectTopLeft.Y, 2.0)) * toMicrometers;
+            double toLayerUnits = ShapeLayer.UnitsPerMillimeter / ShapeLayer.PixelPerUnit;
+            double w = Math.Sqrt(Math.Pow(RectTopRight.X - RectTopLeft.X, 2.0) + Math.Pow(RectTopRight.Y - RectTopLeft.Y, 2.0)) * toLayerUnits;
+            double h = Math.Sqrt(Math.Pow(RectBottomLeft.X - RectTopLeft.X, 2.0) + Math.Pow(RectBottomLeft.Y - RectTopLeft.Y, 2.0)) * toLayerUnits;
 
             return new FiberData()
             {
@@ -496,14 +491,10 @@ namespace Lan.Shapes.Custom
         {
         }
 
-        protected override void OnDragHandleSizeChanges(double dragHandleSize)
-        {
-            base.OnDragHandleSizeChanges(dragHandleSize);
-            foreach (DragHandle handle in Handles)
-            {
-                handle.HandleSize = new Size(dragHandleSize, dragHandleSize);
-            }
-        }
+        // Fiber handles follow the standard stroke-only handle appearance.
+        // CustomGeometryBase keeps its legacy filled-handle styling for the
+        // other thickened custom shapes.
+        protected override Brush? GetDragHandleFill() => null;
 
         private Point RotatePointAroundCenter(Point point, Point center, double angleInRadians)
         {
@@ -528,8 +519,7 @@ namespace Lan.Shapes.Custom
                 renderContext.DrawGeometry(Brushes.Transparent, null, _filletGeometry);
                 renderContext.DrawGeometry(null, ShapeStyler.SketchPen, _filletGeometry);
             }
-            foreach (DragHandle handle in Handles)
-                renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, handle.HandleGeometry);
+            DrawDragHandles(renderContext);
             DrawAnnotationText(renderContext);
             renderContext.Close();
         }

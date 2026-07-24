@@ -30,12 +30,12 @@ namespace Lan.Shapes.Custom
         public double FilletRadius { get; set; }
 
         /// <summary>
-        /// The width of the fiber rectangle.
+        /// The width of the fiber rectangle, expressed in the shape layer's configured unit.
         /// </summary>
         public double Width { get; set; }
 
         /// <summary>
-        /// The height of the fiber rectangle.
+        /// The height of the fiber rectangle, expressed in the shape layer's configured unit.
         /// </summary>
         public double Height { get; set; }
 

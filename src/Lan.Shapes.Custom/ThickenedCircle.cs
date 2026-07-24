@@ -33,7 +33,8 @@ namespace Lan.Shapes.Custom
         public ThickenedCircle(ShapeLayer shapeLayer) : base(shapeLayer)
         {
             RenderGeometryGroup.Children.Add(_middleEllipseGeometry);
-            _resizeHandle = new RectDragHandle(DragHandleSize, Center + new Vector(Radius, 0), 1);
+            RegisterHandle(DistanceResizeHandle);
+            _resizeHandle = RegisterHandle(new RectDragHandle(DragHandleSize, Center + new Vector(Radius, 0), 1));
         }
 
         #endregion
@@ -153,10 +154,7 @@ namespace Lan.Shapes.Custom
 
         public override void FindSelectedHandle(Point p)
         {
-            if (_resizeHandle.HandleGeometry?.FillContains(p) ?? false) SelectedDragHandle = _resizeHandle;
-
-            if (DistanceResizeHandle.HandleGeometry?.FillContains(p) ?? false)
-                SelectedDragHandle = DistanceResizeHandle;
+            base.FindSelectedHandle(p);
         }
 
 
@@ -179,13 +177,7 @@ namespace Lan.Shapes.Custom
             }
 
 
-            renderContext.DrawGeometry(DragHandleFillColor,
-                DragHandlePen,
-                _resizeHandle.HandleGeometry);
-
-            renderContext.DrawGeometry(DragHandleFillColor,
-                DragHandlePen,
-                DistanceResizeHandle.HandleGeometry);
+            DrawDragHandles(renderContext);
             AddTagText(renderContext, Center);
 
             renderContext.Close();
@@ -201,15 +193,6 @@ namespace Lan.Shapes.Custom
                 _resizeHandle.GeometryCenter += newPoint - OldPointForTranslate.Value;
                 DistanceResizeHandle.GeometryCenter += newPoint - OldPointForTranslate.Value;
                 OldPointForTranslate = newPoint;
-            }
-        }
-
-        protected override void OnDragHandleSizeChanges(double dragHandleSize)
-        {
-            base.OnDragHandleSizeChanges(dragHandleSize);
-            if (_resizeHandle != null)
-            {
-                _resizeHandle.HandleSize = new Size(dragHandleSize, dragHandleSize);
             }
         }
 

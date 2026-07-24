@@ -21,6 +21,7 @@ public class GeometryTypeManagerTests
         Assert.Equal(names.Length, names.Distinct(StringComparer.Ordinal).Count());
         Assert.Contains(nameof(Line), names);
         Assert.Contains(nameof(Rectangle), names);
+        Assert.Contains(nameof(Rectangle2), names);
     }
 
     [Fact]

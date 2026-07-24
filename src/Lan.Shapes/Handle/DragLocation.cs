@@ -12,6 +12,7 @@ namespace Lan.Shapes.Handle
         BottomLeft,
         LeftMiddle,
         HorizontalTopLeft,
-        HorizontalBottomRight
+        HorizontalBottomRight,
+        Rotate
     }
 }
