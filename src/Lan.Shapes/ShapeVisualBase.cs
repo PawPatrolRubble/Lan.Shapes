@@ -20,8 +20,6 @@ namespace Lan.Shapes
         #region constants
 
         private const double DefaultDragHandleSize = 10;
-        private const double DefaultDpi = 96;
-        private const double DefaultTagDpi = 40;
         private const string DefaultFontFamily = "Verdana";
         private const string DefaultCulture = "en-us";
 
@@ -46,6 +44,8 @@ namespace Lan.Shapes
         protected readonly GeometryGroup RenderGeometryGroup = new GeometryGroup();
 
         private bool _canMoveWithHand;
+        private bool _isBeingDraggedOrPanMoving;
+        private bool _isGeometryRendered;
         private bool _isLocked;
 
         private ShapeVisualState _state;
@@ -76,18 +76,24 @@ namespace Lan.Shapes
 
         public Guid Id { get; }
 
-        public bool IsBeingDraggedOrPanMoving { get; protected set; }
+        public bool IsBeingDraggedOrPanMoving
+        {
+            get => _isBeingDraggedOrPanMoving;
+            protected set => SetField(ref _isBeingDraggedOrPanMoving, value);
+        }
 
-        public bool IsGeometryRendered { get; protected set; }
+        public bool IsGeometryRendered
+        {
+            get => _isGeometryRendered;
+            protected set => SetField(ref _isGeometryRendered, value);
+        }
 
         public bool IsLocked
         {
             get => _isLocked;
             protected set
             {
-                _isLocked = value;
-
-                State = _isLocked ? ShapeVisualState.Locked : ShapeVisualState.Normal;
+                State = value ? ShapeVisualState.Locked : ShapeVisualState.Normal;
             }
         }
 
@@ -103,7 +109,23 @@ namespace Lan.Shapes
         public ShapeLayer ShapeLayer
         {
             get => _shapeLayer;
-            set => _shapeLayer = value ?? throw new ArgumentNullException(nameof(value));
+            set
+            {
+                if (ReferenceEquals(_shapeLayer, value))
+                {
+                    return;
+                }
+
+                _shapeLayer = value ?? throw new ArgumentNullException(nameof(value));
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ShapeStyler));
+
+                RefreshScaleDependentVisuals(ViewportScale);
+                if (!IsGeometryRendered)
+                {
+                    UpdateVisual();
+                }
+            }
         }
 
         public IShapeStyler? ShapeStyler
@@ -116,17 +138,24 @@ namespace Lan.Shapes
             get => _state;
             set
             {
-                var oldState = _state;
-                _state = value;
-                if (oldState != value)
+                if (_state == value)
                 {
-                    if (ShapeLayer != null)
-                    {
-                        DragHandleSize = ShapeStyler?.DragHandleSize ?? DefaultDragHandleSize;
-                        OnDragHandleSizeChanges(DragHandleSize);
-                    }
+                    return;
+                }
 
-                    UpdateVisualOnStateChanged();
+                var wasLocked = _isLocked;
+                _state = value;
+                _isLocked = value == ShapeVisualState.Locked;
+
+                DragHandleSize = ShapeStyler?.DragHandleSize ?? DefaultDragHandleSize;
+                OnDragHandleSizeChanges(DragHandleSize);
+                UpdateVisualOnStateChanged();
+
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ShapeStyler));
+                if (wasLocked != _isLocked)
+                {
+                    OnPropertyChanged(nameof(IsLocked));
                 }
             }
         }
@@ -138,8 +167,10 @@ namespace Lan.Shapes
             get => _tag;
             set
             {
-                _tag = value;
-                UpdateVisual();
+                if (SetField(ref _tag, value))
+                {
+                    UpdateVisual();
+                }
             }
         }
 
@@ -285,11 +316,6 @@ namespace Lan.Shapes
 
         public void RefreshScaleDependentVisuals(double viewportScale)
         {
-            if (ShapeLayer == null)
-            {
-                return;
-            }
-
             ViewportScale = viewportScale > 0 &&
                             !double.IsNaN(viewportScale) &&
                             !double.IsInfinity(viewportScale)
@@ -369,6 +395,7 @@ namespace Lan.Shapes
         public virtual void OnMouseLeftButtonDown(Point mousePoint)
         {
             FindSelectedHandle(mousePoint);
+            _canMoveWithHand = !IsLocked && PanSensitiveArea.FillContains(mousePoint);
 
             OldPointForTranslate = mousePoint;
             MouseDownPoint = mousePoint;
@@ -383,6 +410,7 @@ namespace Lan.Shapes
 
             SelectedDragHandle = null;
             IsBeingDraggedOrPanMoving = false;
+            _canMoveWithHand = false;
         }
 
         public virtual void OnMouseMove(Point point, MouseButtonState buttonState)
@@ -421,6 +449,11 @@ namespace Lan.Shapes
 
         private void HandleMouseMovePressed(Point point)
         {
+            if (IsLocked)
+            {
+                return;
+            }
+
             if (IsGeometryRendered)
             {
                 if (SelectedDragHandle != null)
@@ -431,6 +464,7 @@ namespace Lan.Shapes
                 }
                 else if (_canMoveWithHand)
                 {
+                    IsBeingDraggedOrPanMoving = true;
                     HandleTranslate(point);
                 }
                 else
@@ -568,8 +602,23 @@ namespace Lan.Shapes
 
         #region text rendering helpers
 
-        protected FormattedText CreateFormattedText(string text, Brush foreground, double dpi = DefaultDpi)
+        protected FormattedText CreateFormattedText(string text, Brush foreground)
         {
+            return CreateFormattedText(
+                text,
+                foreground,
+                VisualTreeHelper.GetDpi(this).PixelsPerDip);
+        }
+
+        protected FormattedText CreateFormattedText(string text, Brush foreground, double pixelsPerDip)
+        {
+            if (pixelsPerDip <= 0 ||
+                double.IsNaN(pixelsPerDip) ||
+                double.IsInfinity(pixelsPerDip))
+            {
+                throw new ArgumentOutOfRangeException(nameof(pixelsPerDip));
+            }
+
             return new FormattedText(
                 text,
                 CultureInfo.GetCultureInfo(DefaultCulture),
@@ -577,7 +626,7 @@ namespace Lan.Shapes
                 new Typeface(DefaultFontFamily),
                 ShapeLayer.TagFontSize,
                 foreground,
-                dpi);
+                pixelsPerDip);
         }
 
         protected void AddTagText(DrawingContext renderContext, Point location)
@@ -585,7 +634,7 @@ namespace Lan.Shapes
             if (!string.IsNullOrEmpty(Tag))
             {
                 var brush = ShapeStyler?.TagColor ?? Brushes.Red;
-                var formattedText = CreateFormattedText(Tag, brush, DefaultTagDpi);
+                var formattedText = CreateFormattedText(Tag, brush);
                 renderContext.DrawText(formattedText, location);
             }
         }

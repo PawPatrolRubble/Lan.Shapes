@@ -37,8 +37,16 @@ namespace Lan.ImageViewer.Prism
         public ImageViewerControlViewModel(
             IShapeLayerManager shapeLayerManager,
             ISketchBoardDataManager sketchBoardDataManager,
+            IGeometryTypeManager geometryTypeManager)
+            : this(shapeLayerManager, sketchBoardDataManager, geometryTypeManager, null)
+        {
+        }
+
+        public ImageViewerControlViewModel(
+            IShapeLayerManager shapeLayerManager,
+            ISketchBoardDataManager sketchBoardDataManager,
             IGeometryTypeManager geometryTypeManager,
-            IGeometryIconProvider? geometryIconProvider = null)
+            IGeometryIconProvider? geometryIconProvider)
         {
             SketchBoardDataManager = sketchBoardDataManager
                 ?? throw new ArgumentNullException(nameof(sketchBoardDataManager));

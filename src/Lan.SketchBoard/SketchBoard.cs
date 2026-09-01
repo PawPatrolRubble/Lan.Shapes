@@ -154,6 +154,7 @@ namespace Lan.SketchBoard
 
         private bool _mouseDownHitExistingShape;
         private bool _leftDragMouseCaptured;
+        private ShapeVisualBase? _hoveredShape;
 
         private ShapeVisualBase? GetHitTestShape(Point mousePosition)
         {
@@ -206,11 +207,42 @@ namespace Lan.SketchBoard
             else
             {
                 var shape = GetHitTestShape(position);
+                UpdateHoveredShape(shape);
                 shape?.UpdateMouseCursorForPoint(position);
                 if (shape == null)
                 {
                     Mouse.SetCursor(Cursors.Arrow);
                 }
+            }
+        }
+
+        private void UpdateHoveredShape(ShapeVisualBase? shape)
+        {
+            if (ReferenceEquals(_hoveredShape, shape))
+            {
+                if (shape != null &&
+                    !shape.IsLocked &&
+                    shape.State == ShapeVisualState.Normal)
+                {
+                    shape.State = ShapeVisualState.MouseOver;
+                }
+
+                return;
+            }
+
+            if (_hoveredShape != null &&
+                !_hoveredShape.IsLocked &&
+                _hoveredShape.State == ShapeVisualState.MouseOver)
+            {
+                _hoveredShape.State = ShapeVisualState.Normal;
+            }
+
+            _hoveredShape = shape;
+            if (_hoveredShape != null &&
+                !_hoveredShape.IsLocked &&
+                _hoveredShape.State == ShapeVisualState.Normal)
+            {
+                _hoveredShape.State = ShapeVisualState.MouseOver;
             }
         }
 

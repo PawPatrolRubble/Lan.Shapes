@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<TargetFramework>net8.0-windows</TargetFramework>
 		<UseWPF>true</UseWPF>
-		<PackageVersion>1.6.2</PackageVersion>
+		<PackageVersion>1.6.3</PackageVersion>
 		<Description>Prism composition root for Lan.Shapes image viewer: DI module, default ViewModel, geometry type registration, and layer manager.</Description>
 		<Authors>Lan</Authors>
 		<PackageTags>wpf;prism;image-viewer;di;sketch</PackageTags>

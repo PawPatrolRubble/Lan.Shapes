@@ -17,6 +17,19 @@ namespace Lan.SketchBoard.Tests;
 public class ImageViewerViewModelTests
 {
     [Fact]
+    public void ThreeParameterConstructor_IsPreservedForBinaryCompatibility()
+    {
+        var constructor = typeof(ImageViewerControlViewModel).GetConstructor(
+            [
+                typeof(IShapeLayerManager),
+                typeof(ISketchBoardDataManager),
+                typeof(IGeometryTypeManager)
+            ]);
+
+        Assert.NotNull(constructor);
+    }
+
+    [Fact]
     public void SelectedShape_MapsToRepositorySelectedGeometry()
     {
         var (vm, manager, layer) = CreateViewModel();
