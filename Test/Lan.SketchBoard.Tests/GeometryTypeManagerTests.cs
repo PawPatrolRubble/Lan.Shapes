@@ -25,6 +25,52 @@ public class GeometryTypeManagerTests
     }
 
     [Fact]
+    public void RegisterGeometryTypes_RegistersOnlySpecifiedCatalogTypes()
+    {
+        var manager = new GeometryTypeManager();
+
+        GeometryTypeRegistration.RegisterGeometryTypes(manager, new[] { "Line", "Circle" });
+
+        Assert.Equal(new[] { nameof(Line), nameof(Circle) }, manager.GetRegisteredGeometryTypes());
+    }
+
+    [Fact]
+    public void RegisterGeometryTypes_UnknownNameThrows()
+    {
+        var manager = new GeometryTypeManager();
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            GeometryTypeRegistration.RegisterGeometryTypes(manager, new[] { "NotAShape" }));
+
+        Assert.Contains("NotAShape", exception.Message);
+    }
+
+    [Fact]
+    public void RegisterGeometryTypes_EmptyFallsBackToFullCatalog()
+    {
+        var manager = new GeometryTypeManager();
+
+        GeometryTypeRegistration.RegisterGeometryTypes(manager, Array.Empty<string>());
+
+        Assert.Equal(
+            GeometryTypeRegistration.Catalog.Count,
+            manager.GetRegisteredGeometryTypes().Count());
+    }
+
+    [Fact]
+    public void RegisterDefaultGeometryTypes_MatchesCatalog()
+    {
+        var manager = new GeometryTypeManager();
+
+        GeometryTypeRegistration.RegisterDefaultGeometryTypes(manager);
+
+        Assert.Equal(
+            GeometryTypeRegistration.Catalog.Keys.OrderBy(x => x, StringComparer.Ordinal),
+            manager.GetRegisteredGeometryTypes().OrderBy(x => x, StringComparer.Ordinal));
+    }
+
+
+    [Fact]
     public void RegisterGeometryType_RejectsConflictingNames()
     {
         var manager = new GeometryTypeManager();

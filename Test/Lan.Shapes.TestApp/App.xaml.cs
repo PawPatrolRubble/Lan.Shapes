@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Windows;
 using Lan.SketchBoard;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Lan.Shapes.App.ViewModels;
@@ -49,7 +50,11 @@ namespace Lan.Shapes.App
             _serviceCollection.AddSingleton<MainWindow>();
             _serviceCollection.AddSingleton<IShapeLayerManager, ShapeLayerManager>();
             var geometryTypeManager = new GeometryTypeManager();
-            GeometryTypeRegistration.RegisterDefaultGeometryTypes(geometryTypeManager);
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                .Build();
+            GeometryTypeRegistration.RegisterFromConfiguration(geometryTypeManager, configuration);
             _serviceCollection.AddSingleton<IGeometryTypeManager>(geometryTypeManager);
             _serviceCollection.AddSingleton<IGeometryIconProvider, ResourceDictionaryGeometryIconProvider>();
             _serviceCollection.AddSingleton<IShapeStylerFactory, ShapeStylerFactory>();

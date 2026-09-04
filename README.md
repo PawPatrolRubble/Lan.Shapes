@@ -55,6 +55,12 @@ Camera1 = ContainerLocator.Container.Resolve<IImageViewerViewModel>();
 | `ISketchBoardDataManager` | `SketchBoardDataManager` (transient) |
 | `IShapeRepository` | same instance as the fat manager |
 
+
+On initialize the module registers geometry types from `IConfiguration` key `geometryTypes` (string array of catalog names). Missing or empty → full catalog. The view-model palette is whatever was registered — do not put tool names on `ShapeLayer`.
+
+```json
+"geometryTypes": [ "Line", "Rectangle", "Circle" ]
+```
 Full IoC walkthrough: [`scripts/IImageViewerViewModel-IoC使用说明.md`](scripts/IImageViewerViewModel-IoC使用说明.md).
 
 ### Alternate host: MSDI (`Lan.Shapes.TestApp`)
@@ -311,6 +317,9 @@ Register tools at the composition root (preferred) or on the repository:
 ```csharp
 // Preferred: GeometryTypeRegistration / host startup
 geometryTypeManager.RegisterGeometryType<MyShape>();
+
+// Or restrict the built-in catalog from configuration
+GeometryTypeRegistration.RegisterFromConfiguration(geometryTypeManager, configuration);
 
 // Or on the board repository
 dataManager.RegisterDrawingTool("MyShape", typeof(MyShape));

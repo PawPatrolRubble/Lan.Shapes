@@ -24,7 +24,7 @@ namespace Lan.ImageViewer.Prism
             }
 
             var geometryTypeManager = containerProvider.Resolve<IGeometryTypeManager>();
-            GeometryTypeRegistration.RegisterDefaultGeometryTypes(geometryTypeManager);
+            GeometryTypeRegistration.RegisterFromConfiguration(geometryTypeManager, configuration);
         }
 
         public void RegisterTypes(IContainerRegistry containerRegistry)

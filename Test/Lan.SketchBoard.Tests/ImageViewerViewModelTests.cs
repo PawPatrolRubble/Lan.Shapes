@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using Lan.ImageViewer;
@@ -105,6 +106,28 @@ public class ImageViewerViewModelTests
         Assert.Single(repo.Shapes);
         // Accessing VisualCollection without host must still throw — VM must not touch it.
         Assert.Throws<System.InvalidOperationException>(() => _ = manager.VisualCollection);
+    }
+
+    [Fact]
+    public void GeometryTypeList_MirrorsRegisteredGeometryTypesOnly()
+    {
+        var layer = TestShapeLayer.Create();
+        var layerManager = new ShapeLayerManager();
+        layerManager.Layers.Add(layer);
+
+        var geometryTypeManager = new GeometryTypeManager();
+        GeometryTypeRegistration.RegisterGeometryTypes(
+            geometryTypeManager,
+            new[] { nameof(Line), nameof(Circle) });
+
+        var vm = new ImageViewerControlViewModel(
+            layerManager,
+            new SketchBoardDataManager(),
+            geometryTypeManager);
+
+        Assert.Equal(
+            new[] { nameof(Line), nameof(Circle) },
+            vm.GeometryTypeList.Select(x => x.Name).ToArray());
     }
 
     private static (ImageViewerControlViewModel Vm, SketchBoardDataManager Manager, ShapeLayer Layer)

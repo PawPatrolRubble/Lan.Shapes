@@ -52,6 +52,9 @@
       <None Update="996.png">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Update="appsettings.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
       <None Update="ShapeLayers.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
