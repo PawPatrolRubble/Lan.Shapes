@@ -1,0 +1,103 @@
+{
+  "AvailableGeometryTypes": [
+    "Line",
+    "Rectangle",
+    "Rectangle2",
+    "Circle",
+    "Cross",
+    "DxfGeometry"
+  ],
+  "Measurement": {
+    "PixelPerUnit": 3410,
+    "UnitsPerMillimeter": 1000,
+    "UnitName": "um"
+  },
+  "ShapeLayers": [
+    {
+      "StyleSchema": {
+        "Normal": {
+          "FillColor": "#00BFFF",
+          "StrokeColor": "#007ACC",
+          "StrokeThickness": 2,
+          "DashStyle": "Solid",
+          "DragHandleSize": 8,
+          "FillOpacity": 0.2
+        },
+        "MouseOver": {
+          "FillColor": "#1E90FF",
+          "StrokeColor": "#FF4500",
+          "StrokeThickness": 2,
+          "DashStyle": "Solid",
+          "DragHandleSize": 8,
+          "FillOpacity": 0.3
+        },
+        "Selected": {
+          "FillColor": "#32CD32",
+          "StrokeColor": "#006400",
+          "StrokeThickness": 2,
+          "DashStyle": "Solid",
+          "DragHandleSize": 8,
+          "FillOpacity": 0.3
+        },
+        "Locked": {
+          "FillColor": "#D3D3D3",
+          "StrokeColor": "#808080",
+          "StrokeThickness": 1,
+          "DashStyle": "Solid",
+          "DragHandleSize": 0,
+          "FillOpacity": 0.2
+        }
+      },
+      "LayerId": 1,
+      "Name": "default",
+      "Description": "description",
+      "TextForeground": null,
+      "BorderBackground": "#00FFFFFF",
+      "MaximumThickenedShapeWidth": 80,
+      "TagFontSize": 50
+    },
+    {
+      "StyleSchema": {
+        "Normal": {
+          "FillColor": "#0c0d0d",
+          "StrokeColor": "#0c0d0d",
+          "StrokeThickness": 10,
+          "DashStyle": "Solid",
+          "DragHandleSize": 5,
+          "FillOpacity": 1
+        },
+        "MouseOver": {
+          "FillColor": "#2c0ec2",
+          "StrokeColor": "#2c0ec2",
+          "StrokeThickness": 1,
+          "DashStyle": "Dot",
+          "DragHandleSize": 5,
+          "FillOpacity": 1
+        },
+        "Selected": {
+          "FillColor": "#2c0ec2",
+          "StrokeColor": "#2c0ec2",
+          "StrokeThickness": 1,
+          "DashStyle": "Solid",
+          "DragHandleSize": 5,
+          "FillOpacity": 1
+        },
+        "Locked": {
+          "FillColor": "#d6d4d4",
+          "StrokeColor": "#d6d4d4",
+          "StrokeThickness": 1,
+          "DashStyle": "Solid",
+          "DragHandleSize": 5,
+          "FillOpacity": 1
+        }
+      },
+      "LayerId": 2,
+      "Name": "layer2",
+      "Description": "description",
+      "TextForeground": null,
+      "BorderBackground": "#00FFFFFF",
+      "MaximumThickenedShapeWidth": 80,
+      "TagFontSize": 50
+    }
+  ]
+}

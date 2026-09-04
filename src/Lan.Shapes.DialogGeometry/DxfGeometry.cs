@@ -473,7 +473,8 @@ namespace Lan.Shapes.DialogGeometry
             if (!IsGeometryRendered)
             {
                 var dialog = new DialogService();
-                dialog.ShowDialog<DxfImportDialog, DxfImportDialogViewModel>(() => new DxfImportDialogViewModel(),
+                dialog.ShowDialog<DxfImportDialog, DxfImportDialogViewModel>(
+                    () => new DxfImportDialogViewModel(ShapeLayer.Measurement.PixelPerUnit),
                     x =>
                     {
                         if (x.Result == DialogResult.Ok && !string.IsNullOrWhiteSpace(x.FilePath))

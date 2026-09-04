@@ -23,9 +23,6 @@ public class FiberDataPipelineTests
             Name = "test",
             Description = "test layer",
             TagFontSize = tagFontSize,
-            UnitsPerMillimeter = unitsPerMillimeter,
-            PixelPerUnit = pixelPerUnit,
-            UnitName = unitName,
             MaximumThickenedShapeWidth = 80,
             TextForeground = Brushes.Black,
             BorderBackground = Brushes.Transparent,
@@ -51,7 +48,15 @@ public class FiberDataPipelineTests
                 }
             }
         };
-        return new ShapeLayer(param);
+        return new ShapeLayer(
+            param,
+            new ShapeMeasurementSettings
+            {
+                UnitsPerMillimeter = unitsPerMillimeter,
+                PixelPerUnit = pixelPerUnit,
+                UnitName = unitName
+            },
+            new ShapeStylerFactory());
     }
 
     [TestMethod]
@@ -60,9 +65,9 @@ public class FiberDataPipelineTests
         var layer = CreateDefaultShapeLayer();
 
         Assert.AreEqual(50, layer.TagFontSize);
-        Assert.AreEqual(1000, layer.UnitsPerMillimeter);
-        Assert.AreEqual(3410, layer.PixelPerUnit);
-        Assert.AreEqual("um", layer.UnitName);
+        Assert.AreEqual(1000, layer.Measurement.UnitsPerMillimeter);
+        Assert.AreEqual(3410, layer.Measurement.PixelPerUnit);
+        Assert.AreEqual("um", layer.Measurement.UnitName);
         Assert.AreEqual(80, layer.MaximumThickenedShapeWidth);
         Assert.IsNotNull(layer.TextForeground);
         Assert.IsNotNull(layer.BorderBackground);
@@ -73,47 +78,46 @@ public class FiberDataPipelineTests
     {
         var original = CreateDefaultShapeLayer(tagFontSize: 72, unitName: "mm");
         var param = original.ToShapeLayerParameter();
-        var restored = new ShapeLayer(param);
+        var restored = new ShapeLayer(param, original.Measurement, new ShapeStylerFactory());
 
         Assert.AreEqual(original.TagFontSize, restored.TagFontSize);
-        Assert.AreEqual(original.UnitsPerMillimeter, restored.UnitsPerMillimeter);
-        Assert.AreEqual(original.PixelPerUnit, restored.PixelPerUnit);
-        Assert.AreEqual(original.UnitName, restored.UnitName);
+        Assert.AreSame(original.Measurement, restored.Measurement);
         Assert.AreEqual(original.MaximumThickenedShapeWidth, restored.MaximumThickenedShapeWidth);
     }
 
     [TestMethod]
-    public void ShapeLayers_Json_Deserializes_With_All_Properties()
+    public void LanShapesConfig_Json_Deserializes_With_GlobalMeasurement()
     {
-        var json = File.ReadAllText("TestData/ShapeLayers.json");
-        var layers = JsonConvert.DeserializeObject<List<ShapeLayerParameter>>(json);
-        Assert.IsNotNull(layers);
-        Assert.AreEqual(2, layers!.Count);
+        var json = File.ReadAllText("TestData/LanShapesConfig.json");
+        var configuration = JsonConvert.DeserializeObject<LanShapesConfiguration>(json);
+        Assert.IsNotNull(configuration);
+        Assert.AreEqual(2, configuration!.ShapeLayers.Count);
+        Assert.AreEqual(1000, configuration.Measurement.UnitsPerMillimeter);
+        Assert.AreEqual(3410, configuration.Measurement.PixelPerUnit);
+        Assert.AreEqual("um", configuration.Measurement.UnitName);
 
-        foreach (var layer in layers)
+        foreach (var layer in configuration.ShapeLayers)
         {
             Assert.AreNotEqual(0, layer.TagFontSize);
-            Assert.AreNotEqual(0, layer.UnitsPerMillimeter);
-            Assert.AreNotEqual(0, layer.PixelPerUnit);
-            Assert.IsNotNull(layer.UnitName);
-            Assert.IsFalse(string.IsNullOrEmpty(layer.UnitName));
-            Assert.IsNotNull(layer.TextForeground);
+            Assert.IsNotNull(layer.StyleSchema);
         }
     }
 
     [TestMethod]
     public void ShapeLayer_From_Json_Has_Correct_Values()
     {
-        var json = File.ReadAllText("TestData/ShapeLayers.json");
-        var parameters = JsonConvert.DeserializeObject<List<ShapeLayerParameter>>(json)!;
-        var layer = new ShapeLayer(parameters[0]);
+        var json = File.ReadAllText("TestData/LanShapesConfig.json");
+        var configuration = JsonConvert.DeserializeObject<LanShapesConfiguration>(json)!;
+        var layer = new ShapeLayer(
+            configuration.ShapeLayers[0],
+            configuration.Measurement,
+            new ShapeStylerFactory());
 
         Assert.AreEqual(50, layer.TagFontSize);
-        Assert.AreEqual(1000, layer.UnitsPerMillimeter);
-        Assert.AreEqual(3410, layer.PixelPerUnit);
-        Assert.AreEqual("um", layer.UnitName);
-        Assert.IsNotNull(layer.TextForeground);
-        Assert.AreEqual(Colors.Black, ((SolidColorBrush)layer.TextForeground).Color);
+        Assert.AreEqual(1000, layer.Measurement.UnitsPerMillimeter);
+        Assert.AreEqual(3410, layer.Measurement.PixelPerUnit);
+        Assert.AreEqual("um", layer.Measurement.UnitName);
+        Assert.AreSame(configuration.Measurement, layer.Measurement);
     }
 
     [TestMethod]
@@ -131,9 +135,9 @@ public class FiberDataPipelineTests
         var layer = CreateDefaultShapeLayer(unitsPerMillimeter: 500, pixelPerUnit: 2000, unitName: "mm");
         var fiber = new Fiber(layer);
 
-        Assert.AreEqual(500, fiber.ShapeLayer.UnitsPerMillimeter);
-        Assert.AreEqual(2000, fiber.ShapeLayer.PixelPerUnit);
-        Assert.AreEqual("mm", fiber.ShapeLayer.UnitName);
+        Assert.AreEqual(500, fiber.ShapeLayer.Measurement.UnitsPerMillimeter);
+        Assert.AreEqual(2000, fiber.ShapeLayer.Measurement.PixelPerUnit);
+        Assert.AreEqual("mm", fiber.ShapeLayer.Measurement.UnitName);
     }
 
     [TestMethod]

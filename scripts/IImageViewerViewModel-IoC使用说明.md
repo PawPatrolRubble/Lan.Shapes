@@ -83,17 +83,9 @@ public void RegisterTypes(IContainerRegistry containerRegistry)
 | `IShapeStylerFactory` | 层样式构建；`ShapeLayerManager` 构造层时注入 |
 | `IShapeRepository` | 与 fat manager **同一实例**，形状状态用 |
 
+`OnInitialized` 从 `LanShapesConfig.json` 的 `AvailableGeometryTypes` 读取调色板类型名并注册。缺省该键时注册完整 catalog；未知类型名启动失败。
 
-`OnInitialized` 从 `IConfiguration` 的 `geometryTypes` 数组向 `IGeometryTypeManager` 注册目录中的形状。缺省或空数组 → 全量目录。调色板只反映已注册类型，不要把工具名写在 `ShapeLayer` 上。
 
-```json
-"geometryTypes": [ "Line", "Rectangle", "Circle" ]
-```
-
-```csharp
-var geometryTypeManager = containerProvider.Resolve<IGeometryTypeManager>();
-GeometryTypeRegistration.RegisterFromConfiguration(geometryTypeManager, configuration);
-```
 注册为 **transient** 生命周期（每次解析返回新实例）的是 VM / board manager；图标与 styler factory 为 **singleton**。
 
 ### 2. 加载模块
@@ -182,11 +174,7 @@ private void ConfigServices()
     _serviceCollection.AddSingleton<MainWindowViewModel>();
     _serviceCollection.AddSingleton<MainWindow>();
     _serviceCollection.AddSingleton<IShapeLayerManager, ShapeLayerManager>();
-
-    var geometryTypeManager = new GeometryTypeManager();
-    GeometryTypeRegistration.RegisterFromConfiguration(geometryTypeManager, configuration);
     _serviceCollection.AddSingleton<IGeometryTypeManager>(geometryTypeManager);
-
     _serviceCollection.AddSingleton<IGeometryIconProvider, ResourceDictionaryGeometryIconProvider>();
     _serviceCollection.AddSingleton<IShapeStylerFactory, ShapeStylerFactory>();
     _serviceCollection.AddTransient<IImageViewerViewModel, ImageViewerControlViewModel>();

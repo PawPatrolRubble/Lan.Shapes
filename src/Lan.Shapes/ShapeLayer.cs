@@ -9,14 +9,15 @@ using Lan.Shapes.Styler;
 namespace Lan.Shapes
 {
     /// <summary>
-    /// Style and units profile for shapes drawn on a sketch board.
+    /// Visual style profile for shapes drawn on a sketch board.
     /// <para>
     /// A layer does <b>not</b> own shape instances — ownership lives on
     /// <see cref="Interfaces.IShapeRepository"/>. Shapes hold a reference to a layer only
     /// to resolve <see cref="IShapeStyler"/> values for their current
     /// <see cref="ShapeVisualState"/>.
     /// </para>
-    /// Layer definitions are typically loaded from app configuration JSON.
+    /// Layer definitions and their shared measurement calibration are typically loaded
+    /// from <see cref="LanShapesConfiguration"/>.
     /// </summary>
     public class ShapeLayer
     {
@@ -39,18 +40,14 @@ namespace Lan.Shapes
         /// <summary>Stylers keyed by visual state. Mutated at runtime for zoom scale only.</summary>
         public Dictionary<ShapeVisualState, IShapeStyler> Stylers => _stylers;
 
-        /// <summary>Pixel count per logical unit used by measurement helpers.</summary>
-        public double PixelPerUnit { get; set; } = 1;
-
-        /// <summary>How many logical units equal 1 mm.</summary>
-        public int UnitsPerMillimeter { get; set; } = 1;
+        /// <summary>Global measurement calibration shared by all configured layers.</summary>
+        public ShapeMeasurementSettings Measurement { get; }
 
         public int LayerId { get; }
         public string Name { get; }
         public string Description { get; }
         public int MaximumThickenedShapeWidth { get; set; }
         public int TagFontSize { get; set; }
-        public string UnitName { get; set; }
 
         public Brush TextForeground { get; } = Brushes.Black;
         public Brush BorderBackground { get; } = Brushes.LightBlue;
@@ -62,7 +59,10 @@ namespace Lan.Shapes
         /// <see cref="ShapeLayerParameter.StyleSchema"/>.
         /// </summary>
         public ShapeLayer(ShapeLayerParameter shapeLayerParameter)
-            : this(shapeLayerParameter, new ShapeStylerFactory())
+            : this(
+                shapeLayerParameter,
+                new ShapeMeasurementSettings(),
+                new ShapeStylerFactory())
         {
         }
 
@@ -71,6 +71,14 @@ namespace Lan.Shapes
         /// <paramref name="stylerFactory"/> (substitutable for tests/themes).
         /// </summary>
         public ShapeLayer(ShapeLayerParameter shapeLayerParameter, IShapeStylerFactory stylerFactory)
+            : this(shapeLayerParameter, new ShapeMeasurementSettings(), stylerFactory)
+        {
+        }
+
+        public ShapeLayer(
+            ShapeLayerParameter shapeLayerParameter,
+            ShapeMeasurementSettings measurement,
+            IShapeStylerFactory stylerFactory)
         {
             if (shapeLayerParameter == null)
             {
@@ -82,16 +90,16 @@ namespace Lan.Shapes
                 throw new ArgumentNullException(nameof(stylerFactory));
             }
 
+            Measurement = measurement ?? throw new ArgumentNullException(nameof(measurement));
+            Measurement.Validate();
+
             LayerId = shapeLayerParameter.LayerId;
             Name = shapeLayerParameter.Name;
             Description = shapeLayerParameter.Description;
             MaximumThickenedShapeWidth = shapeLayerParameter.MaximumThickenedShapeWidth;
             TagFontSize = shapeLayerParameter.TagFontSize;
-            UnitName = shapeLayerParameter.UnitName ?? string.Empty;
             BorderBackground = shapeLayerParameter.BorderBackground;
             TextForeground = shapeLayerParameter.TextForeground;
-            UnitsPerMillimeter = shapeLayerParameter.UnitsPerMillimeter;
-            PixelPerUnit = shapeLayerParameter.PixelPerUnit;
 
             var schema = shapeLayerParameter.StyleSchema
                 ?? throw new InvalidOperationException(
@@ -135,9 +143,6 @@ namespace Lan.Shapes
                 Name = Name,
                 MaximumThickenedShapeWidth = MaximumThickenedShapeWidth,
                 TagFontSize = TagFontSize,
-                UnitsPerMillimeter = UnitsPerMillimeter,
-                PixelPerUnit = (int)PixelPerUnit,
-                UnitName = UnitName,
                 TextForeground = TextForeground,
                 StyleSchema = new Dictionary<ShapeVisualState, ShapeStylerParameter>(
                     _stylers.Select(x => new KeyValuePair<ShapeVisualState, ShapeStylerParameter>(
@@ -154,7 +159,10 @@ namespace Lan.Shapes
         /// </summary>
         public ShapeLayer CreateIndependentCopy()
         {
-            return new ShapeLayer(ToShapeLayerParameter());
+            return new ShapeLayer(
+                ToShapeLayerParameter(),
+                Measurement,
+                new ShapeStylerFactory());
         }
 
         /// <summary>

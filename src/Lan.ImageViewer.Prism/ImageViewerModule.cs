@@ -15,16 +15,22 @@ namespace Lan.ImageViewer.Prism
         {
             var configuration = containerProvider.Resolve<IConfiguration>();
             var baseDirectory = configuration["configBaseDir"] ?? AppContext.BaseDirectory;
-            var layerPath = configuration["shapeLayerPath"];
+            var lanShapesConfigPath =
+                configuration["lanShapesConfigPath"] ??
+                configuration["shapeLayerPath"];
 
-            if (!string.IsNullOrWhiteSpace(layerPath))
+            var shapeLayerManager = containerProvider.Resolve<IShapeLayerManager>();
+            if (!string.IsNullOrWhiteSpace(lanShapesConfigPath))
             {
-                var fullPath = Path.Combine(baseDirectory, layerPath);
-                containerProvider.Resolve<IShapeLayerManager>().ReadShapeLayers(fullPath);
+                var fullPath = Path.Combine(baseDirectory, lanShapesConfigPath);
+                shapeLayerManager.ReadConfiguration(fullPath);
             }
 
             var geometryTypeManager = containerProvider.Resolve<IGeometryTypeManager>();
-            GeometryTypeRegistration.RegisterFromConfiguration(geometryTypeManager, configuration);
+            GeometryTypeRegistration.RegisterGeometryTypes(
+                geometryTypeManager,
+                shapeLayerManager.Configuration.AvailableGeometryTypes);
+
         }
 
         public void RegisterTypes(IContainerRegistry containerRegistry)

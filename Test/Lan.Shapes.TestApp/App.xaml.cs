@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Windows;
 using Lan.SketchBoard;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Lan.Shapes.App.ViewModels;
@@ -20,11 +19,16 @@ namespace Lan.Shapes.App
 
         public static IServiceProvider ServiceProvider;
         private readonly IServiceCollection _serviceCollection = new ServiceCollection();
-        
+
         protected override void OnStartup(StartupEventArgs e)
         {
             ConfigServices();
-            ServiceProvider.GetService<IShapeLayerManager>().ReadShapeLayers("ShapeLayers.json");
+            var shapeLayerManager = ServiceProvider.GetRequiredService<IShapeLayerManager>();
+            shapeLayerManager.ReadConfiguration(
+                System.IO.Path.Combine(AppContext.BaseDirectory, "LanShapesConfig.json"));
+            GeometryTypeRegistration.RegisterGeometryTypes(
+                ServiceProvider.GetRequiredService<IGeometryTypeManager>(),
+                shapeLayerManager.Configuration.AvailableGeometryTypes);
             // Setup the Serilog logger
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
@@ -34,14 +38,14 @@ namespace Lan.Shapes.App
             // Initalie the XamlFlair loggers using the LoggerFactory (with Serilog support)
             //XamlFlair.Animations.InitializeLoggers(new LoggerFactory().AddSerilog());
 
-        }   
+        }
 
         private void ConfigServices()
         {
 
             //var config = new ConfigurationBuilder()
             //    .SetBasePath(Environment.CurrentDirectory)
-            //    .AddJsonFile("ShapeLayers.json").Build();
+            //    .AddJsonFile("LanShapesConfig.json").Build();
 
             //_serviceCollection.AddSingleton(config);
 
@@ -49,13 +53,7 @@ namespace Lan.Shapes.App
             _serviceCollection.AddSingleton<MainWindowViewModel>();
             _serviceCollection.AddSingleton<MainWindow>();
             _serviceCollection.AddSingleton<IShapeLayerManager, ShapeLayerManager>();
-            var geometryTypeManager = new GeometryTypeManager();
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-                .Build();
-            GeometryTypeRegistration.RegisterFromConfiguration(geometryTypeManager, configuration);
-            _serviceCollection.AddSingleton<IGeometryTypeManager>(geometryTypeManager);
+            _serviceCollection.AddSingleton<IGeometryTypeManager, GeometryTypeManager>();
             _serviceCollection.AddSingleton<IGeometryIconProvider, ResourceDictionaryGeometryIconProvider>();
             _serviceCollection.AddSingleton<IShapeStylerFactory, ShapeStylerFactory>();
             _serviceCollection.AddTransient<IImageViewerViewModel, ImageViewerControlViewModel>();

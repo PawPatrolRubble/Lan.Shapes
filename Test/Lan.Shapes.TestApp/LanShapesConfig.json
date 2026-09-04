@@ -1,0 +1,232 @@
+{
+  "AvailableGeometryTypes": [
+    "Circle",
+    "Cross",
+    "Line",
+    "Rectangle",
+    "Rectangle2",
+    "DxfGeometry"
+  ],
+  "Measurement": {
+    "PixelPerUnit": 3410,
+    "UnitsPerMillimeter": 1000,
+    "UnitName": "um"
+  },
+  "ShapeLayers": [
+    {
+      "StyleSchema": {
+        "Normal": {
+          "FillColor": "#00BFFF",
+          "StrokeColor": "#007ACC",
+          "StrokeThickness": 2,
+          "DashStyle": "Solid",
+          "DragHandleSize": 8,
+          "FillOpacity": 0.2
+        },
+        "MouseOver": {
+          "FillColor": "#1E90FF",
+          "StrokeColor": "#FF4500",
+          "StrokeThickness": 2,
+          "DashStyle": "Solid",
+          "DragHandleSize": 8,
+          "FillOpacity": 0.3
+        },
+        "Selected": {
+          "FillColor": "#32CD32",
+          "StrokeColor": "#006400",
+          "StrokeThickness": 2,
+          "DashStyle": "Solid",
+          "DragHandleSize": 8,
+          "FillOpacity": 0.3
+        },
+        "Locked": {
+          "FillColor": "#bdc3c7",
+          "StrokeColor": "#7f8c8d",
+          "StrokeThickness": 1,
+          "DashStyle": "Dot",
+          "DragHandleSize": 20,
+          "FillOpacity": 0.5
+        }
+      },
+      "LayerId": 1,
+      "Name": "default",
+      "Description": "refined teal tone layer",
+      "TextForeground": null,
+      "BorderBackground": "#00FFFFFF",
+      "MaximumThickenedShapeWidth": 80,
+      "TagFontSize": 20
+    },
+    {
+      "StyleSchema": {
+        "Normal": {
+          "FillColor": "#32CD32",
+          "StrokeColor": "#228B22",
+          "StrokeThickness": 2,
+          "DashStyle": "Solid",
+          "DragHandleSize": 8,
+          "FillOpacity": 0.2
+        },
+        "MouseOver": {
+          "FillColor": "#00FF00",
+          "StrokeColor": "#FF4500",
+          "StrokeThickness": 2,
+          "DashStyle": "Solid",
+          "DragHandleSize": 8,
+          "FillOpacity": 0.3
+        },
+        "Selected": {
+          "FillColor": "#00BFFF",
+          "StrokeColor": "#00008B",
+          "StrokeThickness": 2,
+          "DashStyle": "Solid",
+          "DragHandleSize": 8,
+          "FillOpacity": 0.3
+        },
+        "Locked": {
+          "FillColor": "#dcdde1",
+          "StrokeColor": "#7f8c8d",
+          "StrokeThickness": 1,
+          "DashStyle": "Dot",
+          "DragHandleSize": 8,
+          "FillOpacity": 0.5
+        }
+      },
+      "LayerId": 2,
+      "Name": "layer2",
+      "Description": "refined purple tone layer",
+      "TextForeground": null,
+      "BorderBackground": "#00FFFFFF",
+      "MaximumThickenedShapeWidth": 80,
+      "TagFontSize": 20
+    },
+    {
+      "StyleSchema": {
+        "Normal": {
+          "FillColor": "#f7d794",
+          "StrokeColor": "#e77f24",
+          "StrokeThickness": 1.5,
+          "DashStyle": "Solid",
+          "DragHandleSize": 8,
+          "FillOpacity": 0.6
+        },
+        "MouseOver": {
+          "FillColor": "#ffeaa7",
+          "StrokeColor": "#fd9644",
+          "StrokeThickness": 1.5,
+          "DashStyle": "Dash",
+          "DragHandleSize": 7,
+          "FillOpacity": 0.6
+        },
+        "Selected": {
+          "FillColor": "#fab1a0",
+          "StrokeColor": "#e17055",
+          "StrokeThickness": 1.5,
+          "DashStyle": "Solid",
+          "DragHandleSize": 7,
+          "FillOpacity": 0.6
+        },
+        "Locked": {
+          "FillColor": "#dcdde1",
+          "StrokeColor": "#718093",
+          "StrokeThickness": 1,
+          "DashStyle": "Dot",
+          "DragHandleSize": 5,
+          "FillOpacity": 0.5
+        }
+      },
+      "LayerId": 3,
+      "Name": "layer3",
+      "Description": "warm tone layer",
+      "TextForeground": null,
+      "BorderBackground": "#00FFFFFF",
+      "MaximumThickenedShapeWidth": 80,
+      "TagFontSize": 20
+    },
+    {
+      "StyleSchema": {
+        "Normal": {
+          "FillColor": "#dfe6e9",
+          "StrokeColor": "#636e72",
+          "StrokeThickness": 2,
+          "DashStyle": "Solid",
+          "DragHandleSize": 8,
+          "FillOpacity": 0.7
+        },
+        "MouseOver": {
+          "FillColor": "#b2bec3",
+          "StrokeColor": "#2d3436",
+          "StrokeThickness": 2,
+          "DashStyle": "DashDot",
+          "DragHandleSize": 8,
+          "FillOpacity": 0.7
+        },
+        "Selected": {
+          "FillColor": "#a4b0be",
+          "StrokeColor": "#2f3542",
+          "StrokeThickness": 2,
+          "DashStyle": "Solid",
+          "DragHandleSize": 8,
+          "FillOpacity": 0.7
+        },
+        "Locked": {
+          "FillColor": "#ced6e0",
+          "StrokeColor": "#57606f",
+          "StrokeThickness": 1,
+          "DashStyle": "Dot",
+          "DragHandleSize": 5,
+          "FillOpacity": 0.5
+        }
+      },
+      "LayerId": 4,
+      "Name": "layer4",
+      "Description": "grey tone layer",
+      "TextForeground": null,
+      "BorderBackground": "#00FFFFFF",
+      "MaximumThickenedShapeWidth": 80,
+      "TagFontSize": 20
+    },
+    {
+      "StyleSchema": {
+        "Normal": {
+          "FillColor": "#FFA500",
+          "StrokeColor": "#FF8C00",
+          "StrokeThickness": 2,
+          "DashStyle": "Solid",
+          "DragHandleSize": 8,
+          "FillOpacity": 0.2
+        },
+        "MouseOver": {
+          "FillColor": "#FFD700",
+          "StrokeColor": "#DC143C",
+          "StrokeThickness": 2,
+          "DashStyle": "Solid",
+          "DragHandleSize": 8,
+          "FillOpacity": 0.3
+        },
+        "Selected": {
+          "FillColor": "#00CED1",
+          "StrokeColor": "#008B8B",
+          "StrokeThickness": 2,
+          "DashStyle": "Solid",
+          "DragHandleSize": 8,
+          "FillOpacity": 0.3
+        },
+        "Locked": {
+          "FillColor": "#f0e6f6",
+          "StrokeColor": "#5d3b6d",
+          "StrokeThickness": 1,
+          "DashStyle": "Dot",
+          "DragHandleSize": 5,
+          "FillOpacity": 0.5
+        }
+      },
+      "LayerId": 5,
+      "Name": "layer5",
+      "Description": "purple tone layer",
+      "TextForeground": null,
+      "BorderBackground": "#00FFFFFF",
+      "MaximumThickenedShapeWidth": 80,
+      "TagFontSize": 20
+    }
+  ]
+}

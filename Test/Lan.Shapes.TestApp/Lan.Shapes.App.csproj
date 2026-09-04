@@ -9,8 +9,8 @@
 	<PropertyGroup>
 		<EnableSourceControlManagerQueries>true</EnableSourceControlManagerQueries>
 	</PropertyGroup>
-	
-	
+
+
     <ItemGroup>
       <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
       <PackageReference Include="Extended.Wpf.Toolkit" Version="4.5.1" />
@@ -52,10 +52,7 @@
       <None Update="996.png">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="appsettings.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="ShapeLayers.json">
+      <None Update="LanShapesConfig.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="test0.bmp">
@@ -66,6 +63,6 @@
       </None>
     </ItemGroup>
 
-    <ProjectExtensions><VisualStudio><UserProperties shapelayers_1json__JsonSchema="https://blockprotocol.org/schemas/block-metadata.json" /></VisualStudio></ProjectExtensions>
+    <ProjectExtensions><VisualStudio><UserProperties lanshapesconfig_1json__JsonSchema="https://blockprotocol.org/schemas/block-metadata.json" /></VisualStudio></ProjectExtensions>
 
 </Project>

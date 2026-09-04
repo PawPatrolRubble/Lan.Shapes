@@ -55,13 +55,25 @@ Camera1 = ContainerLocator.Container.Resolve<IImageViewerViewModel>();
 | `ISketchBoardDataManager` | `SketchBoardDataManager` (transient) |
 | `IShapeRepository` | same instance as the fat manager |
 
-
-On initialize the module registers geometry types from `IConfiguration` key `geometryTypes` (string array of catalog names). Missing or empty → full catalog. The view-model palette is whatever was registered — do not put tool names on `ShapeLayer`.
+Lan.Shapes configuration is loaded from `lanShapesConfigPath`. The allowed palette types,
+measurement calibration, and per-layer styling all live in that dedicated file. A missing
+`AvailableGeometryTypes` value registers the full catalog; `[]` registers none. Unknown
+names fail at startup.
 
 ```json
-"geometryTypes": [ "Line", "Rectangle", "Circle" ]
+{
+  "AvailableGeometryTypes": [ "Line", "Rectangle", "Rectangle2", "Circle", "Cross", "DxfGeometry" ],
+  "Measurement": {
+    "PixelPerUnit": 3410,
+    "UnitsPerMillimeter": 1000,
+    "UnitName": "um"
+  },
+  "ShapeLayers": []
+}
 ```
+
 Full IoC walkthrough: [`scripts/IImageViewerViewModel-IoC使用说明.md`](scripts/IImageViewerViewModel-IoC使用说明.md).
+
 
 ### Alternate host: MSDI (`Lan.Shapes.TestApp`)
 
@@ -312,19 +324,23 @@ namespace Lan.Shapes.Custom
 
 ### Step 4: Register the Shape
 
-Register tools at the composition root (preferred) or on the repository:
+Add the type to `GeometryTypeRegistration` catalog, then enable it in `LanShapesConfig.json`:
+
+```json
+"AvailableGeometryTypes": [ "Line", "MyShape" ]
+```
+
+Or register at the composition root / repository:
 
 ```csharp
 // Preferred: GeometryTypeRegistration / host startup
 geometryTypeManager.RegisterGeometryType<MyShape>();
 
-// Or restrict the built-in catalog from configuration
-GeometryTypeRegistration.RegisterFromConfiguration(geometryTypeManager, configuration);
-
 // Or on the board repository
 dataManager.RegisterDrawingTool("MyShape", typeof(MyShape));
 dataManager.SetGeometryType(typeof(MyShape));
 ```
+
 
 Palette icons: add a resource key in `Lan.ImageViewer/Geometries.xaml` (or implement `IGeometryIconProvider`). Do **not** hardcode icons in the VM.
 

@@ -23,12 +23,16 @@ public class ExtensibilityTests
         var resources = new ResourceDictionary
         {
             ["Circle"] = Geometry.Parse("M0,0 L1,0"),
-            ["Grid"] = Geometry.Parse("M0,0 L2,0")
+            ["Grid"] = Geometry.Parse("M0,0 L2,0"),
+            ["DxfGeometry"] = Geometry.Parse("M0,0 L3,0"),
+            ["Save"] = Geometry.Parse("M0,0 L4,0")
         };
         IGeometryIconProvider provider = new ResourceDictionaryGeometryIconProvider(resources);
 
         Assert.Same(resources["Circle"], provider.GetIcon("Circle"));
         Assert.Same(resources["Grid"], provider.GetIcon("GriddedRectangle"));
+        Assert.Same(resources["DxfGeometry"], provider.GetIcon("DxfGeometry"));
+        Assert.NotSame(resources["Save"], provider.GetIcon("DxfGeometry"));
         Assert.Null(provider.GetIcon("MissingType"));
         Assert.Null(provider.GetIcon(null!));
     }
@@ -73,17 +77,20 @@ public class ExtensibilityTests
     }
 
     [Fact]
-    public void ShapeCreationCancelled_RemovesShapeFromRepository()
+    public void ShapeCreationCancelled_RemovesShapeAndClearsGeometryType()
     {
         var manager = new SketchBoardDataManager();
         manager.SetShapeLayer(TestShapeLayer.Create());
         manager.InitializeVisualCollection(new ContainerVisual());
+        manager.SetGeometryType(typeof(Line));
 
         var keep = new Line(manager.CurrentShapeLayer!);
         manager.AddShape(keep);
 
         var cancellable = new CancellableShape(manager.CurrentShapeLayer!);
         manager.AddShape(cancellable);
+        Type? unselectedType = null;
+        manager.GeometryTypeUnselected += (_, type) => unselectedType = type;
         Assert.Equal(2, manager.Shapes.Count);
 
         cancellable.Cancel();
@@ -91,6 +98,8 @@ public class ExtensibilityTests
         Assert.Single(manager.Shapes);
         Assert.DoesNotContain(cancellable, manager.Shapes);
         Assert.Contains(keep, manager.Shapes);
+        Assert.Equal(typeof(Line), unselectedType);
+        Assert.Null(manager.CreateNewGeometry(new Point(10, 20)));
     }
 
     [Fact]
@@ -115,9 +124,6 @@ public class ExtensibilityTests
             Description = "test",
             MaximumThickenedShapeWidth = 10,
             TagFontSize = 12,
-            UnitsPerMillimeter = 1,
-            PixelPerUnit = 1,
-            UnitName = "px",
             TextForeground = new SolidColorBrush(Colors.Black),
             BorderBackground = new SolidColorBrush(Colors.White),
             StyleSchema = new Dictionary<ShapeVisualState, ShapeStylerParameter>

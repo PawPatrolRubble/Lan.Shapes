@@ -11,6 +11,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="..\..\data\ShapeLayers.json" Link="ShapeLayers.json" CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\..\data\LanShapesConfig.json" Link="LanShapesConfig.json" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 </Project>

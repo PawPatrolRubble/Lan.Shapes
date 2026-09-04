@@ -176,14 +176,15 @@ namespace Lan.Shapes.Shapes
             // Draw the length text
             var length = Math.Sqrt(Math.Pow(End.X - Start.X, 2) + Math.Pow(End.Y - Start.Y, 2));
             var lengthInMm = 0.0;
+            var measurement = ShapeLayer.Measurement;
 
-            if (ShapeLayer.UnitsPerMillimeter != 0 && ShapeLayer.PixelPerUnit != 0)
+            if (measurement.UnitsPerMillimeter != 0 && measurement.PixelPerUnit != 0)
             {
-                lengthInMm = length * ShapeLayer.UnitsPerMillimeter / ShapeLayer.PixelPerUnit;
+                lengthInMm = length * measurement.UnitsPerMillimeter / measurement.PixelPerUnit;
             }
 
             var formattedText = CreateFormattedText(
-                $"{lengthInMm:f4} {ShapeLayer.UnitName}, {length:f4} px",
+                $"{lengthInMm:f4} {measurement.UnitName}, {length:f4} px",
                 ShapeStyler?.TagColor ?? Brushes.Red);
 
             renderContext.DrawText(formattedText, new Point((Start.X + End.X) / 2, (Start.Y + End.Y) / 2));

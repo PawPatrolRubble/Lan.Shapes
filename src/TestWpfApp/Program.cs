@@ -11,7 +11,7 @@ using Lan.Shapes.Styler;
 
 using Newtonsoft.Json;
 
-string JsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ShapeLayers.json");
+string JsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "LanShapesConfig.json");
 
 int passed = 0, failed = 0;
 
@@ -67,9 +67,6 @@ ShapeLayer CreateDefaultShapeLayer(
         Name = "test",
         Description = "test layer",
         TagFontSize = tagFontSize,
-        UnitsPerMillimeter = unitsPerMillimeter,
-        PixelPerUnit = pixelPerUnit,
-        UnitName = unitName,
         MaximumThickenedShapeWidth = 80,
         TextForeground = Brushes.Black,
         BorderBackground = Brushes.Transparent,
@@ -95,7 +92,15 @@ ShapeLayer CreateDefaultShapeLayer(
             }
         }
     };
-    return new ShapeLayer(param);
+    return new ShapeLayer(
+        param,
+        new ShapeMeasurementSettings
+        {
+            UnitsPerMillimeter = unitsPerMillimeter,
+            PixelPerUnit = pixelPerUnit,
+            UnitName = unitName
+        },
+        new ShapeStylerFactory());
 }
 
 // ===== Test 1: ShapeLayer construction preserves all properties =====
@@ -103,9 +108,9 @@ RunTest("ShapeLayer construction from parameter", () =>
 {
     var layer = CreateDefaultShapeLayer();
     AssertEqual(50, layer.TagFontSize, "TagFontSize = 50");
-    AssertEqual(1000, layer.UnitsPerMillimeter, "UnitsPerMillimeter = 1000");
-    AssertEqual(3410, layer.PixelPerUnit, "PixelPerUnit = 3410");
-    AssertEqual("um", layer.UnitName, "UnitName = 'um'");
+    AssertEqual(1000, layer.Measurement.UnitsPerMillimeter, "UnitsPerMillimeter = 1000");
+    AssertEqual(3410d, layer.Measurement.PixelPerUnit, "PixelPerUnit = 3410");
+    AssertEqual("um", layer.Measurement.UnitName, "UnitName = 'um'");
     AssertEqual(80, layer.MaximumThickenedShapeWidth, "MaximumThickenedShapeWidth = 80");
     AssertNotNull(layer.TextForeground, "TextForeground is not null");
     AssertNotNull(layer.BorderBackground, "BorderBackground is not null");
@@ -116,30 +121,28 @@ RunTest("ToShapeLayerParameter round-trip", () =>
 {
     var original = CreateDefaultShapeLayer(tagFontSize: 72, unitName: "mm");
     var param = original.ToShapeLayerParameter();
-    var restored = new ShapeLayer(param);
+    var restored = new ShapeLayer(param, original.Measurement, new ShapeStylerFactory());
 
     AssertEqual(original.TagFontSize, restored.TagFontSize, "TagFontSize round-trips");
-    AssertEqual(original.UnitsPerMillimeter, restored.UnitsPerMillimeter, "UnitsPerMillimeter round-trips");
-    AssertEqual(original.PixelPerUnit, restored.PixelPerUnit, "PixelPerUnit round-trips");
-    AssertEqual(original.UnitName, restored.UnitName, "UnitName round-trips");
+    AssertTrue(ReferenceEquals(original.Measurement, restored.Measurement), "Measurement profile is shared");
     AssertEqual(original.MaximumThickenedShapeWidth, restored.MaximumThickenedShapeWidth, "MaxThickenedShapeWidth round-trips");
 });
 
 // ===== Test 3: JSON deserialization =====
-RunTest("ShapeLayers.json deserialization", () =>
+RunTest("LanShapesConfig.json deserialization", () =>
 {
     var json = File.ReadAllText(JsonPath);
-    var layers = JsonConvert.DeserializeObject<List<ShapeLayerParameter>>(json);
-    AssertNotNull(layers, "layers is not null");
-    AssertEqual(2, layers!.Count, "2 layers in JSON");
+    var configuration = JsonConvert.DeserializeObject<LanShapesConfiguration>(json);
+    AssertNotNull(configuration, "configuration is not null");
+    AssertEqual(2, configuration!.ShapeLayers.Count, "2 layers in JSON");
+    AssertEqual(1000, configuration.Measurement.UnitsPerMillimeter, "global UnitsPerMillimeter = 1000");
+    AssertEqual(3410d, configuration.Measurement.PixelPerUnit, "global PixelPerUnit = 3410");
+    AssertEqual("um", configuration.Measurement.UnitName, "global UnitName = 'um'");
 
-    foreach (var layer in layers)
+    foreach (var layer in configuration.ShapeLayers)
     {
         AssertTrue(layer.TagFontSize != 0, $"TagFontSize is non-zero ({layer.TagFontSize})");
-        AssertTrue(layer.UnitsPerMillimeter != 0, $"UnitsPerMillimeter is non-zero ({layer.UnitsPerMillimeter})");
-        AssertTrue(layer.PixelPerUnit != 0, $"PixelPerUnit is non-zero ({layer.PixelPerUnit})");
-        AssertTrue(!string.IsNullOrEmpty(layer.UnitName), $"UnitName is set ('{layer.UnitName}')");
-        AssertNotNull(layer.TextForeground, "TextForeground is not null");
+        AssertNotNull(layer.StyleSchema, "StyleSchema is not null");
     }
 });
 
@@ -147,15 +150,16 @@ RunTest("ShapeLayers.json deserialization", () =>
 RunTest("ShapeLayer from JSON values", () =>
 {
     var json = File.ReadAllText(JsonPath);
-    var parameters = JsonConvert.DeserializeObject<List<ShapeLayerParameter>>(json)!;
-    var layer = new ShapeLayer(parameters[0]);
+    var configuration = JsonConvert.DeserializeObject<LanShapesConfiguration>(json)!;
+    var layer = new ShapeLayer(
+        configuration.ShapeLayers[0],
+        configuration.Measurement,
+        new ShapeStylerFactory());
 
     AssertEqual(50, layer.TagFontSize, "TagFontSize = 50 from JSON");
-    AssertEqual(1000, layer.UnitsPerMillimeter, "UnitsPerMillimeter = 1000 from JSON");
-    AssertEqual(3410, layer.PixelPerUnit, "PixelPerUnit = 3410 from JSON");
-    AssertEqual("um", layer.UnitName, "UnitName = 'um' from JSON");
-    AssertNotNull(layer.TextForeground, "TextForeground loaded from JSON");
-    AssertEqual(Colors.Black, ((SolidColorBrush)layer.TextForeground).Color, "TextForeground is black");
+    AssertEqual(1000, layer.Measurement.UnitsPerMillimeter, "UnitsPerMillimeter = 1000 from JSON");
+    AssertEqual(3410d, layer.Measurement.PixelPerUnit, "PixelPerUnit = 3410 from JSON");
+    AssertEqual("um", layer.Measurement.UnitName, "UnitName = 'um' from JSON");
 });
 
 // ===== Test 5: Fiber has access to ShapeLayer properties =====
@@ -165,9 +169,9 @@ RunTest("Fiber accesses ShapeLayer properties", () =>
     var fiber = new Fiber(layer);
 
     AssertEqual(64, fiber.ShapeLayer.TagFontSize, "Fiber sees TagFontSize = 64");
-    AssertEqual(500, fiber.ShapeLayer.UnitsPerMillimeter, "Fiber sees UnitsPerMillimeter = 500");
-    AssertEqual(2000, fiber.ShapeLayer.PixelPerUnit, "Fiber sees PixelPerUnit = 2000");
-    AssertEqual("mm", fiber.ShapeLayer.UnitName, "Fiber sees UnitName = 'mm'");
+    AssertEqual(500, fiber.ShapeLayer.Measurement.UnitsPerMillimeter, "Fiber sees UnitsPerMillimeter = 500");
+    AssertEqual(2000d, fiber.ShapeLayer.Measurement.PixelPerUnit, "Fiber sees PixelPerUnit = 2000");
+    AssertEqual("mm", fiber.ShapeLayer.Measurement.UnitName, "Fiber sees UnitName = 'mm'");
 });
 
 // ===== Test 6: FiberData round-trip with micrometer conversion =====

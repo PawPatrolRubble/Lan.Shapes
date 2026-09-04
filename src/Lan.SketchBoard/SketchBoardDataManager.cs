@@ -488,6 +488,7 @@ namespace Lan.SketchBoard
             if (sender is ShapeVisualBase shape)
             {
                 RemoveShape(shape);
+                UnselectGeometryType();
             }
         }
 

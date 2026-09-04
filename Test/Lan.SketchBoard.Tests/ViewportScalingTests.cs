@@ -357,9 +357,6 @@ public class ViewportScalingTests
             Description = "B",
             MaximumThickenedShapeWidth = 100,
             TagFontSize = 12,
-            UnitsPerMillimeter = 1,
-            PixelPerUnit = 1,
-            UnitName = "px",
             TextForeground = new SolidColorBrush(Colors.Black),
             BorderBackground = new SolidColorBrush(Colors.LightBlue),
             StyleSchema = new Dictionary<ShapeVisualState, ShapeStylerParameter>

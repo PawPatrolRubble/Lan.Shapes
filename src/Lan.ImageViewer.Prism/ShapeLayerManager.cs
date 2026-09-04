@@ -11,6 +11,7 @@ using Lan.Shapes;
 using Lan.Shapes.Interfaces;
 using Lan.Shapes.Styler;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Lan.ImageViewer.Prism
 {
@@ -19,7 +20,7 @@ namespace Lan.ImageViewer.Prism
 
         #region fields
 
-        private string _path;
+        private string _path = string.Empty;
         private readonly IShapeStylerFactory _stylerFactory;
 
         #endregion
@@ -41,47 +42,72 @@ namespace Lan.ImageViewer.Prism
             }
         }
 
-        public void SaveLayerConfigurations(string filePath)
+        public LanShapesConfiguration Configuration { get; private set; } =
+            new LanShapesConfiguration();
+
+        public void SaveConfiguration(string filePath = "")
         {
-            if (!string.IsNullOrEmpty(filePath))
+            if (!string.IsNullOrWhiteSpace(filePath))
             {
                 _path = filePath;
             }
 
-            var serialized = JsonConvert.SerializeObject(Layers.Select(x=>x.ToShapeLayerParameter()).ToList());
+            if (string.IsNullOrWhiteSpace(_path))
+            {
+                throw new InvalidOperationException(
+                    "A configuration file path is required before saving.");
+            }
+
+            Configuration.ShapeLayers = Layers
+                .Select(x => x.ToShapeLayerParameter())
+                .ToList();
+            Configuration.Validate();
+
+            var serialized = JsonConvert.SerializeObject(
+                Configuration,
+                Formatting.Indented);
             File.WriteAllText(_path, serialized);
         }
 
-
-        public void ReadShapeLayers(string configurationFilePath)
+        public void ReadConfiguration(string configurationFilePath)
         {
-            if (string.IsNullOrEmpty(configurationFilePath))
+            if (string.IsNullOrWhiteSpace(configurationFilePath))
             {
                 return;
             }
 
-            using (var file = new StreamReader(configurationFilePath))
-            {
-                var shapeLayerParameters =
-                    JsonConvert.DeserializeObject<List<ShapeLayerParameter>>(file.ReadToEnd())
-                    ?? throw new InvalidOperationException(
-                        $"Shape layer configuration '{configurationFilePath}' is empty or invalid.");
+            var json = File.ReadAllText(configurationFilePath);
+            var token = JToken.Parse(json);
+            var configuration = token.Type == JTokenType.Array
+                ? MigrateLegacyConfiguration(token, configurationFilePath)
+                : token.ToObject<LanShapesConfiguration>()
+                  ?? throw new InvalidOperationException(
+                      $"Lan.Shapes configuration '{configurationFilePath}' is empty or invalid.");
 
-                foreach (var parameter in shapeLayerParameters)
-                {
-                    // Fail fast before mutating the live collection.
-                    ShapeLayer.EnsureRequiredStylerStates(
-                        parameter.StyleSchema,
-                        parameter.Name,
-                        parameter.LayerId);
-                }
+            configuration.Validate();
 
-                CollectionExtension.AddRange(
-                    Layers,
-                    shapeLayerParameters.Select(x => new ShapeLayer(x, _stylerFactory)));
-            }
+            var layers = configuration.ShapeLayers
+                .Select(x => new ShapeLayer(x, configuration.Measurement, _stylerFactory))
+                .ToList();
 
+            Layers.Clear();
+            CollectionExtension.AddRange(Layers, layers);
+
+            Configuration = configuration;
             _path = configurationFilePath;
+            OnPropertyChanged(nameof(Configuration));
+        }
+
+        [Obsolete("Use SaveConfiguration.")]
+        public void SaveLayerConfigurations(string filePath)
+        {
+            SaveConfiguration(filePath);
+        }
+
+        [Obsolete("Use ReadConfiguration.")]
+        public void ReadShapeLayers(string configurationFilePath)
+        {
+            ReadConfiguration(configurationFilePath);
         }
 
         public ObservableCollection<ShapeLayer> Layers { get; private set; } = new ObservableCollection<ShapeLayer>();
@@ -105,6 +131,40 @@ namespace Lan.ImageViewer.Prism
         #endregion
 
         #region public methods
+
+        private static LanShapesConfiguration MigrateLegacyConfiguration(
+            JToken token,
+            string configurationFilePath)
+        {
+            var legacyLayers = token.ToObject<List<LegacyShapeLayerParameter>>()
+                ?? throw new InvalidOperationException(
+                    $"Shape layer configuration '{configurationFilePath}' is empty or invalid.");
+
+            if (legacyLayers.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    $"Shape layer configuration '{configurationFilePath}' contains no layers.");
+            }
+
+            var first = legacyLayers[0];
+            return new LanShapesConfiguration
+            {
+                Measurement = new ShapeMeasurementSettings
+                {
+                    PixelPerUnit = first.PixelPerUnit,
+                    UnitsPerMillimeter = first.UnitsPerMillimeter,
+                    UnitName = first.UnitName
+                },
+                ShapeLayers = legacyLayers.Cast<ShapeLayerParameter>().ToList()
+            };
+        }
+
+        private sealed class LegacyShapeLayerParameter : ShapeLayerParameter
+        {
+            public double PixelPerUnit { get; set; }
+            public int UnitsPerMillimeter { get; set; }
+            public string UnitName { get; set; } = string.Empty;
+        }
 
         private Brush ColorWithOpacity(string colorString, double opacity)
         {

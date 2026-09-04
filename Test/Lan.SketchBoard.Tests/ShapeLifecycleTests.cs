@@ -333,9 +333,9 @@ public class ShapeLifecycleTests
     public void LoadShape_RoundTrips_Fiber_UsingConfiguredLayerUnits()
     {
         var layer = TestShapeLayer.Create();
-        layer.UnitsPerMillimeter = 1000;
-        layer.PixelPerUnit = 3410;
-        layer.UnitName = "um";
+        layer.Measurement.UnitsPerMillimeter = 1000;
+        layer.Measurement.PixelPerUnit = 3410;
+        layer.Measurement.UnitName = "um";
 
         var manager = new SketchBoardDataManager();
         manager.SetShapeLayer(layer);
