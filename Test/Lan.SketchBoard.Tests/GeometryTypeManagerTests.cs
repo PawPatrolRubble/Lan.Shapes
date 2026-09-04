@@ -2,8 +2,10 @@ using System;
 using System.Linq;
 using Lan.ImageViewer;
 using Lan.ImageViewer.Prism;
+using Lan.Shapes.DialogGeometry;
 using Lan.Shapes.Shapes;
 using Xunit;
+
 
 namespace Lan.SketchBoard.Tests;
 
@@ -22,6 +24,56 @@ public class GeometryTypeManagerTests
         Assert.Contains(nameof(Line), names);
         Assert.Contains(nameof(Rectangle), names);
     }
+
+    [Fact]
+    public void RegisterGeometryTypes_RegistersOnlyRequestedNames()
+    {
+        var manager = new GeometryTypeManager();
+
+        GeometryTypeRegistration.RegisterGeometryTypes(manager, new[] { nameof(Line), nameof(DxfGeometry) });
+
+        var names = manager.GetRegisteredGeometryTypes().ToArray();
+        Assert.Equal(new[] { nameof(Line), nameof(DxfGeometry) }, names);
+        Assert.Equal(typeof(Line), manager.GetGeometryTypeByName(nameof(Line)));
+        Assert.Equal(typeof(DxfGeometry), manager.GetGeometryTypeByName(nameof(DxfGeometry)));
+    }
+
+    [Fact]
+    public void RegisterGeometryTypes_NullNames_RegistersCatalog()
+    {
+        var manager = new GeometryTypeManager();
+
+        GeometryTypeRegistration.RegisterGeometryTypes(manager, null);
+
+        var names = manager.GetRegisteredGeometryTypes().ToArray();
+        Assert.Contains(nameof(Line), names);
+        Assert.Contains(nameof(Rectangle), names);
+        Assert.Contains(nameof(DxfGeometry), names);
+        Assert.Equal(GeometryTypeRegistration.Catalog.Count, names.Length);
+    }
+
+    [Fact]
+    public void RegisterGeometryTypes_EmptyNames_RegistersNothing()
+    {
+        var manager = new GeometryTypeManager();
+
+        GeometryTypeRegistration.RegisterGeometryTypes(manager, Array.Empty<string>());
+
+        Assert.Empty(manager.GetRegisteredGeometryTypes());
+    }
+
+    [Fact]
+    public void RegisterGeometryTypes_UnknownName_Throws()
+    {
+        var manager = new GeometryTypeManager();
+
+        var exception = Assert.Throws<ArgumentException>(() =>
+            GeometryTypeRegistration.RegisterGeometryTypes(manager, new[] { "NotAShape" }));
+
+        Assert.Contains("NotAShape", exception.Message);
+        Assert.Empty(manager.GetRegisteredGeometryTypes());
+    }
+
 
     [Fact]
     public void RegisterGeometryType_RejectsConflictingNames()
@@ -43,4 +95,5 @@ public class GeometryTypeManagerTests
         Assert.Throws<ArgumentException>(() =>
             manager.RegisterGeometryType("Invalid", typeof(string)));
     }
+
 }

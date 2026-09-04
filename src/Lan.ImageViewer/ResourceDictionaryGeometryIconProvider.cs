@@ -50,7 +50,6 @@ namespace Lan.ImageViewer
                 "ArrowedLine" when TryGet("Line", out geometry) => geometry,
                 "Fiber" when TryGet("Line", out geometry) => geometry,
                 "Cross" when TryGet("ThickenedCross", out geometry) => geometry,
-                "DxfGeometry" when TryGet("Save", out geometry) => geometry,
                 _ => null
             };
         }

@@ -23,7 +23,12 @@ namespace Lan.Shapes.App
         protected override void OnStartup(StartupEventArgs e)
         {
             ConfigServices();
-            ServiceProvider.GetService<IShapeLayerManager>().ReadShapeLayers("ShapeLayers.json");
+            var shapeLayerManager = ServiceProvider.GetRequiredService<IShapeLayerManager>();
+            shapeLayerManager.ReadConfiguration(
+                System.IO.Path.Combine(AppContext.BaseDirectory, "LanShapesConfig.json"));
+            GeometryTypeRegistration.RegisterGeometryTypes(
+                ServiceProvider.GetRequiredService<IGeometryTypeManager>(),
+                shapeLayerManager.Configuration.AvailableGeometryTypes);
             // Setup the Serilog logger
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
@@ -40,7 +45,7 @@ namespace Lan.Shapes.App
 
             //var config = new ConfigurationBuilder()
             //    .SetBasePath(Environment.CurrentDirectory)
-            //    .AddJsonFile("ShapeLayers.json").Build();
+            //    .AddJsonFile("LanShapesConfig.json").Build();
 
             //_serviceCollection.AddSingleton(config);
 
@@ -48,9 +53,7 @@ namespace Lan.Shapes.App
             _serviceCollection.AddSingleton<MainWindowViewModel>();
             _serviceCollection.AddSingleton<MainWindow>();
             _serviceCollection.AddSingleton<IShapeLayerManager, ShapeLayerManager>();
-            var geometryTypeManager = new GeometryTypeManager();
-            GeometryTypeRegistration.RegisterDefaultGeometryTypes(geometryTypeManager);
-            _serviceCollection.AddSingleton<IGeometryTypeManager>(geometryTypeManager);
+            _serviceCollection.AddSingleton<IGeometryTypeManager, GeometryTypeManager>();
             _serviceCollection.AddSingleton<IGeometryIconProvider, ResourceDictionaryGeometryIconProvider>();
             _serviceCollection.AddSingleton<IShapeStylerFactory, ShapeStylerFactory>();
             _serviceCollection.AddTransient<IImageViewerViewModel, ImageViewerControlViewModel>();

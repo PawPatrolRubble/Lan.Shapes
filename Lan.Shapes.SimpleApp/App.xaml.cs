@@ -94,14 +94,14 @@ namespace Lan.Shapes.SimpleApp
             if (IsLocalDebug())
             {
                 var builder = new ConfigurationBuilder()
-                    .SetBasePath(Environment.CurrentDirectory)
+                    .SetBasePath(AppContext.BaseDirectory)
                     .AddJsonFile("appsettings.local.json", false, true);
                 return builder.Build();
             }
             else
             {
                 var builder = new ConfigurationBuilder()
-                    .SetBasePath(Environment.CurrentDirectory)
+                    .SetBasePath(AppContext.BaseDirectory)
                     .AddJsonFile("appsettings.json", false, true);
                 return builder.Build();
             }

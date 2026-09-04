@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows.Media;
 using Lan.Shapes;
 using Lan.Shapes.Enums;
+using Lan.Shapes.Styler;
 using Xunit;
 
 namespace Lan.SketchBoard.Tests;
@@ -57,6 +58,26 @@ public class ShapeLayerTests
         _ = new ShapeLayer(parameter);
     }
 
+    [Fact]
+    public void IndependentCopiesShareGlobalMeasurementSettings()
+    {
+        var measurement = new ShapeMeasurementSettings
+        {
+            PixelPerUnit = 3410,
+            UnitsPerMillimeter = 1000,
+            UnitName = "um"
+        };
+        var layer = new ShapeLayer(
+            CreateParameter(includeSelected: true),
+            measurement,
+            new ShapeStylerFactory());
+
+        var copy = layer.CreateIndependentCopy();
+
+        Assert.Same(measurement, layer.Measurement);
+        Assert.Same(measurement, copy.Measurement);
+    }
+
     private static ShapeLayerParameter CreateParameter(
         bool includeSelected,
         bool includeMouseOver = false,
@@ -89,9 +110,6 @@ public class ShapeLayerTests
             Description = "Test layer",
             MaximumThickenedShapeWidth = 100,
             TagFontSize = 12,
-            UnitsPerMillimeter = 1,
-            PixelPerUnit = 1,
-            UnitName = "px",
             TextForeground = new SolidColorBrush(Colors.Black),
             BorderBackground = new SolidColorBrush(Colors.LightBlue),
             StyleSchema = schema

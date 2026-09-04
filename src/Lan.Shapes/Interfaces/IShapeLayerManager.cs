@@ -5,9 +5,24 @@ namespace Lan.Shapes.Interfaces
     public interface IShapeLayerManager
     {
         /// <summary>
-        /// read shape layers from config json file, it can be from IConfiguration or from a json file directly
+        /// Global Lan.Shapes configuration currently used by the layer collection.
         /// </summary>
-        /// <param name="configurationFilePath"></param>
+        LanShapesConfiguration Configuration { get; }
+
+        /// <summary>
+        /// Reads global measurement settings and shape layers from one config file.
+        /// </summary>
+        void ReadConfiguration(string configurationFilePath);
+
+        /// <summary>
+        /// Persists global measurement settings and current shape layers.
+        /// </summary>
+        void SaveConfiguration(string filePath = "");
+
+        /// <summary>
+        /// Compatibility alias for <see cref="ReadConfiguration"/>.
+        /// </summary>
+        [System.Obsolete("Use ReadConfiguration.")]
         void ReadShapeLayers(string configurationFilePath = "");
         
         /// <summary>
@@ -16,10 +31,10 @@ namespace Lan.Shapes.Interfaces
         ObservableCollection<ShapeLayer> Layers { get; }
 
         /// <summary>
-        /// persist any updated data for shape layers read from files 
+        /// Compatibility alias for <see cref="SaveConfiguration"/>.
         /// </summary>
-        /// <param name="filePath"></param>
-        void SaveLayerConfigurations(string filePath="");
+        [System.Obsolete("Use SaveConfiguration.")]
+        void SaveLayerConfigurations(string filePath = "");
 
     }
 }

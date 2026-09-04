@@ -52,7 +52,7 @@
       <None Update="996.png">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="ShapeLayers.json">
+      <None Update="LanShapesConfig.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="test0.bmp">
@@ -63,6 +63,6 @@
       </None>
     </ItemGroup>
 
-    <ProjectExtensions><VisualStudio><UserProperties shapelayers_1json__JsonSchema="https://blockprotocol.org/schemas/block-metadata.json" /></VisualStudio></ProjectExtensions>
+    <ProjectExtensions><VisualStudio><UserProperties lanshapesconfig_1json__JsonSchema="https://blockprotocol.org/schemas/block-metadata.json" /></VisualStudio></ProjectExtensions>
 
 </Project>

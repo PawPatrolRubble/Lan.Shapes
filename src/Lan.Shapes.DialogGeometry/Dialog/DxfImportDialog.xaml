@@ -9,10 +9,11 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Width="400"
     Height="250"
-    d:Background="White"
+    Background="{DynamicResource RegionBrush}"
     d:DataContext="{d:DesignInstance local:DxfImportDialogViewModel}"
     d:DesignHeight="250"
     d:DesignWidth="400"
+    Foreground="{DynamicResource PrimaryTextBrush}"
     mc:Ignorable="d">
     <UserControl.Resources>
         <ResourceDictionary>
@@ -48,12 +49,13 @@
         <hc:TextBox
             Margin="5"
             hc:InfoElement.HorizontalAlignment="Right"
-            hc:InfoElement.ShowClearButton="True"
+            hc:InfoElement.ShowClearButton="False"
             hc:InfoElement.Title="Pixel/MM"
             hc:InfoElement.TitlePlacement="Left"
             hc:InfoElement.TitleWidth="80"
             FontSize="16"
-            Text="{Binding PixelToMmFactor}">
+            IsReadOnly="True"
+            Text="{Binding PixelToMmFactor, Mode=OneWay}">
             <hc:TextBox.InputBindings>
                 <KeyBinding Key="Enter" Command="{Binding CloseCommand}" />
             </hc:TextBox.InputBindings>

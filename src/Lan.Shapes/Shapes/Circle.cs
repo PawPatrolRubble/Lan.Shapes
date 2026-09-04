@@ -144,13 +144,14 @@ namespace Lan.Shapes.Shapes
         private void AddRadiusText(DrawingContext renderContext)
         {
             var lengthInMm = 0.0;
-            if (ShapeLayer.UnitsPerMillimeter != 0 && ShapeLayer.PixelPerUnit != 0)
+            var measurement = ShapeLayer.Measurement;
+            if (measurement.UnitsPerMillimeter != 0 && measurement.PixelPerUnit != 0)
             {
-                lengthInMm = Radius * ShapeLayer.UnitsPerMillimeter / ShapeLayer.PixelPerUnit;
+                lengthInMm = Radius * measurement.UnitsPerMillimeter / measurement.PixelPerUnit;
             }
 
             var formattedText = CreateFormattedText(
-                $"{lengthInMm:f4} {ShapeLayer.UnitName}, {Radius:f4} px",
+                $"{lengthInMm:f4} {measurement.UnitName}, {Radius:f4} px",
                 ShapeStyler?.TagColor ?? Brushes.Red);
 
             renderContext.DrawText(formattedText, new Point(Center.X, Center.Y));

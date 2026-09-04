@@ -540,10 +540,11 @@ namespace Lan.Shapes.Custom
 
         private void DrawCircleText(DrawingContext renderContext)
         {
-            double rScaled = FilletRadius * ShapeLayer.UnitsPerMillimeter / ShapeLayer.PixelPerUnit;
+            var measurement = ShapeLayer.Measurement;
+            double rScaled = FilletRadius * measurement.UnitsPerMillimeter / measurement.PixelPerUnit;
 
             FormattedText fmtRadius = new FormattedText(
-                $"radius: {rScaled:f0} {ShapeLayer.UnitName}",
+                $"radius: {rScaled:f0} {measurement.UnitName}",
                 CultureInfo.GetCultureInfo("en-us"),
                 FlowDirection.LeftToRight,
                 new Typeface("Verdana"),
@@ -561,10 +562,10 @@ namespace Lan.Shapes.Custom
                 96.0);
 
             double width = Math.Sqrt(Math.Pow(RectTopLeft.X - RectTopRight.X, 2.0) + Math.Pow(RectTopLeft.Y - RectTopRight.Y, 2.0));
-            double wScaled = width * ShapeLayer.UnitsPerMillimeter / ShapeLayer.PixelPerUnit;
+            double wScaled = width * measurement.UnitsPerMillimeter / measurement.PixelPerUnit;
 
             FormattedText fmtWidth = new FormattedText(
-                $"width: {wScaled:f0} {ShapeLayer.UnitName}",
+                $"width: {wScaled:f0} {measurement.UnitName}",
                 CultureInfo.GetCultureInfo("en-us"),
                 FlowDirection.LeftToRight,
                 new Typeface("Verdana"),
@@ -605,6 +606,7 @@ namespace Lan.Shapes.Custom
 
         private void DrawRectText(DrawingContext renderContext)
         {
+            var measurement = ShapeLayer.Measurement;
             FormattedText fmtAngle = new FormattedText(
                 $"Angle: {GetFiberAngleInDeg():f2}°",
                 CultureInfo.GetCultureInfo("en-us"),
@@ -615,10 +617,10 @@ namespace Lan.Shapes.Custom
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
             double height = Math.Sqrt(Math.Pow(RectTopLeft.X - RectBottomLeft.X, 2.0) + Math.Pow(RectTopLeft.Y - RectBottomLeft.Y, 2.0));
-            double hScaled = height * ShapeLayer.UnitsPerMillimeter / ShapeLayer.PixelPerUnit;
+            double hScaled = height * measurement.UnitsPerMillimeter / measurement.PixelPerUnit;
 
             FormattedText fmtHeight = new FormattedText(
-                $"Height: {hScaled:f0} {ShapeLayer.UnitName}",
+                $"Height: {hScaled:f0} {measurement.UnitName}",
                 CultureInfo.GetCultureInfo("en-us"),
                 FlowDirection.LeftToRight,
                 new Typeface("Verdana"),
