@@ -9,7 +9,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 
 using Lan.Shapes.DialogGeometry.Dialog;
+using Lan.Shapes.Enums;
 using Lan.Shapes.Handle;
+using Lan.Shapes.Interfaces;
 using Lan.Shapes.Shapes;
 
 using Microsoft.Win32;
@@ -23,8 +25,13 @@ using Point = System.Windows.Point;
 
 namespace Lan.Shapes.DialogGeometry
 {
-    public class DxfGeometry : ShapeVisualBase
+    public class DxfGeometry : ShapeVisualBase, IBoardContextAware
     {
+        private const int RotationHandleId = 100;
+        private const int TranslateHandleId = 101;
+        private const double RotationBarScreenLength = 50.0;
+        private const double TranslateHandleSizeMultiplier = 1.5;
+
         #region constructor
 
         private readonly IDxfDocumentService _dxfDocumentService;
@@ -49,6 +56,8 @@ namespace Lan.Shapes.DialogGeometry
         private DxfDocument? _originalDxfDoc;
         private Point _initialOffset;
         private Matrix _accumulatedWpfTransform = Matrix.Identity;
+        private double _boardWidth;
+        private double _boardHeight;
 
         #endregion
 
@@ -62,6 +71,35 @@ namespace Lan.Shapes.DialogGeometry
         protected override void CreateHandles()
         {
             // handles are creating during ReadDxfFile
+        }
+
+        protected override bool AreDragHandlesActive => !IsLocked;
+
+        private bool AreSelectionHandlesVisible =>
+            !IsGeometryRendered || State == ShapeVisualState.Selected;
+
+        protected override void OnDragHandleSizeChanges(double dragHandleSize)
+        {
+            base.OnDragHandleSizeChanges(dragHandleSize);
+
+            var translateHandle = Handles.FirstOrDefault(h => h.Id == TranslateHandleId);
+            if (translateHandle != null)
+            {
+                var translateHandleSize = dragHandleSize * TranslateHandleSizeMultiplier;
+                translateHandle.HandleSize = new Size(translateHandleSize, translateHandleSize);
+            }
+        }
+
+        protected override void OnViewportScaleChanged(double viewportScale)
+        {
+            UpdateHandleLocation();
+        }
+
+        private Point GetRotationHandleCenter(Rect bounds)
+        {
+            return new Point(
+                (bounds.Left + bounds.Right) / 2,
+                bounds.Top - RotationBarScreenLength / ViewportScale);
         }
 
         private void UpdateHandleLocation()
@@ -90,11 +128,35 @@ namespace Lan.Shapes.DialogGeometry
                 {
                     h.GeometryCenter = bounds.BottomLeft;
                 }
-                else if (h.Id == 100)
+                else if (h.Id == TranslateHandleId)
                 {
-                    h.GeometryCenter = new Point((bounds.Left + bounds.Right) / 2, bounds.Top - 30);
+                    h.GeometryCenter = new Point(
+                        (bounds.Left + bounds.Right) / 2,
+                        (bounds.Top + bounds.Bottom) / 2);
+                }
+                else if (h.Id == RotationHandleId)
+                {
+                    h.GeometryCenter = GetRotationHandleCenter(bounds);
                 }
             }
+        }
+
+        public override DragHandle? FindDragHandleMouseOver(Point p)
+        {
+            if (IsLocked)
+            {
+                return null;
+            }
+
+            var translateHandle = Handles.FirstOrDefault(h => h.Id == TranslateHandleId);
+            if (translateHandle?.FillContains(p) == true)
+            {
+                return translateHandle;
+            }
+
+            return AreSelectionHandlesVisible
+                ? base.FindDragHandleMouseOver(p)
+                : null;
         }
 
         protected override void HandleResizing(Point point)
@@ -110,7 +172,7 @@ namespace Lan.Shapes.DialogGeometry
                 return;
             }
 
-            if (SelectedDragHandle.Id == 100) // Rotation handle
+            if (SelectedDragHandle.Id == RotationHandleId)
             {
                 var center = new Point((oldBounds.Left + oldBounds.Right) / 2, (oldBounds.Top + oldBounds.Bottom) / 2);
                 if (OldPointForTranslate.HasValue)
@@ -319,42 +381,55 @@ namespace Lan.Shapes.DialogGeometry
             }
 
             var renderContext = RenderOpen();
-
-            // Draw a background rectangle using the shape's bounds to make the inner area clickable
             var bounds = BoundsRect;
-            if (!bounds.IsEmpty && bounds.Width > 0 && bounds.Height > 0)
-            {
-                // Use a transparent or very light fill color so it's clickable
-                Brush backgroundBrush = Brushes.Transparent;
-                if (ShapeStyler.FillColor != null)
-                {
-                    var tint = ShapeStyler.FillColor.CloneCurrentValue();
-                    tint.Opacity = 0.1; // Slight tint if there is a fill color
-                    backgroundBrush = tint;
-                }
-
-                renderContext.DrawRectangle(backgroundBrush, null, bounds);
-            }
 
             renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometry);
 
-            if (!bounds.IsEmpty && bounds.Width > 0 && bounds.Height > 0 && ShapeStyler.SketchPen != null)
+            if (AreSelectionHandlesVisible &&
+                !bounds.IsEmpty && bounds.Width > 0 && bounds.Height > 0 && ShapeStyler.SketchPen != null)
             {
                 var topCenter = new Point((bounds.Left + bounds.Right) / 2, bounds.Top);
-                var handleCenter = new Point((bounds.Left + bounds.Right) / 2, bounds.Top - 30);
+                var handleCenter = GetRotationHandleCenter(bounds);
                 renderContext.DrawLine(ShapeStyler.SketchPen, topCenter, handleCenter);
             }
 
-            DrawDragHandles(renderContext);
+            DrawVisibleHandles(renderContext);
 
             renderContext.Close();
+        }
+
+        private void DrawVisibleHandles(DrawingContext renderContext)
+        {
+            if (!AreDragHandlesActive)
+            {
+                return;
+            }
+
+            var fill = GetDragHandleFill();
+            var pen = GetDragHandlePen();
+            foreach (var handle in Handles)
+            {
+                if ((AreSelectionHandlesVisible || handle.Id == TranslateHandleId) &&
+                    handle.HandleGeometry != null)
+                {
+                    renderContext.DrawGeometry(fill, pen, handle.HandleGeometry);
+                }
+            }
         }
 
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
             if (IsGeometryRendered && buttonState == MouseButtonState.Pressed)
             {
-                if (SelectedDragHandle != null)
+                if (SelectedDragHandle?.Id == TranslateHandleId)
+                {
+                    IsBeingDraggedOrPanMoving = true;
+                    UpdateMouseCursor(DragLocation.Move);
+                    HandleTranslate(point);
+                    UpdateGeometryGroup();
+                    UpdateVisual();
+                }
+                else if (SelectedDragHandle != null)
                 {
                     IsBeingDraggedOrPanMoving = true;
                     HandleResizing(point);
@@ -490,17 +565,12 @@ namespace Lan.Shapes.DialogGeometry
                         }
                     });
             }
-            else
-            {
-                foreach (var dragHandle in Handles)
-                {
-                    if (dragHandle.FillContains(mousePoint))
-                    {
-                        SelectedDragHandle = dragHandle;
-                        break;
-                    }
-                }
-            }
+        }
+
+        public void OnBoardContextAvailable(double boardWidth, double boardHeight)
+        {
+            _boardWidth = boardWidth;
+            _boardHeight = boardHeight;
         }
 
         private double _dxfRenderScale = 1.0;
@@ -508,8 +578,8 @@ namespace Lan.Shapes.DialogGeometry
         private void ReadDxfFile(string filePath, Point offset, double pixelToMmFactor = 1.0)
         {
             var doc = _dxfDocumentService.Load(filePath);
-            _originalDxfDoc = _dxfDocumentService.Load(filePath);
-            _initialOffset = offset;
+            _originalDxfDoc = doc;
+            _initialOffset = default;
             _accumulatedWpfTransform = Matrix.Identity;
             var dpiScale = 1.0;
             if (Application.Current != null && Application.Current.MainWindow != null)
@@ -523,12 +593,24 @@ namespace Lan.Shapes.DialogGeometry
             double actualScale = pixelToMmFactor / dpiScale;
             _dxfRenderScale = actualScale;
 
-            _geometry = DxfRenderer.BuildGeometry(doc, actualScale, offset);
+            _geometry = DxfRenderer.BuildGeometry(doc, actualScale);
 
             _dxfGeometryWrapper = new GeometryGroup();
             if (_geometry != null)
             {
                 _dxfGeometryWrapper.Children.Add(_geometry);
+
+                var geometryBounds = _geometry.Bounds;
+                var targetCenter = _boardWidth > 0 && _boardHeight > 0
+                    ? new Point(_boardWidth / 2, _boardHeight / 2)
+                    : offset;
+                var translation = geometryBounds.IsEmpty
+                    ? (Vector)targetCenter
+                    : targetCenter - new Point(
+                        geometryBounds.Left + geometryBounds.Width / 2,
+                        geometryBounds.Top + geometryBounds.Height / 2);
+
+                _dxfGeometryWrapper.Transform = new TranslateTransform(translation.X, translation.Y);
             }
 
             var dragHandleSize = ShapeStyler?.DragHandleSize ?? 10;
@@ -539,9 +621,19 @@ namespace Lan.Shapes.DialogGeometry
             RegisterHandle(new RectDragHandle(dragHandleSize, bounds.BottomRight, DragLocation.BottomRight));
             RegisterHandle(new RectDragHandle(dragHandleSize, bounds.BottomLeft, DragLocation.BottomLeft));
 
+            var center = new Point(
+                (bounds.Left + bounds.Right) / 2,
+                (bounds.Top + bounds.Bottom) / 2);
+            var translateHandleSize = dragHandleSize * TranslateHandleSizeMultiplier;
+            RegisterHandle(new RectDragHandle(
+                new Size(translateHandleSize, translateHandleSize),
+                center,
+                10,
+                TranslateHandleId,
+                DragLocation.Move));
+
             // Add a rotation handle above the center
-            RegisterHandle(new RectDragHandle(dragHandleSize, new Point((bounds.Left + bounds.Right) / 2, bounds.Top - 30),
-                100));
+            RegisterHandle(new RectDragHandle(dragHandleSize, GetRotationHandleCenter(bounds), RotationHandleId));
 
             RenderGeometryGroup.Children.Add(_dxfGeometryWrapper);
         }

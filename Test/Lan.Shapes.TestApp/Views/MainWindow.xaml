@@ -78,6 +78,8 @@
                 <Button Command="{Binding SetTagNameCommand}" Content="Set Tag" />
                 <Button Command="{Binding ClearAllShapesCommand}" Content="clear all" />
 
+                <Button Command="{Binding ChooseFileDialogCommand}" Content="Select Background Image..." />
+
                 <TextBox VerticalAlignment="Center" Text="{Binding ImagePath}">
 
                     <TextBox.InputBindings>

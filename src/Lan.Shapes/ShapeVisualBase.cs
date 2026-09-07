@@ -35,6 +35,7 @@ namespace Lan.Shapes
                 { DragLocation.BottomLeft, Cursors.SizeNESW },
                 { DragLocation.LeftMiddle, Cursors.SizeWE },
                 { DragLocation.Rotate, Cursors.Hand },
+                { DragLocation.Move, Cursors.SizeAll },
             };
 
         #endregion
