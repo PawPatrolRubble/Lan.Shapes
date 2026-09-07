@@ -717,7 +717,13 @@
                 HorizontalAlignment="Center"
                 Data="{Binding IconGeometry}"
                 Stretch="Uniform"
-                StrokeThickness="1" />
+                StrokeThickness="1">
+                <Path.Style>
+                    <Style TargetType="Path">
+                        <Setter Property="Fill" Value="Black" />
+                    </Style>
+                </Path.Style>
+            </Path>
 
         </Border>
 

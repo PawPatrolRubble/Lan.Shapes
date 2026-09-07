@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
 
@@ -28,6 +29,13 @@ namespace Lan.ImageViewer
         public ResourceDictionaryGeometryIconProvider(ResourceDictionary resources)
         {
             _resources = resources ?? throw new ArgumentNullException(nameof(resources));
+            if(_resources.Count==0)
+            {
+                _resources = TryLoadDefaultResources();
+
+                Debug.WriteLine($"hashcode of _resource is : {_resources.GetHashCode()}");
+            }
+            ;
         }
 
         /// <inheritdoc />
@@ -56,6 +64,8 @@ namespace Lan.ImageViewer
 
         private bool TryGet(string key, out Geometry? geometry)
         {
+
+            Debug.WriteLine($"hashcode of _resource is : {_resources.GetHashCode()}");
             if (_resources.Contains(key) && _resources[key] is Geometry g)
             {
                 geometry = g;
