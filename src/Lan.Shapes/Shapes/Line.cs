@@ -109,6 +109,7 @@ namespace Lan.Shapes.Shapes
 
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
+            _showText = true;
             base.OnMouseLeftButtonDown(mousePoint);
             if (!IsGeometryRendered)
             {
@@ -163,10 +164,13 @@ namespace Lan.Shapes.Shapes
             }
         }
 
+        private bool _showText = true;
+
         public override void OnMouseLeftButtonUp(Point newPoint)
         {
             base.OnMouseLeftButtonUp(newPoint);
             SelectedDragHandle = null;
+            _showText = false;
         }
 
         #endregion
@@ -184,7 +188,7 @@ namespace Lan.Shapes.Shapes
             }
 
             var formattedText = CreateFormattedText(
-                $"{lengthInMm:f4} {measurement.UnitName}, {length:f4} px",
+                $"{lengthInMm:f3} {measurement.UnitName}",
                 ShapeStyler?.TagColor ?? Brushes.Red);
 
             renderContext.DrawText(formattedText, new Point((Start.X + End.X) / 2, (Start.Y + End.Y) / 2));
@@ -207,7 +211,11 @@ namespace Lan.Shapes.Shapes
             var renderContext = RenderOpen();
             renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometryGroup);
             DrawDragHandles(renderContext);
-            DrawLengthText(renderContext);
+            if (_showText)
+            {
+                DrawLengthText(renderContext);
+            }
+
             renderContext.Close();
         }
 

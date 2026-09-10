@@ -4,6 +4,7 @@
     "Cross",
     "Line",
     "Rectangle",
+    "Fiber",
     "Rectangle2",
     "DxfGeometry"
   ],

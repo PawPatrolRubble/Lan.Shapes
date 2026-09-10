@@ -17,7 +17,7 @@ namespace Lan.Shapes.Custom
         private readonly RectDragHandle _bottomRightHandle;
         private readonly LineGeometry _centerMarkHorizontal;
         private readonly LineGeometry _centerMarkVertical;
-        private readonly int _crossSize = 40;
+        private readonly int _crossSize = 5;
         private readonly RectDragHandle _filletRadiusHandle;
         private readonly PathFigure _pathFigure;
         private readonly PathGeometry _pathGeometry;
@@ -26,6 +26,7 @@ namespace Lan.Shapes.Custom
         private readonly RectDragHandle _topRightHandle;
         private readonly RectDragHandle _triangleLeftBaseHandle;
         private readonly RectDragHandle _triangleRightBaseHandle;
+        private readonly RectDragHandle _translationHandle;
         private bool _enableTranslation = true;
         private double _fiberAngle;
         private double _filletRadius = 30.0;
@@ -127,6 +128,7 @@ namespace Lan.Shapes.Custom
             _triangleRightBaseHandle = RectDragHandle.CreateRectDragHandleFromStyler(styler, new Point(), 8);
             _filletRadiusHandle = RectDragHandle.CreateRectDragHandleFromStyler(styler, new Point(), 9);
             _rotationHandle = RectDragHandle.CreateRectDragHandleFromStyler(styler, new Point(), 10);
+            _translationHandle = RectDragHandle.CreateRectDragHandleFromStyler(styler, new Point(), DragLocation.Move);
 
             _pathGeometry = new PathGeometry();
             _pathFigure = new PathFigure();
@@ -143,7 +145,8 @@ namespace Lan.Shapes.Custom
             foreach (var handle in new DragHandle[]
                      {
                          _topLeftHandle, _topRightHandle, _bottomLeftHandle, _bottomRightHandle,
-                         _triangleLeftBaseHandle, _triangleRightBaseHandle, _filletRadiusHandle, _rotationHandle
+                         _triangleLeftBaseHandle, _triangleRightBaseHandle, _filletRadiusHandle, _rotationHandle,
+                         _translationHandle
                      })
             {
                 RegisterHandle(handle);
@@ -261,6 +264,9 @@ namespace Lan.Shapes.Custom
             _triangleLeftBaseHandle.GeometryCenter = pointLine1AnglePoint1;
             _triangleRightBaseHandle.GeometryCenter = pointLine1AnglePoint2;
             _rotationHandle.GeometryCenter = point8;
+            _translationHandle.GeometryCenter = new Point(
+                (RectTopLeft.X + RectBottomRight.X) / 2.0,
+                (RectTopLeft.Y + RectBottomRight.Y) / 2.0);
 
             _fiberAngle = GetFiberAngleInDeg();
             UpdateVisual();
@@ -399,11 +405,10 @@ namespace Lan.Shapes.Custom
                             OldPointForTranslate = point;
                         }
                         break;
+                    case (int)DragLocation.Move:
+                        HandleTranslate(point);
+                        break;
                 }
-            }
-            else
-            {
-                HandleTranslate(point);
             }
         }
 
@@ -514,12 +519,18 @@ namespace Lan.Shapes.Custom
             if (ShapeStyler == null)
                 return;
             DrawingContext renderContext = RenderOpen();
+            Pen fiberPen = ShapeStyler.SketchPen.Clone();
+            fiberPen.Thickness *= 0.5;
             renderContext.DrawGeometry(Brushes.Transparent, null, RenderGeometry);
-            renderContext.DrawGeometry(null, ShapeStyler.SketchPen, RenderGeometry);
+            renderContext.DrawGeometry(null, fiberPen, _pathGeometry);
+            renderContext.DrawGeometry(null, fiberPen, _centerMarkHorizontal);
+            renderContext.DrawGeometry(null, fiberPen, _centerMarkVertical);
             if (FilletRadius > 0.0)
             {
+                Pen filletPen = fiberPen.Clone();
+                filletPen.DashStyle = DashStyles.Dash;
                 renderContext.DrawGeometry(Brushes.Transparent, null, _filletGeometry);
-                renderContext.DrawGeometry(null, ShapeStyler.SketchPen, _filletGeometry);
+                renderContext.DrawGeometry(null, filletPen, _filletGeometry);
             }
             DrawDragHandles(renderContext);
             DrawAnnotationText(renderContext);
