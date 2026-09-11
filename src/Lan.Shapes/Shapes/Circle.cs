@@ -150,7 +150,7 @@ namespace Lan.Shapes.Shapes
             }
 
             var formattedText = CreateFormattedText(
-                $"{lengthInMm:f4} {measurement.UnitName}, {Radius:f4} px",
+                $"{lengthInMm:f3} {measurement.UnitName}",
                 ShapeStyler?.TagColor ?? Brushes.Red);
 
             renderContext.DrawText(formattedText, new Point(Center.X, Center.Y));

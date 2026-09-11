@@ -18,6 +18,7 @@ namespace Lan.Shapes.Custom
         private readonly LineGeometry _centerMarkHorizontal;
         private readonly LineGeometry _centerMarkVertical;
         private readonly int _crossSize = 5;
+        private static readonly DashStyle FilletDashStyle = CreateFilletDashStyle();
         private readonly RectDragHandle _filletRadiusHandle;
         private readonly PathFigure _pathFigure;
         private readonly PathGeometry _pathGeometry;
@@ -514,6 +515,13 @@ namespace Lan.Shapes.Custom
 
         private double AngleToRadian(double angle) => angle * Math.PI / 180.0;
 
+        private static DashStyle CreateFilletDashStyle()
+        {
+            var dashStyle = new DashStyle(new double[] { 8, 4 }, 0);
+            dashStyle.Freeze();
+            return dashStyle;
+        }
+
         public override void UpdateVisual()
         {
             if (ShapeStyler == null)
@@ -528,7 +536,7 @@ namespace Lan.Shapes.Custom
             if (FilletRadius > 0.0)
             {
                 Pen filletPen = fiberPen.Clone();
-                filletPen.DashStyle = DashStyles.Dash;
+                filletPen.DashStyle = FilletDashStyle;
                 renderContext.DrawGeometry(Brushes.Transparent, null, _filletGeometry);
                 renderContext.DrawGeometry(null, filletPen, _filletGeometry);
             }
