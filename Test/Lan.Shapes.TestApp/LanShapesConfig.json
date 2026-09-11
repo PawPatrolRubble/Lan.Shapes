@@ -8,6 +8,7 @@
     "Rectangle2",
     "DxfGeometry"
   ],
+  "ShowCrossLine": false,
   "Measurement": {
     "PixelPerUnit": 3410,
     "UnitsPerMillimeter": 1000,

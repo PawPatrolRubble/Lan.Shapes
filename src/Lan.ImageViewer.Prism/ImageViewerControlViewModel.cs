@@ -32,6 +32,7 @@ namespace Lan.ImageViewer.Prism
         private Point _mouseDoubleClickPosition;
         private ImageSource _image = new BitmapImage();
         private bool _hideShapeList;
+        private bool _showCrossLine = true;
         private ObservableCollection<GeometryType> _geometryTypeList = new();
 
         public ImageViewerControlViewModel(
@@ -69,6 +70,7 @@ namespace Lan.ImageViewer.Prism
 
             Scale = 1;
             ShowSimpleCanvas = true;
+            ShowCrossLine = _shapeLayerManager.Configuration.ShowCrossLine;
             CreateGeometryTypeList();
             Image = CreateEmptyImageSource(2048, 2048);
 
@@ -202,6 +204,12 @@ namespace Lan.ImageViewer.Prism
         }
 
         public bool ShowShapeTypes { get; set; } = true;
+
+        public bool ShowCrossLine
+        {
+            get => _showCrossLine;
+            set => SetProperty(ref _showCrossLine, value);
+        }
 
         public void FilterGeometryTypes(Expression<Func<GeometryType, bool>> predicate)
         {

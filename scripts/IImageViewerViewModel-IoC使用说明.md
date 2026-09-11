@@ -39,6 +39,7 @@ public interface IImageViewerViewModel
     ICommand DeleteShapeCommand { get; }  // deletes SelectedShape
     bool ShowSimpleCanvas { get; set; }
     bool ShowShapeTypes { get; set; }
+    bool ShowCrossLine { get; set; }
     void FilterGeometryTypes(Expression<Func<GeometryType, bool>> predicate);
 }
 ```
@@ -83,7 +84,7 @@ public void RegisterTypes(IContainerRegistry containerRegistry)
 | `IShapeStylerFactory` | 层样式构建；`ShapeLayerManager` 构造层时注入 |
 | `IShapeRepository` | 与 fat manager **同一实例**，形状状态用 |
 
-`OnInitialized` 从 `LanShapesConfig.json` 的 `AvailableGeometryTypes` 读取调色板类型名并注册。缺省该键时注册完整 catalog；未知类型名启动失败。
+`OnInitialized` 从 `LanShapesConfig.json` 的 `AvailableGeometryTypes` 读取调色板类型名并注册。缺省该键时注册完整 catalog；未知类型名启动失败。`ShowCrossLine` 缺省为 `true`，由 VM 绑定到图像查看器十字线。
 
 
 注册为 **transient** 生命周期（每次解析返回新实例）的是 VM / board manager；图标与 styler factory 为 **singleton**。

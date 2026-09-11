@@ -59,6 +59,7 @@ public class ShapeLayerManagerTests
             var configuration = new LanShapesConfiguration
             {
                 AvailableGeometryTypes = new List<string> { "Line", "DxfGeometry" },
+                ShowCrossLine = false,
                 Measurement = new ShapeMeasurementSettings
                 {
                     PixelPerUnit = 3410,
@@ -81,6 +82,7 @@ public class ShapeLayerManagerTests
             Assert.Equal(
                 new[] { "Line", "DxfGeometry" },
                 saved["AvailableGeometryTypes"]?.Values<string>());
+            Assert.False(saved["ShowCrossLine"]?.Value<bool>());
             Assert.Null(saved["ShapeLayers"]?[0]?["PixelPerUnit"]);
             Assert.Null(saved["ShapeLayers"]?[0]?["UnitsPerMillimeter"]);
             Assert.Null(saved["ShapeLayers"]?[0]?["UnitName"]);
@@ -155,7 +157,36 @@ public class ShapeLayerManagerTests
             manager.ReadConfiguration(path);
 
             Assert.Null(manager.Configuration.AvailableGeometryTypes);
+            Assert.True(manager.Configuration.ShowCrossLine);
             Assert.Single(manager.Layers);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void ReadConfiguration_MissingShowCrossLineDefaultsToTrue()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            var configuration = JObject.FromObject(new LanShapesConfiguration
+            {
+                Measurement = new ShapeMeasurementSettings(),
+                ShapeLayers = new List<ShapeLayerParameter>
+                {
+                    TestShapeLayer.Create().ToShapeLayerParameter()
+                }
+            });
+            configuration.Remove(nameof(LanShapesConfiguration.ShowCrossLine));
+            File.WriteAllText(path, configuration.ToString());
+            var manager = new ShapeLayerManager();
+
+            manager.ReadConfiguration(path);
+
+            Assert.True(manager.Configuration.ShowCrossLine);
         }
         finally
         {

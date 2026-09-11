@@ -56,13 +56,14 @@ Camera1 = ContainerLocator.Container.Resolve<IImageViewerViewModel>();
 | `IShapeRepository` | same instance as the fat manager |
 
 Lan.Shapes configuration is loaded from `lanShapesConfigPath`. The allowed palette types,
-measurement calibration, and per-layer styling all live in that dedicated file. A missing
-`AvailableGeometryTypes` value registers the full catalog; `[]` registers none. Unknown
-names fail at startup.
+crosshair overlay, measurement calibration, and per-layer styling all live in that dedicated
+file. A missing `AvailableGeometryTypes` value registers the full catalog; `[]` registers none.
+Unknown names fail at startup. A missing `ShowCrossLine` value defaults to true.
 
 ```json
 {
   "AvailableGeometryTypes": [ "Line", "Rectangle", "Rectangle2", "Circle", "Cross", "DxfGeometry" ],
+  "ShowCrossLine": true,
   "Measurement": {
     "PixelPerUnit": 3410,
     "UnitsPerMillimeter": 1000,

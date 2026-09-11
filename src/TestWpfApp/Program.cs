@@ -138,6 +138,7 @@ RunTest("LanShapesConfig.json deserialization", () =>
     AssertEqual(1000, configuration.Measurement.UnitsPerMillimeter, "global UnitsPerMillimeter = 1000");
     AssertEqual(3410d, configuration.Measurement.PixelPerUnit, "global PixelPerUnit = 3410");
     AssertEqual("um", configuration.Measurement.UnitName, "global UnitName = 'um'");
+    AssertTrue(configuration.ShowCrossLine, "ShowCrossLine defaults to true");
 
     foreach (var layer in configuration.ShapeLayers)
     {

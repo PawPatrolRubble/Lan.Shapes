@@ -83,7 +83,7 @@
                 ImageSource="{Binding Image, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                 MouseDoubleClickPosition="{Binding MouseDoubleClickPosition, UpdateSourceTrigger=PropertyChanged, Mode=OneWayToSource}"
                 Scale="{Binding Scale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                ShowCrossLine="True"
+                ShowCrossLine="{Binding ShowCrossLine}"
                 SketchBoardDataManager="{Binding SketchBoardDataManager}"
                 StrokeThickness="1"
                 Style="{StaticResource ImageViewer.Compact}" />

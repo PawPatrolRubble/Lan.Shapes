@@ -7,6 +7,7 @@
     "Cross",
     "DxfGeometry"
   ],
+  "ShowCrossLine": true,
   "Measurement": {
     "PixelPerUnit": 3410,
     "UnitsPerMillimeter": 1000,

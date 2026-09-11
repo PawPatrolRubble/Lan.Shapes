@@ -95,6 +95,7 @@ public class FiberDataPipelineTests
         Assert.AreEqual(1000, configuration.Measurement.UnitsPerMillimeter);
         Assert.AreEqual(3410, configuration.Measurement.PixelPerUnit);
         Assert.AreEqual("um", configuration.Measurement.UnitName);
+        Assert.IsTrue(configuration.ShowCrossLine);
 
         foreach (var layer in configuration.ShapeLayers)
         {

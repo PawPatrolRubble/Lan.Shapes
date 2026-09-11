@@ -73,6 +73,9 @@ namespace Lan.ImageViewer
         /// <summary>Controls visibility of geometry-type tools.</summary>
         bool ShowShapeTypes { get; set; }
 
+        /// <summary>When true, the image viewer draws the center crosshair overlay.</summary>
+        bool ShowCrossLine { get; set; }
+
         /// <summary>Filters the geometry-type palette by the given predicate.</summary>
         void FilterGeometryTypes(Expression<Func<GeometryType, bool>> predicate);
 

@@ -16,6 +16,12 @@ namespace Lan.Shapes
         /// </summary>
         public List<string>? AvailableGeometryTypes { get; set; }
 
+        /// <summary>
+        /// When true, the image viewer draws the center crosshair overlay.
+        /// Missing JSON values default to true.
+        /// </summary>
+        public bool ShowCrossLine { get; set; } = true;
+
         public ShapeMeasurementSettings Measurement { get; set; } = new ShapeMeasurementSettings();
         public List<ShapeLayerParameter> ShapeLayers { get; set; } = new List<ShapeLayerParameter>();
 

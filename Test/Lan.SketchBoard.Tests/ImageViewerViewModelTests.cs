@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.IO;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
@@ -8,6 +10,7 @@ using Lan.Shapes;
 using Lan.Shapes.Interfaces;
 using Lan.Shapes.Shapes;
 using Lan.SketchBoard;
+using Newtonsoft.Json;
 using Xunit;
 namespace Lan.SketchBoard.Tests;
 
@@ -128,6 +131,39 @@ public class ImageViewerViewModelTests
         Assert.Equal(
             new[] { nameof(Line), nameof(Circle) },
             vm.GeometryTypeList.Select(x => x.Name).ToArray());
+    }
+
+    [Fact]
+    public void ShowCrossLine_ReadsFromLoadedConfiguration()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            var configuration = new LanShapesConfiguration
+            {
+                ShowCrossLine = false,
+                Measurement = new ShapeMeasurementSettings(),
+                ShapeLayers = new List<ShapeLayerParameter>
+                {
+                    TestShapeLayer.Create().ToShapeLayerParameter()
+                }
+            };
+            File.WriteAllText(path, JsonConvert.SerializeObject(configuration));
+
+            var layerManager = new ShapeLayerManager();
+            layerManager.ReadConfiguration(path);
+
+            var vm = new ImageViewerControlViewModel(
+                layerManager,
+                new SketchBoardDataManager(),
+                new GeometryTypeManager());
+
+            Assert.False(vm.ShowCrossLine);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     private static (ImageViewerControlViewModel Vm, SketchBoardDataManager Manager, ShapeLayer Layer)
