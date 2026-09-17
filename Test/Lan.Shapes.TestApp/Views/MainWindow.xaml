@@ -49,6 +49,7 @@
 
                 <imageViewer:ImageViewerControl
                     Margin="5"
+                    ShowCrossLine="True"
                     DataContext="{Binding SelectedImageViewModel}"
                     Loaded="FrameworkElement_OnLoaded" />
 
