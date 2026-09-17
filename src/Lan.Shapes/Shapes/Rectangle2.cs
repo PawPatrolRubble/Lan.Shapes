@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -17,6 +18,8 @@ namespace Lan.Shapes.Shapes
     /// </summary>
     public class Rectangle2 : ShapeVisualBase, IDataExport<Rectangle2Data>
     {
+        public override IEnumerable<Point> GetSnapPoints() => Rectangle2Math.GetCorners(Center, Phi, Length1, Length2);
+
         private const int TopLeftHandleId = 1;
         private const int TopMiddleHandleId = 2;
         private const int TopRightHandleId = 3;

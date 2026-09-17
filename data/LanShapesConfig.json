@@ -5,6 +5,7 @@
     "Rectangle2",
     "Circle",
     "Cross",
+    "RulerCross",
     "DxfGeometry"
   ],
   "ShowCrossLine": true,

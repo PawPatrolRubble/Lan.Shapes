@@ -36,6 +36,9 @@ namespace Lan.Shapes.Custom
 
         #region Properties
 
+        public override bool CanSnapDuringResize => base.CanSnapDuringResize
+            && SelectedDragHandle?.Id != (int)DragLocations.ResizeHandle;
+
         public override Geometry RenderGeometry
         {
             get => _combinedGeometry;

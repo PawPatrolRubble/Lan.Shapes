@@ -90,7 +90,7 @@ public class GeometryTypeTemplateTests
                 }
 
                 IGeometryIconProvider provider = new ResourceDictionaryGeometryIconProvider();
-                foreach (var name in new[] { "Line", "Rectangle", "Rectangle2", "Circle", "Cross", "DxfGeometry" })
+                foreach (var name in new[] { "Line", "Rectangle", "Rectangle2", "Circle", "Cross", "RulerCross", "DxfGeometry" })
                 {
                     icons[name] = provider.GetIcon(name) != null;
                 }
@@ -118,6 +118,7 @@ public class GeometryTypeTemplateTests
                 ["Rectangle2"] = true,
                 ["Circle"] = true,
                 ["Cross"] = true,
+                ["RulerCross"] = true,
                 ["DxfGeometry"] = true
             },
             icons);

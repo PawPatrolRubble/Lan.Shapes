@@ -115,7 +115,21 @@ namespace Lan.Shapes.Custom
                     ShapeStyler.SetStrokeThickness(_textGeometryData.StrokeThickness);
                 }
 
-                render.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, _geometry);
+                var fill = ShapeStyler.FillColor;
+                var pen = ShapeStyler.SketchPen;
+                if (IsLocked)
+                {
+                    pen = pen.CloneCurrentValue();
+                    pen.Brush = GetTextForeground(pen.Brush);
+                    if (fill != null)
+                    {
+                        var grayFill = GetTextForeground(fill).CloneCurrentValue();
+                        // Preserve transparency when text is drawn as an outline.
+                        grayFill.Opacity = fill.Opacity * (fill is SolidColorBrush solid ? solid.Color.A / 255.0 : 1);
+                        fill = grayFill;
+                    }
+                }
+                render.DrawGeometry(fill, pen, _geometry);
             }
             finally
             {

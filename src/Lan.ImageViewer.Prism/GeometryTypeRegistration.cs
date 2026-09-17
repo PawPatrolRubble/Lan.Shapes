@@ -83,6 +83,7 @@ namespace Lan.ImageViewer.Prism
                 typeof(Circle),
                 typeof(FixedCenterCircle),
                 typeof(Cross),
+                typeof(RulerCross),
                 typeof(Line),
                 typeof(Rectangle),
                 typeof(Rectangle2),

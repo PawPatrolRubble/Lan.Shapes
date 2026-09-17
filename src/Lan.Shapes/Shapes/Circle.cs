@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
@@ -70,6 +71,15 @@ namespace Lan.Shapes.Shapes
         {
             get { return _ellipseGeometry.Bounds; }
         }
+
+        public override IEnumerable<Point> GetSnapPoints() => new[]
+        {
+            Center,
+            Center + new Vector(Radius, 0),
+            Center + new Vector(0, -Radius),
+            Center + new Vector(-Radius, 0),
+            Center + new Vector(0, Radius)
+        };
 
         private double _x;
 

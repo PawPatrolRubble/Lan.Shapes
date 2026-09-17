@@ -1,6 +1,7 @@
 #region
 
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -41,12 +42,21 @@ namespace Lan.Shapes.Custom
             get => _boundsRect;
         }
 
+        public override IEnumerable<Point> GetSnapPoints() => new[]
+        {
+            Center,
+            Center + new Vector(Radius, 0),
+            Center + new Vector(0, -Radius),
+            Center + new Vector(-Radius, 0),
+            Center + new Vector(0, Radius)
+        };
+
         public Point Center
         {
             get => _center;
             set
             {
-                _center = value;
+                SetField(ref _center, value);
                 OnCenterChanges(_center);
             }
         }
@@ -56,7 +66,7 @@ namespace Lan.Shapes.Custom
             get => _radius;
             set
             {
-                _radius = value;
+                SetField(ref _radius, value);
                 OnRadiusChanged(_radius);
             }
         }

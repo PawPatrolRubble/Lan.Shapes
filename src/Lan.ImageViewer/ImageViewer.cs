@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.ComponentModel;
@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Lan.Shapes.Interfaces;
+using Lan.Shapes.Enums;
 using Lan.SketchBoard;
 
 #endregion
@@ -68,6 +69,17 @@ namespace Lan.ImageViewer {
             "SketchBoardDataManager", typeof(ISketchBoardDataManager), typeof(ImageViewer),
             new PropertyMetadata(default(ISketchBoardDataManager), OnSketchBoardChangeCallBack));
 
+        public static readonly DependencyProperty LineDirectionModeProperty = DependencyProperty.Register(
+            nameof(LineDirectionMode), typeof(LineDirectionMode), typeof(ImageViewer),
+            new FrameworkPropertyMetadata(LineDirectionMode.Free, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault),
+            value => value is LineDirectionMode mode && Enum.IsDefined(mode));
+
+        /// <summary>Direction constraint used when drawing or resizing line endpoints.</summary>
+        public LineDirectionMode LineDirectionMode {
+            get => (LineDirectionMode)GetValue(LineDirectionModeProperty);
+            set => SetValue(LineDirectionModeProperty, value);
+        }
+
         private static void OnSketchBoardChangeCallBack(DependencyObject d, DependencyPropertyChangedEventArgs e) {
             if (d is not ImageViewer imageViewer) {
                 return;
@@ -99,8 +111,41 @@ namespace Lan.ImageViewer {
             set => SetValue(SketchBoardDataManagerProperty, value);
         }
 
-        #endregion
+        public static readonly DependencyProperty ShowGeometriesProperty = DependencyProperty.Register(
+            nameof(ShowGeometries), typeof(bool), typeof(ImageViewer),
+            new FrameworkPropertyMetadata(true,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault |
+                FrameworkPropertyMetadataOptions.AffectsRender |
+                FrameworkPropertyMetadataOptions.AffectsMeasure,
+                OnShowGeometriesChanged));
 
+        private static void OnShowGeometriesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) {
+            if (d is ImageViewer imageViewer) {
+                imageViewer.UpdateSketchBoardVisibility();
+            }
+        }
+
+        public bool ShowGeometries {
+            get => (bool)GetValue(ShowGeometriesProperty);
+            set => SetValue(ShowGeometriesProperty, value);
+        }
+
+        private FrameworkElement? _sketchBoard;
+
+        internal void UpdateSketchBoardVisibility() {
+            _sketchBoard ??= GetTemplateChild("SketchBoard") as FrameworkElement;
+            if (_sketchBoard != null) {
+                _sketchBoard.Visibility = ShowGeometries ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        public override void OnApplyTemplate() {
+            base.OnApplyTemplate();
+            _sketchBoard = GetTemplateChild("SketchBoard") as FrameworkElement;
+            UpdateSketchBoardVisibility();
+        }
+
+        #endregion
 
         #region events handlers
 

@@ -5,9 +5,9 @@ A high-performance WPF image viewer and geometry sketching control. Built on `Dr
 ## Features
 
 - **Performance**: Built on `DrawingVisual` for optimized rendering
-- **Shape Support**: Rectangle, ellipse, line, polygon, circle, and cross shapes
+- **Shape Support**: Rectangle, ellipse, line, polygon, circle, cross, and ruler cross shapes
 - **Custom Shapes**: Extensible architecture for custom geometry types
-- **Zoom & Pan**: Mouse wheel zoom and CTRL+drag panning
+- **Zoom & Pan**: Mouse wheel zoom, middle-button drag panning, and CTRL+left-drag panning
 - **Pixel Info**: Display RGB values at cursor position
 - **Scale Display**: Real-time zoom ratio display
 - **Auto-Sized Handles**: Drag handles automatically sized based on shape dimensions
@@ -62,7 +62,7 @@ Unknown names fail at startup. A missing `ShowCrossLine` value defaults to true.
 
 ```json
 {
-  "AvailableGeometryTypes": [ "Line", "Rectangle", "Rectangle2", "Circle", "Cross", "DxfGeometry" ],
+  "AvailableGeometryTypes": [ "Line", "Rectangle", "Rectangle2", "Circle", "Cross", "RulerCross", "DxfGeometry" ],
   "ShowCrossLine": true,
   "Measurement": {
     "PixelPerUnit": 3410,
@@ -94,7 +94,35 @@ Resolve `IImageViewerViewModel` from `IServiceProvider` the same way as any othe
 ### Navigation Controls
 
 - **Zoom**: Use mouse wheel to zoom in/out
-- **Pan**: Press CTRL + Left mouse button and drag to move the sketch area
+- **Pan**: Hold the middle mouse button (press the scroll wheel) and drag to move the sketch area. CTRL + Left mouse button and drag also pans.
+- **Select overlapping geometry**: Click its outline; outlines and active resize handles take priority over shape interiors. Hold ALT and click repeatedly at the same point to cycle through overlapping unlocked geometries from topmost to bottommost. ALT + click selects without dragging or toggling locks. You can also select a geometry directly in the shape list.
+- **Lock / unlock**: Double-click a completed geometry to lock it; its text turns gray. Double-click it again to unlock it and restore the usual text color.
+- **Drawing**: With a drawing tool active, clicks create or continue the new geometry, including over existing shapes. Selection and double-click locking resume when drawing finishes; right-click ends the active sketch.
+- **Line direction**: Choose Free, Horizontal, or Vertical in the toolbar's Line selector. In Free mode, hold SHIFT while drawing or resizing a line endpoint to use the nearest horizontal or vertical axis; release SHIFT to return to free drawing. Fixed Horizontal and Vertical modes persist across sketches. This also works for thickened and arrowed lines. The opposite endpoint stays fixed when resizing, and snapping only accepts anchors on the constrained axis.
+- **Snapping**: While drawing or dragging a resize handle, points snap to nearby rectangle corners (including rotated rectangles), line endpoints and midpoints, and circle centers and quadrant points (top, right, bottom, and left), including locked shapes. A blue marker shows the target; the default distance is 8 screen pixels at every zoom level. Thickened rectangles, thickened lines, arrowed lines, fixed-center circles, and thickened circles also provide anchors. Thickened circle anchors follow the circle's centerline. The geometry being edited is excluded from snap targets.
+
+Set `SketchBoard.IsSnappingEnabled` to disable snapping, or adjust `SketchBoard.SnapTolerance`
+(in screen device-independent pixels). Custom shapes can override `ShapeVisualBase.GetSnapPoints()`
+to supply model-space anchors. Snapping copies a position; moving the target later does not move
+the geometry drawn there. Whole-shape movement, rotation, and stroke-width adjustment remain free
+of snapping. Custom shapes can override `CanSnapDuringResize` to distinguish special handles
+from geometry resize handles.
+
+`SketchBoard.LineDirectionMode`, `ImageViewer.LineDirectionMode`, and
+`ImageViewerControl.LineDirectionMode` expose the same Free / Horizontal / Vertical setting
+using `Lan.Shapes.Enums.LineDirectionMode`. The default is Free. Custom line shapes can
+implement `ILineDirectionConstraint` to supply the stationary endpoint for an active edit.
+
+### Ruler cross tool
+
+Choose **RulerCross** in the sketch palette, then click the image to add horizontal and
+vertical rulers at its center. Drag either ruler line or the intersection to move the
+origin. The axes stay aligned with the image and span its width and height.
+Tick values are relative to the intersection: zero at the origin, positive to the right
+and down, and negative to the left and up. Labels use the same `Measurement` calibration
+as the other measurement tools. Tick spacing adjusts with zoom, while tick length and
+label size remain constant on screen. Add `"RulerCross"` to `AvailableGeometryTypes` in
+hosts that restrict the palette. `RulerCrossData` saves the origin and image dimensions.
 
 ## Architecture
 

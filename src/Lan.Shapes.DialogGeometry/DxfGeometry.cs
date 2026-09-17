@@ -63,6 +63,9 @@ namespace Lan.Shapes.DialogGeometry
 
         #region Overrides of ShapeVisualBase
 
+        public override bool CanSnapDuringResize => base.CanSnapDuringResize
+            && SelectedDragHandle?.Id != RotationHandleId;
+
         public override Rect BoundsRect
         {
             get { return _dxfGeometryWrapper?.Bounds ?? new Rect(); }

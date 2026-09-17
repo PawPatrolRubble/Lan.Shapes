@@ -12,7 +12,7 @@ using Lan.Shapes.Models;
 
 namespace Lan.Shapes.Shapes
 {
-    public class Line : ShapeVisualBase, IDataExport<PointsData>
+    public class Line : ShapeVisualBase, IDataExport<PointsData>, ILineDirectionConstraint
     {
         #region constructor
 
@@ -69,6 +69,21 @@ namespace Lan.Shapes.Shapes
         {
             get { return RenderGeometryGroup.Bounds; }
         }
+
+        public override IEnumerable<Point> GetSnapPoints() => new[]
+        {
+            Start,
+            End,
+            Start + (End - Start) / 2
+        };
+
+        public override bool CanSnapDuringResize => base.CanSnapDuringResize
+            && (ReferenceEquals(SelectedDragHandle, _leftDragHandle) || ReferenceEquals(SelectedDragHandle, _rightDragHandle));
+
+        Point? ILineDirectionConstraint.ConstraintOrigin => !IsGeometryRendered ? Start
+            : ReferenceEquals(SelectedDragHandle, _leftDragHandle) ? End
+            : ReferenceEquals(SelectedDragHandle, _rightDragHandle) ? Start
+            : null;
 
         #endregion
 

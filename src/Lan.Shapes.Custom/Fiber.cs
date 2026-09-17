@@ -70,9 +70,76 @@ namespace Lan.Shapes.Custom
             get => _filletRadius;
             set
             {
-                SetField(ref _filletRadius, value, nameof(FilletRadius));
-                UpdateFilletCircle();
-                UpdateVisual();
+                if (SetField(ref _filletRadius, value, nameof(FilletRadius)))
+                {
+                    OnPropertyChanged(nameof(Radius));
+                    UpdateFilletCircle();
+                    UpdateVisual();
+                    OnPropertyChanged(nameof(FilletCenter));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Observable alias for <see cref="FilletRadius"/>.
+        /// </summary>
+        public double Radius
+        {
+            get => FilletRadius;
+            set => FilletRadius = value;
+        }
+
+        /// <summary>
+        /// The observable width of the fiber rectangle.
+        /// </summary>
+        public double Width
+        {
+            get => (RectTopRight - RectTopLeft).Length;
+            set
+            {
+                var currentWidth = Width;
+                if (Math.Abs(currentWidth - value) > 0.0001 && currentWidth > 0 && value > 0)
+                {
+                    double ratio = value / currentWidth;
+                    Point center = new Point(
+                        (RectTopLeft.X + RectTopRight.X + RectBottomLeft.X + RectBottomRight.X) / 4.0,
+                        (RectTopLeft.Y + RectTopRight.Y + RectBottomLeft.Y + RectBottomRight.Y) / 4.0);
+                    Vector halfW = (RectTopRight - RectTopLeft) * 0.5 * ratio;
+                    Vector halfH = (RectBottomLeft - RectTopLeft) * 0.5;
+                    _rectTopLeft = center - halfW - halfH;
+                    _rectTopRight = center + halfW - halfH;
+                    _rectBottomLeft = center - halfW + halfH;
+                    _rectBottomRight = center + halfW + halfH;
+                    UpdateGeometry();
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// The observable height of the fiber rectangle.
+        /// </summary>
+        public double Height
+        {
+            get => (RectBottomLeft - RectTopLeft).Length;
+            set
+            {
+                var currentHeight = Height;
+                if (Math.Abs(currentHeight - value) > 0.0001 && currentHeight > 0 && value > 0)
+                {
+                    double ratio = value / currentHeight;
+                    Point center = new Point(
+                        (RectTopLeft.X + RectTopRight.X + RectBottomLeft.X + RectBottomRight.X) / 4.0,
+                        (RectTopLeft.Y + RectTopRight.Y + RectBottomLeft.Y + RectBottomRight.Y) / 4.0);
+                    Vector halfW = (RectTopRight - RectTopLeft) * 0.5;
+                    Vector halfH = (RectBottomLeft - RectTopLeft) * 0.5 * ratio;
+                    _rectTopLeft = center - halfW - halfH;
+                    _rectTopRight = center + halfW - halfH;
+                    _rectBottomLeft = center - halfW + halfH;
+                    _rectBottomRight = center + halfW + halfH;
+                    UpdateGeometry();
+                    OnPropertyChanged();
+                }
             }
         }
 
@@ -82,7 +149,7 @@ namespace Lan.Shapes.Custom
             set
             {
                 double oldAngle = _fiberAngle;
-                if (!SetField(ref _fiberAngle, value, nameof(FiberAngle))) return;
+                if (Math.Abs(_fiberAngle - value) < 0.0001) return;
                 Point center = _filletGeometry.Center;
                 RotateAboutAngle(AngleToRadian(-(value - oldAngle)), center);
             }
@@ -95,8 +162,24 @@ namespace Lan.Shapes.Custom
             get => _triangleAngleInDeg;
             set
             {
-                SetField(ref _triangleAngleInDeg, value, nameof(TriangleBottomEdgeAngleInDeg));
-                UpdateGeometry();
+                if (SetField(ref _triangleAngleInDeg, value, nameof(TriangleBottomEdgeAngleInDeg)))
+                {
+                    UpdateGeometry();
+                    OnPropertyChanged(nameof(TipAngle));
+                }
+            }
+        }
+
+        /// <summary>
+        /// The observable tip angle in degrees, defined as (90 - TriangleBottomEdgeAngleInDeg) * 2.
+        /// </summary>
+        public double TipAngle
+        {
+            get => (90.0 - TriangleBottomEdgeAngleInDeg) * 2.0;
+            set
+            {
+                TriangleBottomEdgeAngleInDeg = Math.Max(10.0, Math.Min(80.0, 90.0 - (value / 2.0)));
+                OnPropertyChanged();
             }
         }
 
@@ -161,10 +244,11 @@ namespace Lan.Shapes.Custom
 
         private void TranslateShape(double dx, double dy)
         {
-            RectBottomLeft = new Point(RectBottomLeft.X + dx, RectBottomLeft.Y + dy);
-            RectTopLeft = new Point(RectTopLeft.X + dx, RectTopLeft.Y + dy);
-            RectBottomRight = new Point(RectBottomRight.X + dx, RectBottomRight.Y + dy);
-            RectTopRight = new Point(RectTopRight.X + dx, RectTopRight.Y + dy);
+            _rectBottomLeft = new Point(_rectBottomLeft.X + dx, _rectBottomLeft.Y + dy);
+            _rectTopLeft = new Point(_rectTopLeft.X + dx, _rectTopLeft.Y + dy);
+            _rectBottomRight = new Point(_rectBottomRight.X + dx, _rectBottomRight.Y + dy);
+            _rectTopRight = new Point(_rectTopRight.X + dx, _rectTopRight.Y + dy);
+            UpdateGeometry();
         }
 
         public void FromData(FiberData data)
@@ -210,6 +294,13 @@ namespace Lan.Shapes.Custom
 
             IsGeometryRendered = true;
             UpdateVisual();
+            OnPropertyChanged(nameof(Width));
+            OnPropertyChanged(nameof(Height));
+            OnPropertyChanged(nameof(Radius));
+            OnPropertyChanged(nameof(FiberAngle));
+            OnPropertyChanged(nameof(FilletCenter));
+            OnPropertyChanged(nameof(TipAngle));
+            OnPropertyChanged(nameof(TriangleBottomEdgeAngleInDeg));
         }
 
         public FiberData GetMetaData()
@@ -271,6 +362,13 @@ namespace Lan.Shapes.Custom
 
             _fiberAngle = GetFiberAngleInDeg();
             UpdateVisual();
+            OnPropertyChanged(nameof(Width));
+            OnPropertyChanged(nameof(Height));
+            OnPropertyChanged(nameof(Radius));
+            OnPropertyChanged(nameof(FiberAngle));
+            OnPropertyChanged(nameof(FilletCenter));
+            OnPropertyChanged(nameof(TipAngle));
+            OnPropertyChanged(nameof(TriangleBottomEdgeAngleInDeg));
         }
 
         public override void OnMouseLeftButtonDown(Point mousePoint)
@@ -415,10 +513,11 @@ namespace Lan.Shapes.Custom
 
         private void RotateAboutAngle(double rotationAngle, Point rotationCenter)
         {
-            RectTopLeft = RotatePointAroundCenter(RectTopLeft, rotationCenter, rotationAngle);
-            RectTopRight = RotatePointAroundCenter(RectTopRight, rotationCenter, rotationAngle);
-            RectBottomLeft = RotatePointAroundCenter(RectBottomLeft, rotationCenter, rotationAngle);
-            RectBottomRight = RotatePointAroundCenter(RectBottomRight, rotationCenter, rotationAngle);
+            _rectTopLeft = RotatePointAroundCenter(_rectTopLeft, rotationCenter, rotationAngle);
+            _rectTopRight = RotatePointAroundCenter(_rectTopRight, rotationCenter, rotationAngle);
+            _rectBottomLeft = RotatePointAroundCenter(_rectBottomLeft, rotationCenter, rotationAngle);
+            _rectBottomRight = RotatePointAroundCenter(_rectBottomRight, rotationCenter, rotationAngle);
+            UpdateGeometry();
         }
 
         protected override void HandleTranslate(Point point)
@@ -430,10 +529,11 @@ namespace Lan.Shapes.Custom
             double dx = point.X - oldPoint.X;
             double dy = point.Y - oldPoint.Y;
 
-            RectBottomLeft = new Point(RectBottomLeft.X + dx, RectBottomLeft.Y + dy);
-            RectTopLeft = new Point(RectTopLeft.X + dx, RectTopLeft.Y + dy);
-            RectBottomRight = new Point(RectBottomRight.X + dx, RectBottomRight.Y + dy);
-            RectTopRight = new Point(RectTopRight.X + dx, RectTopRight.Y + dy);
+            _rectBottomLeft = new Point(_rectBottomLeft.X + dx, _rectBottomLeft.Y + dy);
+            _rectTopLeft = new Point(_rectTopLeft.X + dx, _rectTopLeft.Y + dy);
+            _rectBottomRight = new Point(_rectBottomRight.X + dx, _rectBottomRight.Y + dy);
+            _rectTopRight = new Point(_rectTopRight.X + dx, _rectTopRight.Y + dy);
+            UpdateGeometry();
 
             OldPointForTranslate = point;
         }
@@ -562,7 +662,7 @@ namespace Lan.Shapes.Custom
                 FlowDirection.LeftToRight,
                 new Typeface("Consolas"),
                 (double)ShapeLayer.TagFontSize,
-                Brushes.Red,
+                GetTextForeground(Brushes.Red),
                 96.0);
 
             FormattedText fmtAngle = new FormattedText(
@@ -571,7 +671,7 @@ namespace Lan.Shapes.Custom
                 FlowDirection.LeftToRight,
                 new Typeface("Consolas"),
                 (double)ShapeLayer.TagFontSize,
-                Brushes.Red,
+                GetTextForeground(Brushes.Red),
                 96.0);
 
             double width = Math.Sqrt(Math.Pow(RectTopLeft.X - RectTopRight.X, 2.0) + Math.Pow(RectTopLeft.Y - RectTopRight.Y, 2.0));
@@ -583,7 +683,7 @@ namespace Lan.Shapes.Custom
                 FlowDirection.LeftToRight,
                 new Typeface("Consolas"),
                 (double)ShapeLayer.TagFontSize,
-                Brushes.Red,
+                GetTextForeground(Brushes.Red),
                 96.0);
 
             // Position text above the top edge
@@ -628,7 +728,7 @@ namespace Lan.Shapes.Custom
                 FlowDirection.LeftToRight,
                 new Typeface("Consolas"),
                 (double)ShapeLayer.TagFontSize,
-                Brushes.Red,
+                GetTextForeground(Brushes.Red),
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
             double height = Math.Sqrt(Math.Pow(RectTopLeft.X - RectBottomLeft.X, 2.0) + Math.Pow(RectTopLeft.Y - RectBottomLeft.Y, 2.0));
@@ -640,7 +740,7 @@ namespace Lan.Shapes.Custom
                 FlowDirection.LeftToRight,
                 new Typeface("Consolas"),
                 (double)ShapeLayer.TagFontSize,
-                Brushes.Red,
+                GetTextForeground(Brushes.Red),
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
             // Position text outside the left edge

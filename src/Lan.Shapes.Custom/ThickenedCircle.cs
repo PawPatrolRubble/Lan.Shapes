@@ -1,6 +1,7 @@
 #region
 
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -43,6 +44,14 @@ namespace Lan.Shapes.Custom
 
         #region properties
 
+        public override IEnumerable<Point> GetSnapPoints() => new[]
+        {
+            Center,
+            Center + new Vector(Radius, 0),
+            Center + new Vector(0, -Radius),
+            Center + new Vector(-Radius, 0),
+            Center + new Vector(0, Radius)
+        };
 
         protected override void OnStrokeThicknessChanges(double strokeThickness)
         {
@@ -60,7 +69,7 @@ namespace Lan.Shapes.Custom
             get => _center;
             set
             {
-                _center = value;
+                SetField(ref _center, value);
                 CreateOrTranslateGeometry(_center);
                 UpdateVisual();
             }
@@ -76,7 +85,7 @@ namespace Lan.Shapes.Custom
             get => _radius;
             set
             {
-                _radius = value;
+                SetField(ref _radius, value);
                 ResizeGeometry(_radius);
                 UpdateVisual();
             }

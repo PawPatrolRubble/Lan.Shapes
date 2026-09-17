@@ -166,6 +166,46 @@ public class ImageViewerViewModelTests
         }
     }
 
+    [Fact]
+    public void ShowGeometries_DefaultsToTrue_AndNotifiesOnToggle()
+    {
+        var (vm, _, _) = CreateViewModel();
+
+        Assert.True(vm.ShowGeometries);
+
+        var propertyChangedFired = false;
+        ((INotifyPropertyChanged)vm).PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(IImageViewerViewModel.ShowGeometries))
+            {
+                propertyChangedFired = true;
+            }
+        };
+
+        vm.ShowGeometries = false;
+        Assert.False(vm.ShowGeometries);
+        Assert.True(propertyChangedFired);
+
+        propertyChangedFired = false;
+        vm.ShowGeometries = true;
+        Assert.True(vm.ShowGeometries);
+        Assert.True(propertyChangedFired);
+    }
+
+    [Fact]
+    public void ChooseGeometryType_RestoresShowGeometriesToTrue()
+    {
+        var (vm, _, _) = CreateViewModel();
+        vm.ShowGeometries = false;
+
+        var lineType = vm.GeometryTypeList.FirstOrDefault();
+        Assert.NotNull(lineType);
+
+        vm.ChooseGeometryTypeCommand.Execute(lineType);
+
+        Assert.True(vm.ShowGeometries);
+    }
+
     private static (ImageViewerControlViewModel Vm, SketchBoardDataManager Manager, ShapeLayer Layer)
         CreateViewModel()
     {

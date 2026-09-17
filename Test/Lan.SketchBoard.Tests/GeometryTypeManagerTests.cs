@@ -24,6 +24,7 @@ public class GeometryTypeManagerTests
         Assert.Contains(nameof(Line), names);
         Assert.Contains(nameof(Rectangle), names);
         Assert.Contains(nameof(Rectangle2), names);
+        Assert.Contains(nameof(RulerCross), names);
     }
 
     [Fact]

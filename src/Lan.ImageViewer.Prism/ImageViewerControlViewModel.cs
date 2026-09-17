@@ -211,6 +211,15 @@ namespace Lan.ImageViewer.Prism
             set => SetProperty(ref _showCrossLine, value);
         }
 
+        private bool _showGeometries = true;
+
+        /// <inheritdoc />
+        public bool ShowGeometries
+        {
+            get => _showGeometries;
+            set => SetProperty(ref _showGeometries, value);
+        }
+
         public void FilterGeometryTypes(Expression<Func<GeometryType, bool>> predicate)
         {
             var func = predicate.Compile();
@@ -224,6 +233,8 @@ namespace Lan.ImageViewer.Prism
             {
                 return;
             }
+
+            ShowGeometries = true;
 
             if (SelectedGeometryType != null)
             {

@@ -3,7 +3,7 @@
 namespace Lan.Shapes.Interfaces
 {
     /// <summary>
-    /// Implemented by shapes that require board dimensions after creation.
+    /// Implemented by shapes that require image/canvas dimensions after creation.
     /// <see cref="ISketchBoardDataManager"/> detects this interface and calls
     /// <see cref="OnBoardContextAvailable"/> instead of hard-coding shape-specific logic.
     /// </summary>
@@ -12,8 +12,8 @@ namespace Lan.Shapes.Interfaces
         /// <summary>
         /// Called by the sketch board manager immediately after the shape is added to the board.
         /// </summary>
-        /// <param name="boardWidth">Current width of the sketch board.</param>
-        /// <param name="boardHeight">Current height of the sketch board.</param>
+        /// <param name="boardWidth">Image width in pixels, or board width when no bitmap is available.</param>
+        /// <param name="boardHeight">Image height in pixels, or board height when no bitmap is available.</param>
         void OnBoardContextAvailable(double boardWidth, double boardHeight);
     }
 }

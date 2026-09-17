@@ -36,6 +36,9 @@ namespace Lan.Shapes.Custom
         /// </summary>
         public override Rect BoundsRect { get; }
 
+        public override bool CanSnapDuringResize => base.CanSnapDuringResize
+            && !ReferenceEquals(SelectedDragHandle, DistanceResizeHandle);
+
         protected double StrokeThickness
         {
             get => _strokeThickness;

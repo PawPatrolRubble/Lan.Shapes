@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 
 	  <PropertyGroup>
@@ -47,6 +47,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Lan.Shapes\Lan.Shapes.csproj" PrivateAssets="All" />
+	  <ProjectReference Include="..\Lan.Shapes.Custom\Lan.Shapes.Custom.csproj" PrivateAssets="All" />
 	  <ProjectReference Include="..\Lan.SketchBoard\Lan.SketchBoard.csproj" PrivateAssets="All" />
 	</ItemGroup>
 

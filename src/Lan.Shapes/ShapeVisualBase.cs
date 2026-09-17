@@ -67,6 +67,21 @@ namespace Lan.Shapes
 
         public abstract Rect BoundsRect { get; }
 
+        /// <summary>
+        /// Model-space anchors that other shapes can snap to while being drawn or resized.
+        /// These do not depend on selection, locking, or visible drag handles.
+        /// Override to opt a custom geometry into snapping.
+        /// </summary>
+        public virtual IEnumerable<Point> GetSnapPoints() => Array.Empty<Point>();
+
+        /// <summary>
+        /// Whether the active drag handle accepts a snapped resize position.
+        /// Override for handles that translate, rotate, or adjust other properties.
+        /// </summary>
+        public virtual bool CanSnapDuringResize => IsGeometryRendered && !IsLocked
+            && SelectedDragHandle != null
+            && SelectedDragHandle.CursorLocation is not (DragLocation.Move or DragLocation.Rotate);
+
         protected double DragHandleSize { get; set; }
 
         /// <summary>
@@ -76,6 +91,11 @@ namespace Lan.Shapes
         protected double ViewportScale { get; private set; } = 1.0;
 
         public Guid Id { get; }
+
+        /// <summary>
+        /// Gets the geometry type name (e.g. "Circle", "Rectangle", "Line").
+        /// </summary>
+        public virtual string GeometryType => GetType().Name;
 
         public bool IsBeingDraggedOrPanMoving
         {
@@ -92,7 +112,7 @@ namespace Lan.Shapes
         public bool IsLocked
         {
             get => _isLocked;
-            protected set
+            set
             {
                 State = value ? ShapeVisualState.Locked : ShapeVisualState.Normal;
             }
@@ -603,6 +623,9 @@ namespace Lan.Shapes
 
         #region text rendering helpers
 
+        /// <summary>Uses a muted foreground for locked geometry without changing shared styles.</summary>
+        protected Brush GetTextForeground(Brush foreground) => IsLocked ? Brushes.Gray : foreground;
+
         protected FormattedText CreateFormattedText(string text, Brush foreground)
         {
             return CreateFormattedText(
@@ -626,7 +649,7 @@ namespace Lan.Shapes
                 FlowDirection.LeftToRight,
                 new Typeface(DefaultFontFamily),
                 ShapeLayer.TagFontSize,
-                foreground,
+                GetTextForeground(foreground),
                 pixelsPerDip);
         }
 

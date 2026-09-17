@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Lan.Shapes;
 using Lan.Shapes.Enums;
 using Lan.Shapes.Interfaces;
@@ -65,6 +66,8 @@ namespace Lan.SketchBoard
 
         public ISketchBoard? SketchBoard => _sketchBoard;
 
+        public double ViewportScale => NormalizeScale(_viewportScale);
+
         public ObservableCollection<ShapeVisualBase> Shapes => _shapes;
 
         public VisualCollection VisualCollection => _visualCollection
@@ -92,8 +95,9 @@ namespace Lan.SketchBoard
                 var previous = _selectedGeometry;
                 if (previous != null)
                 {
+                    var wasLocked = previous.IsLocked;
                     previous.OnDeselected();
-                    previous.State = previous.IsLocked
+                    previous.State = wasLocked || previous.IsLocked
                         ? ShapeVisualState.Locked
                         : ShapeVisualState.Normal;
                 }
@@ -107,16 +111,23 @@ namespace Lan.SketchBoard
 
                 if (_selectedGeometry != null)
                 {
-                    _selectedGeometry.State = _selectedGeometry.IsLocked
+                    var wasLocked = _selectedGeometry.IsLocked;
+                    _selectedGeometry.State = wasLocked
                         ? ShapeVisualState.Locked
                         : ShapeVisualState.Selected;
                     _selectedGeometry.OnSelected();
+                    if (wasLocked)
+                    {
+                        _selectedGeometry.State = ShapeVisualState.Locked;
+                    }
                     ShapeSelected?.Invoke(this, _selectedGeometry);
                 }
             }
         }
 
         public ShapeLayer? CurrentShapeLayer => _currentShapeLayer;
+
+        public Type? CurrentGeometryType => _currentGeometryType;
 
 
         public void SetGeometryType(string drawingTool)
@@ -137,7 +148,7 @@ namespace Lan.SketchBoard
         public void SetGeometryType(Type type)
         {
             _shapeFactory.Validate(type);
-            _currentGeometryType = type;
+            SetField(ref _currentGeometryType, type, nameof(CurrentGeometryType));
             GeometryTypeSelected?.Invoke(this, type);
         }
 
@@ -166,7 +177,7 @@ namespace Lan.SketchBoard
             }
 
             var previousType = _currentGeometryType;
-            _currentGeometryType = null;
+            SetField(ref _currentGeometryType, null, nameof(CurrentGeometryType));
             GeometryTypeUnselected?.Invoke(this, previousType);
         }
 
@@ -322,9 +333,10 @@ namespace Lan.SketchBoard
 
             if (shape is IBoardContextAware contextAware && _sketchBoard != null)
             {
+                var image = _sketchBoard.Image as BitmapSource;
                 contextAware.OnBoardContextAvailable(
-                    _sketchBoard.ActualWidth,
-                    _sketchBoard.ActualHeight);
+                    image != null ? image.PixelWidth : _sketchBoard.ActualWidth,
+                    image != null ? image.PixelHeight : _sketchBoard.ActualHeight);
             }
 
             return shape;
@@ -359,6 +371,7 @@ namespace Lan.SketchBoard
         {
             _viewportScale = scale;
             ApplyScaleToOwnedLayers(scale, refreshShapes: true);
+            OnPropertyChanged(nameof(ViewportScale));
         }
 
         /// <summary>

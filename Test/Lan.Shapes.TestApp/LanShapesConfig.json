@@ -2,6 +2,7 @@
   "AvailableGeometryTypes": [
     "Circle",
     "Cross",
+    "RulerCross",
     "Line",
     "Rectangle",
     "Fiber",

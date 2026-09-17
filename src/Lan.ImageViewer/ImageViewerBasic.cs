@@ -105,12 +105,12 @@ namespace Lan.ImageViewer
         private Line? _horizontalLineGeometry;
         private Image? _image;
         private bool _isImageScaledByMouseWheel;
-        private bool _isMouseFirstClick = true;
         private Point? _lastMouseDownPoint;
 
 
         private double _localScale;
         private Point? _mousePos;
+        private MouseButton? _panButton;
         //private TextBlock? _textBlock;
 
         private Line? _verticalLineGeometry;
@@ -479,12 +479,32 @@ namespace Lan.ImageViewer
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             _lastMouseDownPoint = e.GetPosition(this);
-            if (Keyboard.IsKeyDown(Key.LeftCtrl))
+        }
+
+        protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
+        {
+            base.OnPreviewMouseDown(e);
+            if (HandlePanMouseDown(e.GetPosition(_containerCanvas ?? (IInputElement)this),
+                e.ChangedButton, Keyboard.Modifiers))
             {
-                //capture the mouse, even when the mouse is not above the control, the mouse events will still be fired
+                _lastMouseDownPoint = e.GetPosition(this);
+                // Capture at the viewer so moves cannot edit child shapes and
+                // panning continues after the pointer leaves the image.
                 CaptureMouse();
-                _mousePos = _lastMouseDownPoint;
+                e.Handled = true;
             }
+        }
+
+        protected bool HandlePanMouseDown(Point position, MouseButton button, ModifierKeys modifiers)
+        {
+            if (_panButton.HasValue) return true;
+            if (button != MouseButton.Middle
+                && (button != MouseButton.Left || (modifiers & ModifierKeys.Control) == 0)) return false;
+
+            _panButton = button;
+            _mousePos = position;
+            Mouse.SetCursor(Cursors.Hand);
+            return true;
         }
 
         /// <summary>Raises the <see cref="E:System.Windows.Controls.Control.MouseDoubleClick" /> routed event.</summary>
@@ -528,22 +548,34 @@ namespace Lan.ImageViewer
             }
 
 
-            if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+            if (HandlePanMouseMove(mousePositionRelativeToCanvas, e.LeftButton, e.MiddleButton))
+            {
+                e.Handled = true;
+            }
+            else if ((Keyboard.Modifiers & ModifierKeys.Control) != 0)
             {
                 Mouse.SetCursor(Cursors.Hand);
-
-                if (_mousePos.HasValue && e.LeftButton == MouseButtonState.Pressed && !_isMouseFirstClick)
-                {
-                    var matrix = _matrixTransform.Matrix;
-
-                    var dx = mousePositionRelativeToCanvas.X - _mousePos.Value.X;
-                    var dy = mousePositionRelativeToCanvas.Y - _mousePos.Value.Y;
-
-                    matrix.Translate(dx, dy);
-                    _matrixTransform.Matrix = matrix;
-                    _mousePos = mousePositionRelativeToCanvas;
-                }
             }
+        }
+
+        protected bool HandlePanMouseMove(Point position, MouseButtonState leftButton, MouseButtonState middleButton)
+        {
+            if (!_panButton.HasValue || !_mousePos.HasValue) return false;
+            var buttonState = _panButton == MouseButton.Middle ? middleButton : leftButton;
+            if (buttonState != MouseButtonState.Pressed)
+            {
+                EndPan();
+                if (IsMouseCaptured) ReleaseMouseCapture();
+                return false;
+            }
+
+            var matrix = _matrixTransform.Matrix;
+            var delta = position - _mousePos.Value;
+            matrix.Translate(delta.X, delta.Y);
+            _matrixTransform.Matrix = matrix;
+            _mousePos = position;
+            Mouse.SetCursor(Cursors.Hand);
+            return true;
         }
 
         private static string? GetPixelValue(BitmapSource bitmap, int x, int y)
@@ -569,10 +601,33 @@ namespace Lan.ImageViewer
         /// <param name="e">The <see cref="T:System.Windows.Input.MouseButtonEventArgs" /> that contains the event data. The event data reports that the mouse button was released.</param>
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
-            ReleaseMouseCapture();
-            _mousePos = null;
-            _isMouseFirstClick = false;
+            if (_panButton.HasValue)
+            {
+                e.Handled = true;
+                if (HandlePanMouseUp(e.ChangedButton)) ReleaseMouseCapture();
+            }
             base.OnMouseUp(e);
+        }
+
+        protected bool HandlePanMouseUp(MouseButton button)
+        {
+            if (_panButton != button) return false;
+            EndPan();
+            return true;
+        }
+
+        protected override void OnLostMouseCapture(MouseEventArgs e)
+        {
+            if (ReferenceEquals(e.OriginalSource, this)) EndPan();
+            base.OnLostMouseCapture(e);
+        }
+
+        private void EndPan()
+        {
+            if (!_panButton.HasValue) return;
+            _panButton = null;
+            _mousePos = null;
+            Mouse.SetCursor(Cursors.Arrow);
         }
 
         /// <summary>Invoked when an unhandled <see cref="E:System.Windows.Input.Mouse.MouseWheel" /> attached event reaches an element in its route that is derived from this class. Implement this method to add class handling for this event.</summary>

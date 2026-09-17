@@ -33,6 +33,9 @@ namespace Lan.Shapes.Interfaces
         /// </summary>
         VisualCollection VisualCollection { get; }
 
+        /// <summary>Image-to-view zoom scale, used for distances measured on screen.</summary>
+        double ViewportScale { get; }
+
         /// <summary>
         /// Attaches this manager to a WPF <see cref="Visual"/> (the <c>SketchBoard</c> canvas)
         /// and initialises the <see cref="VisualCollection"/>.

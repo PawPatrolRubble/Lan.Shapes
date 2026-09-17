@@ -42,6 +42,9 @@ namespace Lan.Shapes.Interfaces
 
         // ── Layer & type management ──────────────────────────────────────────────
 
+        /// <summary>The active drawing tool, or null when no tool is selected.</summary>
+        Type? CurrentGeometryType { get; }
+
         ShapeLayer? CurrentShapeLayer { get; }
 
         /// <summary>Sets the active layer that new shapes will be assigned to.</summary>

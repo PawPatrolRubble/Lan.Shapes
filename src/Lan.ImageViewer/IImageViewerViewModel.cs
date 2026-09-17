@@ -76,6 +76,9 @@ namespace Lan.ImageViewer
         /// <summary>When true, the image viewer draws the center crosshair overlay.</summary>
         bool ShowCrossLine { get; set; }
 
+        /// <summary>When true, geometries on the sketch board are visible; when false, hidden.</summary>
+        bool ShowGeometries { get; set; }
+
         /// <summary>Filters the geometry-type palette by the given predicate.</summary>
         void FilterGeometryTypes(Expression<Func<GeometryType, bool>> predicate);
 

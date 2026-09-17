@@ -45,9 +45,39 @@ namespace Lan.Shapes.Shapes
                     UpdateHandleLocation();
                     UpdateVisual();
                 }
+
+                OnPropertyChanged(nameof(Width));
+                OnPropertyChanged(nameof(Height));
             }
         }
 
+        public double Width
+        {
+            get => Math.Abs(BottomRight.X - TopLeft.X);
+            set
+            {
+                if (Math.Abs(Width - value) > 0.000001 && value >= 0)
+                {
+                    var sign = BottomRight.X >= TopLeft.X ? 1 : -1;
+                    BottomRight = new Point(TopLeft.X + sign * value, BottomRight.Y);
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public double Height
+        {
+            get => Math.Abs(BottomRight.Y - TopLeft.Y);
+            set
+            {
+                if (Math.Abs(Height - value) > 0.000001 && value >= 0)
+                {
+                    var sign = BottomRight.Y >= TopLeft.Y ? 1 : -1;
+                    BottomRight = new Point(BottomRight.X, TopLeft.Y + sign * value);
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         /// <summary>
         /// 
@@ -55,6 +85,12 @@ namespace Lan.Shapes.Shapes
         public override Rect BoundsRect
         {
             get => RenderGeometry.Bounds;
+        }
+
+        public override IEnumerable<Point> GetSnapPoints()
+        {
+            var rectangle = new Rect(TopLeft, BottomRight);
+            return new[] { rectangle.TopLeft, rectangle.TopRight, rectangle.BottomRight, rectangle.BottomLeft };
         }
 
         public Point TopLeft
@@ -77,6 +113,8 @@ namespace Lan.Shapes.Shapes
 
                 UpdateHandleLocation();
                 UpdateVisual();
+                OnPropertyChanged(nameof(Width));
+                OnPropertyChanged(nameof(Height));
             }
         }
 

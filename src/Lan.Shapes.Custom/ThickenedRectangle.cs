@@ -32,6 +32,12 @@ namespace Lan.Shapes.Custom
 
         #region Properties
 
+        public override IEnumerable<Point> GetSnapPoints()
+        {
+            var rectangle = new Rect(TopLeft, BottomRight);
+            return new[] { rectangle.TopLeft, rectangle.TopRight, rectangle.BottomRight, rectangle.BottomLeft };
+        }
+
         public Point BottomRight
         {
             get => _bottomRight;

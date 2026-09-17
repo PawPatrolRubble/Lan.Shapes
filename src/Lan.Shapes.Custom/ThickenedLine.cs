@@ -18,7 +18,7 @@ using Point = System.Windows.Point;
 
 namespace Lan.Shapes.Custom
 {
-    public class ThickenedLine : CustomGeometryBase, IDataExport<PointsData>
+    public class ThickenedLine : CustomGeometryBase, IDataExport<PointsData>, ILineDirectionConstraint
     {
         #region fields
 
@@ -34,6 +34,18 @@ namespace Lan.Shapes.Custom
         #endregion
 
         #region Properties
+
+        public override IEnumerable<Point> GetSnapPoints() => new[]
+        {
+            Start,
+            End,
+            Start + (End - Start) / 2
+        };
+
+        Point? ILineDirectionConstraint.ConstraintOrigin => !IsGeometryRendered ? Start
+            : ReferenceEquals(SelectedDragHandle, _leftDragHandle) ? End
+            : ReferenceEquals(SelectedDragHandle, _rightDragHandle) ? Start
+            : null;
 
         public Point End
         {
