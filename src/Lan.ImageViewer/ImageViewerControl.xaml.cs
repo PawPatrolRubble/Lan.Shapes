@@ -27,6 +27,32 @@ namespace Lan.ImageViewer
             set => SetValue(LineDirectionModeProperty, value);
         }
 
+        public static readonly DependencyProperty ShowCrossLineProperty = DependencyProperty.Register(
+            nameof(ShowCrossLine), typeof(bool), typeof(ImageViewerControl),
+            new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnShowCrossLineChanged));
+
+        public bool ShowCrossLine
+        {
+            get => (bool)GetValue(ShowCrossLineProperty);
+            set => SetValue(ShowCrossLineProperty, value);
+        }
+
+        private static void OnShowCrossLineChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is ImageViewerControl control)
+            {
+                var isVisible = (bool)e.NewValue;
+                if (control.ImageViewer != null && control.ImageViewer.ShowCrossLine != isVisible)
+                {
+                    control.ImageViewer.ShowCrossLine = isVisible;
+                }
+                if (control.DataContext is IImageViewerViewModel vm && vm.ShowCrossLine != isVisible)
+                {
+                    vm.ShowCrossLine = isVisible;
+                }
+            }
+        }
+
         public static readonly DependencyProperty ShowGeometriesProperty = DependencyProperty.Register(
             nameof(ShowGeometries), typeof(bool), typeof(ImageViewerControl),
             new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnShowGeometriesChanged));
@@ -68,6 +94,20 @@ namespace Lan.ImageViewer
                 }
                 if (e.NewValue is IImageViewerViewModel vm)
                 {
+                    var isShowCrossLineSet = ReadLocalValue(ShowCrossLineProperty) != DependencyProperty.UnsetValue;
+                    if (isShowCrossLineSet)
+                    {
+                        vm.ShowCrossLine = this.ShowCrossLine;
+                    }
+                    else
+                    {
+                        this.ShowCrossLine = vm.ShowCrossLine;
+                    }
+                    if (this.ImageViewer != null)
+                    {
+                        this.ImageViewer.ShowCrossLine = this.ShowCrossLine;
+                    }
+
                     this.ShowGeometries = vm.ShowGeometries;
                     if (this.ImageViewer != null)
                     {
@@ -84,15 +124,26 @@ namespace Lan.ImageViewer
 
         private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(IImageViewerViewModel.ShowGeometries) &&
-                sender is IImageViewerViewModel vm &&
-                this.ShowGeometries != vm.ShowGeometries)
+            if (sender is IImageViewerViewModel vm)
             {
-                this.ShowGeometries = vm.ShowGeometries;
-                if (this.ImageViewer != null)
+                if (e.PropertyName == nameof(IImageViewerViewModel.ShowGeometries) &&
+                    this.ShowGeometries != vm.ShowGeometries)
                 {
-                    this.ImageViewer.ShowGeometries = vm.ShowGeometries;
-                    this.ImageViewer.UpdateSketchBoardVisibility();
+                    this.ShowGeometries = vm.ShowGeometries;
+                    if (this.ImageViewer != null)
+                    {
+                        this.ImageViewer.ShowGeometries = vm.ShowGeometries;
+                        this.ImageViewer.UpdateSketchBoardVisibility();
+                    }
+                }
+                else if (e.PropertyName == nameof(IImageViewerViewModel.ShowCrossLine) &&
+                    this.ShowCrossLine != vm.ShowCrossLine)
+                {
+                    this.ShowCrossLine = vm.ShowCrossLine;
+                    if (this.ImageViewer != null)
+                    {
+                        this.ImageViewer.ShowCrossLine = vm.ShowCrossLine;
+                    }
                 }
             }
         }

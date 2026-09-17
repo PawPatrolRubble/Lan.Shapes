@@ -62,7 +62,7 @@
             LineDirectionMode="{Binding LineDirectionMode, ElementName=Root}"
             MouseDoubleClickPosition="{Binding MouseDoubleClickPosition, UpdateSourceTrigger=PropertyChanged, Mode=OneWayToSource}"
             Scale="{Binding Scale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-            ShowCrossLine="{Binding ShowCrossLine}"
+            ShowCrossLine="{Binding ShowCrossLine, ElementName=Root}"
             ShowGeometries="{Binding ShowGeometries, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=True, TargetNullValue=True}"
             SketchBoardDataManager="{Binding SketchBoardDataManager}"
             StrokeThickness="1"

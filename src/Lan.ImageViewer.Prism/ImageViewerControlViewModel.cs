@@ -70,7 +70,6 @@ namespace Lan.ImageViewer.Prism
 
             Scale = 1;
             ShowSimpleCanvas = true;
-            ShowCrossLine = _shapeLayerManager.Configuration.ShowCrossLine;
             CreateGeometryTypeList();
             Image = CreateEmptyImageSource(2048, 2048);
 

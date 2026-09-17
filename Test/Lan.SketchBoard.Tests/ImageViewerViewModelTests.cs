@@ -134,36 +134,29 @@ public class ImageViewerViewModelTests
     }
 
     [Fact]
-    public void ShowCrossLine_ReadsFromLoadedConfiguration()
+    public void ShowCrossLine_DefaultsToTrue_AndNotifiesOnPropertyChange()
     {
-        var path = Path.GetTempFileName();
-        try
+        var (vm, _, _) = CreateViewModel();
+
+        Assert.True(vm.ShowCrossLine);
+
+        var propertyChangedFired = false;
+        ((INotifyPropertyChanged)vm).PropertyChanged += (_, e) =>
         {
-            var configuration = new LanShapesConfiguration
+            if (e.PropertyName == nameof(IImageViewerViewModel.ShowCrossLine))
             {
-                ShowCrossLine = false,
-                Measurement = new ShapeMeasurementSettings(),
-                ShapeLayers = new List<ShapeLayerParameter>
-                {
-                    TestShapeLayer.Create().ToShapeLayerParameter()
-                }
-            };
-            File.WriteAllText(path, JsonConvert.SerializeObject(configuration));
+                propertyChangedFired = true;
+            }
+        };
 
-            var layerManager = new ShapeLayerManager();
-            layerManager.ReadConfiguration(path);
+        vm.ShowCrossLine = false;
+        Assert.False(vm.ShowCrossLine);
+        Assert.True(propertyChangedFired);
 
-            var vm = new ImageViewerControlViewModel(
-                layerManager,
-                new SketchBoardDataManager(),
-                new GeometryTypeManager());
-
-            Assert.False(vm.ShowCrossLine);
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        propertyChangedFired = false;
+        vm.ShowCrossLine = true;
+        Assert.True(vm.ShowCrossLine);
+        Assert.True(propertyChangedFired);
     }
 
     [Fact]
