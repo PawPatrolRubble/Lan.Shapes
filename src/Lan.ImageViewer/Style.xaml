@@ -321,8 +321,7 @@
                                     Image="{TemplateBinding ImageSource}"
                                     LineDirectionMode="{TemplateBinding LineDirectionMode}"
                                     SketchBoardDataManager="{TemplateBinding SketchBoardDataManager}"
-                                    Visibility="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}, Path=ShowGeometries,
-                                                         Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                    Visibility="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}, Path=ShowGeometries, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
                                 <!--<Line
                                     x:Name="HorizontalLine"
@@ -413,8 +412,7 @@
                                         Image="{TemplateBinding ImageSource}"
                                         LineDirectionMode="{TemplateBinding LineDirectionMode}"
                                         SketchBoardDataManager="{TemplateBinding SketchBoardDataManager}"
-                                        Visibility="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}, Path=ShowGeometries,
-                                                             Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        Visibility="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}, Path=ShowGeometries, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
                                     <Line
                                         x:Name="HorizontalLine"

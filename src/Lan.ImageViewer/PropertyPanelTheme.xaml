@@ -5,7 +5,7 @@
     xmlns:lanShapes="clr-namespace:Lan.Shapes;assembly=Lan.Shapes"
     xmlns:shapes="clr-namespace:Lan.Shapes.Shapes;assembly=Lan.Shapes">
 
-    <!-- Dark Theme Brushes for Properties Panel -->
+    <!--  Dark Theme Brushes for Properties Panel  -->
     <SolidColorBrush x:Key="DarkPanel.Background" Color="#222225" />
     <SolidColorBrush x:Key="DarkPanel.CardBackground" Color="#1E1E20" />
     <SolidColorBrush x:Key="DarkPanel.Border" Color="#38383E" />
@@ -20,7 +20,7 @@
     <SolidColorBrush x:Key="DarkPanel.ItemHover" Color="#2E2E34" />
     <SolidColorBrush x:Key="DarkPanel.ItemSelected" Color="#0E639C" />
 
-    <!-- Dark Card Border Style -->
+    <!--  Dark Card Border Style  -->
     <Style x:Key="DarkPropertyCardStyle" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource DarkPanel.CardBackground}" />
         <Setter Property="BorderBrush" Value="{StaticResource DarkPanel.Border}" />
@@ -29,7 +29,7 @@
         <Setter Property="Padding" Value="8" />
     </Style>
 
-    <!-- Dark Property Label Style -->
+    <!--  Dark Property Label Style  -->
     <Style x:Key="DarkPropertyLabelStyle" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource DarkPanel.LabelForeground}" />
         <Setter Property="FontSize" Value="12" />
@@ -37,7 +37,7 @@
         <Setter Property="Margin" Value="0,1" />
     </Style>
 
-    <!-- Dark Property TextBox Style -->
+    <!--  Dark Property TextBox Style  -->
     <Style x:Key="DarkPropertyTextBoxStyle" TargetType="TextBox">
         <Setter Property="Background" Value="{StaticResource DarkPanel.InputBackground}" />
         <Setter Property="Foreground" Value="{StaticResource DarkPanel.ValueForeground}" />
@@ -56,7 +56,11 @@
                         BorderThickness="{TemplateBinding BorderThickness}"
                         CornerRadius="3"
                         SnapsToDevicePixels="True">
-                        <ScrollViewer x:Name="PART_ContentHost" Focusable="False" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" />
+                        <ScrollViewer
+                            x:Name="PART_ContentHost"
+                            Focusable="False"
+                            HorizontalScrollBarVisibility="Hidden"
+                            VerticalScrollBarVisibility="Hidden" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsFocused" Value="True">
@@ -71,22 +75,25 @@
         </Setter>
     </Style>
 
-    <!-- Dark Property ReadOnly TextBox Style -->
-    <Style x:Key="DarkPropertyReadOnlyTextBoxStyle" BasedOn="{StaticResource DarkPropertyTextBoxStyle}" TargetType="TextBox">
+    <!--  Dark Property ReadOnly TextBox Style  -->
+    <Style
+        x:Key="DarkPropertyReadOnlyTextBoxStyle"
+        BasedOn="{StaticResource DarkPropertyTextBoxStyle}"
+        TargetType="TextBox">
         <Setter Property="Background" Value="{StaticResource DarkPanel.ReadOnlyInputBackground}" />
         <Setter Property="Foreground" Value="#BBBBBB" />
         <Setter Property="BorderBrush" Value="#33333A" />
         <Setter Property="IsReadOnly" Value="True" />
     </Style>
 
-    <!-- Dark Property CheckBox Style -->
+    <!--  Dark Property CheckBox Style  -->
     <Style x:Key="DarkPropertyCheckBoxStyle" TargetType="CheckBox">
         <Setter Property="Foreground" Value="{StaticResource DarkPanel.ValueForeground}" />
         <Setter Property="FontSize" Value="12" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
-    <!-- Dark ListBox Style -->
+    <!--  Dark ListBox Style  -->
     <Style x:Key="DarkListBoxStyle" TargetType="ListBox">
         <Setter Property="Background" Value="#1A1A1C" />
         <Setter Property="BorderBrush" Value="{StaticResource DarkPanel.Border}" />
@@ -129,7 +136,7 @@
         </Setter>
     </Style>
 
-    <!-- Dark ToggleButton Style -->
+    <!--  Dark ToggleButton Style  -->
     <Style x:Key="DarkPanelToggleButtonStyle" TargetType="ToggleButton">
         <Setter Property="Background" Value="#2A2A2E" />
         <Setter Property="Foreground" Value="#CCCCCC" />
@@ -163,7 +170,7 @@
         </Setter>
     </Style>
 
-    <!-- Dark Icon ToggleButton Style (for toolbar icon buttons) -->
+    <!--  Dark Icon ToggleButton Style (for toolbar icon buttons)  -->
     <Style x:Key="DarkIconButtonToggleStyle" TargetType="ToggleButton">
         <Setter Property="Background" Value="#252528" />
         <Setter Property="Foreground" Value="#CCCCCC" />
@@ -211,15 +218,24 @@
         </Setter>
     </Style>
 
-    <!-- DataTemplates for each Geometry Type -->
+    <!--  DataTemplates for each Geometry Type  -->
 
-    <!-- 1. Circle -->
+    <!--  1. Circle  -->
     <DataTemplate DataType="{x:Type shapes:Circle}">
         <Border Style="{StaticResource DarkPropertyCardStyle}">
             <StackPanel>
                 <DockPanel Margin="0,0,0,6">
-                    <TextBlock Text="Circle" FontWeight="Bold" Foreground="{StaticResource DarkPanel.Accent}" FontSize="13" />
-                    <TextBlock Text="{Binding State}" HorizontalAlignment="Right" Foreground="#888888" FontSize="11" VerticalAlignment="Center" />
+                    <TextBlock
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="{StaticResource DarkPanel.Accent}"
+                        Text="Circle" />
+                    <TextBlock
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="#888888"
+                        Text="{Binding State}" />
                 </DockPanel>
 
                 <Grid Margin="0,2">
@@ -227,8 +243,11 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Radius" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Text="{Binding Radius, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}" Style="{StaticResource DarkPropertyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Radius" />
+                    <TextBox
+                        Grid.Column="1"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Radius, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -237,9 +256,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Center" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Margin="0,0,2,0" Text="{Binding Center.X, Mode=OneWay, StringFormat='X: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
-                    <TextBox Grid.Column="2" Margin="2,0,0,0" Text="{Binding Center.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Center" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,2,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding Center.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="2,0,0,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding Center.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -247,22 +274,38 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Tag" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Style="{StaticResource DarkPropertyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBox
+                        Grid.Column="1"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
-                <CheckBox Margin="0,6,0,0" IsChecked="{Binding IsLocked, Mode=TwoWay}" Content="锁定 (Lock)" Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                <CheckBox
+                    Margin="0,6,0,0"
+                    Content="锁定 (Lock)"
+                    IsChecked="{Binding IsLocked, Mode=TwoWay}"
+                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
-    <!-- 2. Rectangle -->
+    <!--  2. Rectangle  -->
     <DataTemplate DataType="{x:Type shapes:Rectangle}">
         <Border Style="{StaticResource DarkPropertyCardStyle}">
             <StackPanel>
                 <DockPanel Margin="0,0,0,6">
-                    <TextBlock Text="Rectangle" FontWeight="Bold" Foreground="{StaticResource DarkPanel.Accent}" FontSize="13" />
-                    <TextBlock Text="{Binding State}" HorizontalAlignment="Right" Foreground="#888888" FontSize="11" VerticalAlignment="Center" />
+                    <TextBlock
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="{StaticResource DarkPanel.Accent}"
+                        Text="Rectangle" />
+                    <TextBlock
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="#888888"
+                        Text="{Binding State}" />
                 </DockPanel>
 
                 <Grid Margin="0,2">
@@ -271,9 +314,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="TopLeft" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Margin="0,0,2,0" Text="{Binding TopLeft.X, Mode=OneWay, StringFormat='X: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
-                    <TextBox Grid.Column="2" Margin="2,0,0,0" Text="{Binding TopLeft.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="TopLeft" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,2,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding TopLeft.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="2,0,0,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding TopLeft.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -282,9 +333,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="BottomRight" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Margin="0,0,2,0" Text="{Binding BottomRight.X, Mode=OneWay, StringFormat='X: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
-                    <TextBox Grid.Column="2" Margin="2,0,0,0" Text="{Binding BottomRight.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="BottomRight" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,2,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding BottomRight.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="2,0,0,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding BottomRight.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -295,11 +354,32 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Size" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBlock Grid.Column="1" Text="W" Foreground="#888888" VerticalAlignment="Center" Margin="0,0,4,0" FontSize="11" />
-                    <TextBox Grid.Column="2" Margin="0,0,4,0" Text="{Binding Width, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}" Style="{StaticResource DarkPropertyTextBoxStyle}" ToolTip="Width" />
-                    <TextBlock Grid.Column="3" Text="H" Foreground="#888888" VerticalAlignment="Center" Margin="0,0,4,0" FontSize="11" />
-                    <TextBox Grid.Column="4" Text="{Binding Height, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}" Style="{StaticResource DarkPropertyTextBoxStyle}" ToolTip="Height" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Size" />
+                    <TextBlock
+                        Grid.Column="1"
+                        Margin="0,0,4,0"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="#888888"
+                        Text="W" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="0,0,4,0"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Width, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
+                        ToolTip="Width" />
+                    <TextBlock
+                        Grid.Column="3"
+                        Margin="0,0,4,0"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="#888888"
+                        Text="H" />
+                    <TextBox
+                        Grid.Column="4"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Height, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
+                        ToolTip="Height" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -307,22 +387,38 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Tag" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Style="{StaticResource DarkPropertyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBox
+                        Grid.Column="1"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
-                <CheckBox Margin="0,6,0,0" IsChecked="{Binding IsLocked, Mode=TwoWay}" Content="锁定 (Lock)" Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                <CheckBox
+                    Margin="0,6,0,0"
+                    Content="锁定 (Lock)"
+                    IsChecked="{Binding IsLocked, Mode=TwoWay}"
+                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
-    <!-- 3. Rectangle2 (Rotated Rectangle) -->
+    <!--  3. Rectangle2 (Rotated Rectangle)  -->
     <DataTemplate DataType="{x:Type shapes:Rectangle2}">
         <Border Style="{StaticResource DarkPropertyCardStyle}">
             <StackPanel>
                 <DockPanel Margin="0,0,0,6">
-                    <TextBlock Text="Rectangle2" FontWeight="Bold" Foreground="{StaticResource DarkPanel.Accent}" FontSize="13" />
-                    <TextBlock Text="{Binding State}" HorizontalAlignment="Right" Foreground="#888888" FontSize="11" VerticalAlignment="Center" />
+                    <TextBlock
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="{StaticResource DarkPanel.Accent}"
+                        Text="Rectangle2" />
+                    <TextBlock
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="#888888"
+                        Text="{Binding State}" />
                 </DockPanel>
 
                 <Grid Margin="0,2">
@@ -331,9 +427,19 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Center" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Margin="0,0,2,0" Text="{Binding Column, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}" Style="{StaticResource DarkPropertyTextBoxStyle}" ToolTip="Center X / Column" />
-                    <TextBox Grid.Column="2" Margin="2,0,0,0" Text="{Binding Row, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}" Style="{StaticResource DarkPropertyTextBoxStyle}" ToolTip="Center Y / Row" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Center" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,2,0"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Column, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
+                        ToolTip="Center X / Column" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="2,0,0,0"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Row, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
+                        ToolTip="Center Y / Row" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -341,8 +447,11 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Phi (rad)" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Text="{Binding Phi, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F3}'}" Style="{StaticResource DarkPropertyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Phi (rad)" />
+                    <TextBox
+                        Grid.Column="1"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Phi, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F3}'}" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -351,9 +460,19 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Lengths" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Margin="0,0,2,0" Text="{Binding Length1, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}" Style="{StaticResource DarkPropertyTextBoxStyle}" ToolTip="Half Length 1" />
-                    <TextBox Grid.Column="2" Margin="2,0,0,0" Text="{Binding Length2, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}" Style="{StaticResource DarkPropertyTextBoxStyle}" ToolTip="Half Length 2" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Lengths" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,2,0"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Length1, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
+                        ToolTip="Half Length 1" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="2,0,0,0"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Length2, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
+                        ToolTip="Half Length 2" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -361,22 +480,38 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Tag" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Style="{StaticResource DarkPropertyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBox
+                        Grid.Column="1"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
-                <CheckBox Margin="0,6,0,0" IsChecked="{Binding IsLocked, Mode=TwoWay}" Content="锁定 (Lock)" Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                <CheckBox
+                    Margin="0,6,0,0"
+                    Content="锁定 (Lock)"
+                    IsChecked="{Binding IsLocked, Mode=TwoWay}"
+                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
-    <!-- 4. Line -->
+    <!--  4. Line  -->
     <DataTemplate DataType="{x:Type shapes:Line}">
         <Border Style="{StaticResource DarkPropertyCardStyle}">
             <StackPanel>
                 <DockPanel Margin="0,0,0,6">
-                    <TextBlock Text="Line" FontWeight="Bold" Foreground="{StaticResource DarkPanel.Accent}" FontSize="13" />
-                    <TextBlock Text="{Binding State}" HorizontalAlignment="Right" Foreground="#888888" FontSize="11" VerticalAlignment="Center" />
+                    <TextBlock
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="{StaticResource DarkPanel.Accent}"
+                        Text="Line" />
+                    <TextBlock
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="#888888"
+                        Text="{Binding State}" />
                 </DockPanel>
 
                 <Grid Margin="0,2">
@@ -385,9 +520,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Start" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Margin="0,0,2,0" Text="{Binding Start.X, Mode=OneWay, StringFormat='X: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
-                    <TextBox Grid.Column="2" Margin="2,0,0,0" Text="{Binding Start.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Start" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,2,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding Start.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="2,0,0,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding Start.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -396,9 +539,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="End" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Margin="0,0,2,0" Text="{Binding End.X, Mode=OneWay, StringFormat='X: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
-                    <TextBox Grid.Column="2" Margin="2,0,0,0" Text="{Binding End.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="End" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,2,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding End.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="2,0,0,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding End.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -406,22 +557,38 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Tag" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Style="{StaticResource DarkPropertyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBox
+                        Grid.Column="1"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
-                <CheckBox Margin="0,6,0,0" IsChecked="{Binding IsLocked, Mode=TwoWay}" Content="锁定 (Lock)" Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                <CheckBox
+                    Margin="0,6,0,0"
+                    Content="锁定 (Lock)"
+                    IsChecked="{Binding IsLocked, Mode=TwoWay}"
+                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
-    <!-- 5. Ellipse -->
+    <!--  5. Ellipse  -->
     <DataTemplate DataType="{x:Type shapes:Ellipse}">
         <Border Style="{StaticResource DarkPropertyCardStyle}">
             <StackPanel>
                 <DockPanel Margin="0,0,0,6">
-                    <TextBlock Text="Ellipse" FontWeight="Bold" Foreground="{StaticResource DarkPanel.Accent}" FontSize="13" />
-                    <TextBlock Text="{Binding State}" HorizontalAlignment="Right" Foreground="#888888" FontSize="11" VerticalAlignment="Center" />
+                    <TextBlock
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="{StaticResource DarkPanel.Accent}"
+                        Text="Ellipse" />
+                    <TextBlock
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="#888888"
+                        Text="{Binding State}" />
                 </DockPanel>
 
                 <Grid Margin="0,2">
@@ -430,9 +597,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Center" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Margin="0,0,2,0" Text="{Binding Center.X, Mode=OneWay, StringFormat='X: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
-                    <TextBox Grid.Column="2" Margin="2,0,0,0" Text="{Binding Center.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Center" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,2,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding Center.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="2,0,0,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding Center.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -441,9 +616,19 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Radius" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Margin="0,0,2,0" Text="{Binding RadiusX, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}" Style="{StaticResource DarkPropertyTextBoxStyle}" ToolTip="Radius X" />
-                    <TextBox Grid.Column="2" Margin="2,0,0,0" Text="{Binding RadiusY, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}" Style="{StaticResource DarkPropertyTextBoxStyle}" ToolTip="Radius Y" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Radius" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,2,0"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding RadiusX, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
+                        ToolTip="Radius X" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="2,0,0,0"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding RadiusY, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
+                        ToolTip="Radius Y" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -451,22 +636,38 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Tag" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Style="{StaticResource DarkPropertyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBox
+                        Grid.Column="1"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
-                <CheckBox Margin="0,6,0,0" IsChecked="{Binding IsLocked, Mode=TwoWay}" Content="锁定 (Lock)" Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                <CheckBox
+                    Margin="0,6,0,0"
+                    Content="锁定 (Lock)"
+                    IsChecked="{Binding IsLocked, Mode=TwoWay}"
+                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
-    <!-- 6. Polygon -->
+    <!--  6. Polygon  -->
     <DataTemplate DataType="{x:Type shapes:Polygon}">
         <Border Style="{StaticResource DarkPropertyCardStyle}">
             <StackPanel>
                 <DockPanel Margin="0,0,0,6">
-                    <TextBlock Text="Polygon" FontWeight="Bold" Foreground="{StaticResource DarkPanel.Accent}" FontSize="13" />
-                    <TextBlock Text="{Binding State}" HorizontalAlignment="Right" Foreground="#888888" FontSize="11" VerticalAlignment="Center" />
+                    <TextBlock
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="{StaticResource DarkPanel.Accent}"
+                        Text="Polygon" />
+                    <TextBlock
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="#888888"
+                        Text="{Binding State}" />
                 </DockPanel>
 
                 <Grid Margin="0,2">
@@ -475,9 +676,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Bounds" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Margin="0,0,2,0" Text="{Binding BoundsRect.X, Mode=OneWay, StringFormat='X: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
-                    <TextBox Grid.Column="2" Margin="2,0,0,0" Text="{Binding BoundsRect.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Bounds" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,2,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding BoundsRect.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="2,0,0,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding BoundsRect.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -486,9 +695,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Size" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Margin="0,0,2,0" Text="{Binding BoundsRect.Width, Mode=OneWay, StringFormat='W: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
-                    <TextBox Grid.Column="2" Margin="2,0,0,0" Text="{Binding BoundsRect.Height, Mode=OneWay, StringFormat='H: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Size" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,2,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding BoundsRect.Width, Mode=OneWay, StringFormat='W: {0:F1}'}" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="2,0,0,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding BoundsRect.Height, Mode=OneWay, StringFormat='H: {0:F1}'}" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -496,22 +713,38 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Tag" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Style="{StaticResource DarkPropertyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBox
+                        Grid.Column="1"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
-                <CheckBox Margin="0,6,0,0" IsChecked="{Binding IsLocked, Mode=TwoWay}" Content="锁定 (Lock)" Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                <CheckBox
+                    Margin="0,6,0,0"
+                    Content="锁定 (Lock)"
+                    IsChecked="{Binding IsLocked, Mode=TwoWay}"
+                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
-    <!-- 7. Cross -->
+    <!--  7. Cross  -->
     <DataTemplate DataType="{x:Type shapes:Cross}">
         <Border Style="{StaticResource DarkPropertyCardStyle}">
             <StackPanel>
                 <DockPanel Margin="0,0,0,6">
-                    <TextBlock Text="Cross" FontWeight="Bold" Foreground="{StaticResource DarkPanel.Accent}" FontSize="13" />
-                    <TextBlock Text="{Binding State}" HorizontalAlignment="Right" Foreground="#888888" FontSize="11" VerticalAlignment="Center" />
+                    <TextBlock
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="{StaticResource DarkPanel.Accent}"
+                        Text="Cross" />
+                    <TextBlock
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="#888888"
+                        Text="{Binding State}" />
                 </DockPanel>
 
                 <Grid Margin="0,2">
@@ -520,9 +753,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Center" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Margin="0,0,2,0" Text="{Binding Center.X, Mode=OneWay, StringFormat='X: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
-                    <TextBox Grid.Column="2" Margin="2,0,0,0" Text="{Binding Center.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Center" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,2,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding Center.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="2,0,0,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding Center.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -531,9 +772,19 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Size" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Margin="0,0,2,0" Text="{Binding Width, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Style="{StaticResource DarkPropertyTextBoxStyle}" ToolTip="Width" />
-                    <TextBox Grid.Column="2" Margin="2,0,0,0" Text="{Binding Height, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Style="{StaticResource DarkPropertyTextBoxStyle}" ToolTip="Height" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Size" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,2,0"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Width, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                        ToolTip="Width" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="2,0,0,0"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Height, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                        ToolTip="Height" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -541,22 +792,38 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Tag" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Style="{StaticResource DarkPropertyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBox
+                        Grid.Column="1"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
-                <CheckBox Margin="0,6,0,0" IsChecked="{Binding IsLocked, Mode=TwoWay}" Content="锁定 (Lock)" Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                <CheckBox
+                    Margin="0,6,0,0"
+                    Content="锁定 (Lock)"
+                    IsChecked="{Binding IsLocked, Mode=TwoWay}"
+                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
-    <!-- 8. RulerCross -->
+    <!--  8. RulerCross  -->
     <DataTemplate DataType="{x:Type shapes:RulerCross}">
         <Border Style="{StaticResource DarkPropertyCardStyle}">
             <StackPanel>
                 <DockPanel Margin="0,0,0,6">
-                    <TextBlock Text="RulerCross" FontWeight="Bold" Foreground="{StaticResource DarkPanel.Accent}" FontSize="13" />
-                    <TextBlock Text="{Binding State}" HorizontalAlignment="Right" Foreground="#888888" FontSize="11" VerticalAlignment="Center" />
+                    <TextBlock
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="{StaticResource DarkPanel.Accent}"
+                        Text="RulerCross" />
+                    <TextBlock
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="#888888"
+                        Text="{Binding State}" />
                 </DockPanel>
 
                 <Grid Margin="0,2">
@@ -565,9 +832,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Center" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Margin="0,0,2,0" Text="{Binding Center.X, Mode=OneWay, StringFormat='X: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
-                    <TextBox Grid.Column="2" Margin="2,0,0,0" Text="{Binding Center.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Center" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,2,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding Center.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="2,0,0,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding Center.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -576,9 +851,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Size" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Margin="0,0,2,0" Text="{Binding Width, Mode=OneWay, StringFormat='W: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
-                    <TextBox Grid.Column="2" Margin="2,0,0,0" Text="{Binding Height, Mode=OneWay, StringFormat='H: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Size" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,2,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding Width, Mode=OneWay, StringFormat='W: {0:F1}'}" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="2,0,0,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding Height, Mode=OneWay, StringFormat='H: {0:F1}'}" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -586,8 +869,11 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Tick" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Text="{Binding MajorTickInterval, Mode=OneWay, StringFormat='{}{0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tick" />
+                    <TextBox
+                        Grid.Column="1"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding MajorTickInterval, Mode=OneWay, StringFormat='{}{0:F1}'}" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -595,22 +881,38 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Tag" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Style="{StaticResource DarkPropertyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBox
+                        Grid.Column="1"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
-                <CheckBox Margin="0,6,0,0" IsChecked="{Binding IsLocked, Mode=TwoWay}" Content="锁定 (Lock)" Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                <CheckBox
+                    Margin="0,6,0,0"
+                    Content="锁定 (Lock)"
+                    IsChecked="{Binding IsLocked, Mode=TwoWay}"
+                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
-    <!-- 9. Fiber -->
+    <!--  9. Fiber  -->
     <DataTemplate DataType="{x:Type custom:Fiber}">
         <Border Style="{StaticResource DarkPropertyCardStyle}">
             <StackPanel>
                 <DockPanel Margin="0,0,0,6">
-                    <TextBlock Text="Fiber" FontWeight="Bold" Foreground="{StaticResource DarkPanel.Accent}" FontSize="13" />
-                    <TextBlock Text="{Binding State}" HorizontalAlignment="Right" Foreground="#888888" FontSize="11" VerticalAlignment="Center" />
+                    <TextBlock
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="{StaticResource DarkPanel.Accent}"
+                        Text="Fiber" />
+                    <TextBlock
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="#888888"
+                        Text="{Binding State}" />
                 </DockPanel>
 
                 <Grid Margin="0,2">
@@ -619,9 +921,19 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Center" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Margin="0,0,2,0" Text="{Binding FilletCenter.X, Mode=OneWay, StringFormat='X: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" ToolTip="Fillet Center X" />
-                    <TextBox Grid.Column="2" Margin="2,0,0,0" Text="{Binding FilletCenter.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" ToolTip="Fillet Center Y" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Center" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,2,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding FilletCenter.X, Mode=OneWay, StringFormat='X: {0:F1}'}"
+                        ToolTip="Fillet Center X" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="2,0,0,0"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding FilletCenter.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}"
+                        ToolTip="Fillet Center Y" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -629,8 +941,12 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Radius" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Text="{Binding Radius, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}" Style="{StaticResource DarkPropertyTextBoxStyle}" ToolTip="Fillet Radius" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Radius" />
+                    <TextBox
+                        Grid.Column="1"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Radius, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
+                        ToolTip="Fillet Radius" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -638,8 +954,12 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Tip Angle" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Text="{Binding TipAngle, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}" Style="{StaticResource DarkPropertyTextBoxStyle}" ToolTip="Tip Angle in Degrees" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tip Angle" />
+                    <TextBox
+                        Grid.Column="1"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding TipAngle, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
+                        ToolTip="Tip Angle in Degrees" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -650,11 +970,32 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Size" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBlock Grid.Column="1" Text="W" Foreground="#888888" VerticalAlignment="Center" Margin="0,0,4,0" FontSize="11" />
-                    <TextBox Grid.Column="2" Margin="0,0,4,0" Text="{Binding Width, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}" Style="{StaticResource DarkPropertyTextBoxStyle}" ToolTip="Width" />
-                    <TextBlock Grid.Column="3" Text="H" Foreground="#888888" VerticalAlignment="Center" Margin="0,0,4,0" FontSize="11" />
-                    <TextBox Grid.Column="4" Text="{Binding Height, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}" Style="{StaticResource DarkPropertyTextBoxStyle}" ToolTip="Height" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Size" />
+                    <TextBlock
+                        Grid.Column="1"
+                        Margin="0,0,4,0"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="#888888"
+                        Text="W" />
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="0,0,4,0"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Width, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
+                        ToolTip="Width" />
+                    <TextBlock
+                        Grid.Column="3"
+                        Margin="0,0,4,0"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="#888888"
+                        Text="H" />
+                    <TextBox
+                        Grid.Column="4"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Height, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
+                        ToolTip="Height" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -662,8 +1003,12 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Angle" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Text="{Binding FiberAngle, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}" Style="{StaticResource DarkPropertyTextBoxStyle}" ToolTip="Fiber Angle in Degrees" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Angle" />
+                    <TextBox
+                        Grid.Column="1"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding FiberAngle, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
+                        ToolTip="Fiber Angle in Degrees" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -671,22 +1016,38 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Tag" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Style="{StaticResource DarkPropertyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBox
+                        Grid.Column="1"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
-                <CheckBox Margin="0,6,0,0" IsChecked="{Binding IsLocked, Mode=TwoWay}" Content="锁定 (Lock)" Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                <CheckBox
+                    Margin="0,6,0,0"
+                    Content="锁定 (Lock)"
+                    IsChecked="{Binding IsLocked, Mode=TwoWay}"
+                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
-    <!-- 10. Fallback for any ShapeVisualBase -->
+    <!--  10. Fallback for any ShapeVisualBase  -->
     <DataTemplate DataType="{x:Type lanShapes:ShapeVisualBase}">
         <Border Style="{StaticResource DarkPropertyCardStyle}">
             <StackPanel>
                 <DockPanel Margin="0,0,0,6">
-                    <TextBlock Text="{Binding GeometryType}" FontWeight="Bold" Foreground="{StaticResource DarkPanel.Accent}" FontSize="13" />
-                    <TextBlock Text="{Binding State}" HorizontalAlignment="Right" Foreground="#888888" FontSize="11" VerticalAlignment="Center" />
+                    <TextBlock
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Foreground="{StaticResource DarkPanel.Accent}"
+                        Text="{Binding GeometryType}" />
+                    <TextBlock
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="#888888"
+                        Text="{Binding State}" />
                 </DockPanel>
 
                 <Grid Margin="0,2">
@@ -694,8 +1055,11 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Bounds" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Text="{Binding BoundsRect, Mode=OneWay, StringFormat='{}{0:F1}'}" Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Bounds" />
+                    <TextBox
+                        Grid.Column="1"
+                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Text="{Binding BoundsRect, Mode=OneWay, StringFormat='{}{0:F1}'}" />
                 </Grid>
 
                 <Grid Margin="0,2">
@@ -703,11 +1067,18 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Tag" Style="{StaticResource DarkPropertyLabelStyle}" />
-                    <TextBox Grid.Column="1" Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Style="{StaticResource DarkPropertyTextBoxStyle}" />
+                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBox
+                        Grid.Column="1"
+                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
-                <CheckBox Margin="0,6,0,0" IsChecked="{Binding IsLocked, Mode=TwoWay}" Content="锁定 (Lock)" Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                <CheckBox
+                    Margin="0,6,0,0"
+                    Content="锁定 (Lock)"
+                    IsChecked="{Binding IsLocked, Mode=TwoWay}"
+                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
