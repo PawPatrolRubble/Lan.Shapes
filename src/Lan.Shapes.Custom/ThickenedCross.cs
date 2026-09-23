@@ -535,7 +535,7 @@ namespace Lan.Shapes.Custom
                 renderContext.DrawGeometry(ShapeStyler.FillColor, Pen, RenderGeometry);
             }
 
-            AddTagText(renderContext, VerticalTopLeft - new Vector(0, ShapeLayer.TagFontSize + StrokeThickness));
+            AddTagText(renderContext, VerticalTopLeft - new Vector(0, AnnotationFontSize + StrokeThickness));
             DrawDragHandles(renderContext);
             renderContext.Close();
         }

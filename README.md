@@ -62,7 +62,7 @@ Unknown names fail at startup. Crosshair overlay display is controlled via the `
 
 ```json
 {
-  "AvailableGeometryTypes": [ "Line", "Rectangle", "Rectangle2", "Circle", "Cross", "RulerCross", "DxfGeometry" ],
+  "AvailableGeometryTypes": [ "Line", "Angle", "Rectangle", "Rectangle2", "Circle", "Cross", "RulerCross", "DxfGeometry" ],
   "Measurement": {
     "PixelPerUnit": 3410,
     "UnitsPerMillimeter": 1000,
@@ -71,6 +71,12 @@ Unknown names fail at startup. Crosshair overlay display is controlled via the `
   "ShapeLayers": []
 }
 ```
+
+Each shape layer can set `AnnotationFontToHandleRatio` (default `1.5`). Built-in
+measurement labels and tags use the normal drag-handle size multiplied by this
+ratio: an 8 px handle gives a 12 px label. Both scale together with zoom, and
+the label does not change size when the shape is selected or locked. The older
+`TagFontSize` setting remains available for custom shapes that use it directly.
 
 Full IoC walkthrough: [`scripts/IImageViewerViewModel-IoC使用说明.md`](scripts/IImageViewerViewModel-IoC使用说明.md).
 
@@ -111,6 +117,13 @@ from geometry resize handles.
 `ImageViewerControl.LineDirectionMode` expose the same Free / Horizontal / Vertical setting
 using `Lan.Shapes.Enums.LineDirectionMode`. The default is Free. Custom line shapes can
 implement `ILineDirectionConstraint` to supply the stationary endpoint for an active edit.
+
+### Angle tool
+
+Choose **Angle**, then click the first endpoint, the vertex, and the second endpoint.
+The smaller angle (0–180°) appears beside the arc. Drag either endpoint or the vertex
+to change the angle; drag a ray to move the whole annotation. Right-click during
+creation to cancel it. `PointsData` stores the three points in click order.
 
 ### Ruler cross tool
 

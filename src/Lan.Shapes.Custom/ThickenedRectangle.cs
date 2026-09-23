@@ -296,7 +296,7 @@ namespace Lan.Shapes.Custom
 
             DrawDragHandles(renderContext);
 
-            AddTagText(renderContext, TopLeft - new Vector(0, ShapeLayer.TagFontSize + StrokeThickness));
+            AddTagText(renderContext, TopLeft - new Vector(0, AnnotationFontSize + StrokeThickness));
             renderContext.Close();
         }
 

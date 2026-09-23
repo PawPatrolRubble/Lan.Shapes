@@ -1,6 +1,7 @@
 {
   "AvailableGeometryTypes": [
     "Line",
+    "Angle",
     "Rectangle",
     "Rectangle2",
     "Circle",
@@ -55,7 +56,8 @@
       "TextForeground": null,
       "BorderBackground": "#00FFFFFF",
       "MaximumThickenedShapeWidth": 80,
-      "TagFontSize": 50
+      "TagFontSize": 50,
+      "AnnotationFontToHandleRatio": 1.5
     },
     {
       "StyleSchema": {
@@ -98,7 +100,8 @@
       "TextForeground": null,
       "BorderBackground": "#00FFFFFF",
       "MaximumThickenedShapeWidth": 80,
-      "TagFontSize": 50
+      "TagFontSize": 50,
+      "AnnotationFontToHandleRatio": 1.5
     }
   ]
 }

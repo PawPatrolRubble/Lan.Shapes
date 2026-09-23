@@ -85,6 +85,7 @@ namespace Lan.ImageViewer.Prism
                 typeof(Cross),
                 typeof(RulerCross),
                 typeof(Line),
+                typeof(Angle),
                 typeof(Rectangle),
                 typeof(Rectangle2),
                 typeof(Fiber),

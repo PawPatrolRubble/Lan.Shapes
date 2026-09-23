@@ -222,7 +222,7 @@ namespace Lan.Shapes.Shapes
         private void DrawLabel(DrawingContext context, string value, Point point, bool horizontal, bool origin = false)
         {
             var text = CreateFormattedText(value, ShapeStyler?.SketchPen.Brush ?? Brushes.Red);
-            text.SetFontSize(12 / ViewportScale);
+            text.SetFontSize(AnnotationFontSize);
             var gap = 8 / ViewportScale;
             var location = origin
                 ? new Point(point.X + gap, point.Y + gap)

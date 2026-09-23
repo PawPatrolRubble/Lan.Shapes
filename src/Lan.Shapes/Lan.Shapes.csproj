@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>net8.0-windows</TargetFramework>
-	    <PackageVersion>1.1.24</PackageVersion>
+	    <PackageVersion>1.1.25</PackageVersion>
 	    <Description>WPF DrawingVisual shape core: geometry types, layers, stylers, handles, and metadata contracts for Lan.Shapes sketching.</Description>
 	    <Authors>Lan</Authors>
 	    <PackageTags>wpf;drawingvisual;shapes;annotation;sketch</PackageTags>

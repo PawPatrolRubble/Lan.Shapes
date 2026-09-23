@@ -87,6 +87,28 @@ public class ShapeVisualBaseTests
         Assert.Equal(VisualTreeHelper.GetDpi(shape).PixelsPerDip, text.PixelsPerDip);
     }
 
+    [Fact]
+    public void AnnotationSize_FollowsNormalHandleSizeAcrossZoomAndStates()
+    {
+        var parameter = TestShapeLayer.CreateWithThickness(stroke: 1, handle: 10)
+            .ToShapeLayerParameter();
+        parameter.AnnotationFontToHandleRatio = 2;
+        parameter.StyleSchema[ShapeVisualState.Selected].DragHandleSize = 30;
+        var layer = new ShapeLayer(parameter);
+        var shape = new ProbeShape(layer);
+
+        Assert.Equal(20, shape.TextSize);
+        shape.State = ShapeVisualState.Selected;
+        Assert.Equal(20, shape.TextSize);
+        shape.State = ShapeVisualState.Locked;
+        Assert.Equal(20, shape.TextSize);
+
+        layer.Stylers[ShapeVisualState.Normal].DragHandleSize = 5;
+        shape.RefreshScaleDependentVisuals(2);
+        Assert.Equal(10, shape.TextSize);
+        Assert.Equal(2, layer.CreateIndependentCopy().AnnotationFontToHandleRatio);
+    }
+
     private sealed class ProbeShape : ShapeVisualBase
     {
         private readonly DragHandle _handle;
@@ -98,6 +120,7 @@ public class ShapeVisualBaseTests
         }
 
         public Size HandleSize => _handle.HandleSize;
+        public double TextSize => AnnotationFontSize;
 
         public FormattedText CreateText(string text)
         {

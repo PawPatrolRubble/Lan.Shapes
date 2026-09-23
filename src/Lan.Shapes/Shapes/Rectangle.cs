@@ -308,13 +308,13 @@ namespace Lan.Shapes.Shapes
             switch (_tagPosition)
             {
                 case TagPosition.Center:
-                    return TopLeft.MiddleWith(BottomRight) - new Vector(ShapeLayer.TagFontSize / 2, ShapeLayer.TagFontSize / 2);
+                    return TopLeft.MiddleWith(BottomRight) - new Vector(AnnotationFontSize / 2, AnnotationFontSize / 2);
 
                 case TagPosition.Top:
-                    return TopLeft - new Vector(0, ShapeLayer.TagFontSize);
+                    return TopLeft - new Vector(0, AnnotationFontSize);
 
                 case TagPosition.Bottom:
-                    return TopLeft + new Vector(0, BottomRight.Y - TopLeft.Y + ShapeLayer.TagFontSize);
+                    return TopLeft + new Vector(0, BottomRight.Y - TopLeft.Y + AnnotationFontSize);
 
                 default:
                     throw new ArgumentOutOfRangeException();

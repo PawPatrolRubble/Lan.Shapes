@@ -661,7 +661,7 @@ namespace Lan.Shapes.Custom
                 CultureInfo.GetCultureInfo("en-us"),
                 FlowDirection.LeftToRight,
                 new Typeface("Consolas"),
-                (double)ShapeLayer.TagFontSize,
+                AnnotationFontSize,
                 GetTextForeground(Brushes.Red),
                 96.0);
 
@@ -670,7 +670,7 @@ namespace Lan.Shapes.Custom
                 CultureInfo.GetCultureInfo("en-us"),
                 FlowDirection.LeftToRight,
                 new Typeface("Consolas"),
-                (double)ShapeLayer.TagFontSize,
+                AnnotationFontSize,
                 GetTextForeground(Brushes.Red),
                 96.0);
 
@@ -682,7 +682,7 @@ namespace Lan.Shapes.Custom
                 CultureInfo.GetCultureInfo("en-us"),
                 FlowDirection.LeftToRight,
                 new Typeface("Consolas"),
-                (double)ShapeLayer.TagFontSize,
+                AnnotationFontSize,
                 GetTextForeground(Brushes.Red),
                 96.0);
 
@@ -727,7 +727,7 @@ namespace Lan.Shapes.Custom
                 CultureInfo.GetCultureInfo("en-us"),
                 FlowDirection.LeftToRight,
                 new Typeface("Consolas"),
-                (double)ShapeLayer.TagFontSize,
+                AnnotationFontSize,
                 GetTextForeground(Brushes.Red),
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
@@ -739,7 +739,7 @@ namespace Lan.Shapes.Custom
                 CultureInfo.GetCultureInfo("en-us"),
                 FlowDirection.LeftToRight,
                 new Typeface("Consolas"),
-                (double)ShapeLayer.TagFontSize,
+                AnnotationFontSize,
                 GetTextForeground(Brushes.Red),
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
 

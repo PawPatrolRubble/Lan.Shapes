@@ -500,6 +500,10 @@ namespace Lan.SketchBoard
             {
                 if (IsDrawing)
                 {
+                    if (shapeInEdit is IStagedSketch previewShape)
+                    {
+                        previewShape.PreviewPointer(position);
+                    }
                     UpdateHoveredShape(null);
                     Mouse.SetCursor(Cursors.Cross);
                     return;
@@ -593,10 +597,15 @@ namespace Lan.SketchBoard
             _lastDragPoint = null;
             _resizeStartPoint = null;
 
-            if (!geometry.IsGeometryRendered)
+            var stagedSketch = geometry is IStagedSketch;
+            var wasRendered = geometry.IsGeometryRendered;
+            if (!wasRendered && !stagedSketch)
                 SketchBoardDataManager.RaiseNewShapeSketched(geometry);
 
             geometry.OnMouseLeftButtonUp(position);
+
+            if (stagedSketch && !wasRendered && geometry.IsGeometryRendered)
+                SketchBoardDataManager.RaiseNewShapeSketched(geometry);
 
             if (geometry.IsGeometryRendered)
             {

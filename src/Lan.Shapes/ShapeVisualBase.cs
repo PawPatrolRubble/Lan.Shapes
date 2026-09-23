@@ -626,6 +626,21 @@ namespace Lan.Shapes
         /// <summary>Uses a muted foreground for locked geometry without changing shared styles.</summary>
         protected Brush GetTextForeground(Brush foreground) => IsLocked ? Brushes.Gray : foreground;
 
+        /// <summary>Uses the normal handle size so selection and locking do not resize labels.</summary>
+        protected double AnnotationFontSize
+        {
+            get
+            {
+                var handleSize = ShapeLayer.GetStyler(ShapeVisualState.Normal).DragHandleSize;
+                if (!double.IsFinite(handleSize) || handleSize <= 0)
+                {
+                    handleSize = DefaultDragHandleSize / ViewportScale;
+                }
+
+                return handleSize * ShapeLayer.AnnotationFontToHandleRatio;
+            }
+        }
+
         protected FormattedText CreateFormattedText(string text, Brush foreground)
         {
             return CreateFormattedText(
@@ -648,7 +663,7 @@ namespace Lan.Shapes
                 CultureInfo.GetCultureInfo(DefaultCulture),
                 FlowDirection.LeftToRight,
                 new Typeface(DefaultFontFamily),
-                ShapeLayer.TagFontSize,
+                AnnotationFontSize,
                 GetTextForeground(foreground),
                 pixelsPerDip);
         }

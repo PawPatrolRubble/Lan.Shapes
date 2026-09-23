@@ -496,7 +496,7 @@ namespace Lan.Shapes.Shapes
         {
             return _tagPosition switch
             {
-                TagPosition.Center => Center - new Vector(ShapeLayer.TagFontSize / 2, ShapeLayer.TagFontSize / 2),
+                TagPosition.Center => Center - new Vector(AnnotationFontSize / 2, AnnotationFontSize / 2),
                 TagPosition.Top => Rectangle2Math.FromLocal(Center, Phi, 0, -Length2),
                 TagPosition.Bottom => Rectangle2Math.FromLocal(Center, Phi, 0, Length2),
                 _ => Center

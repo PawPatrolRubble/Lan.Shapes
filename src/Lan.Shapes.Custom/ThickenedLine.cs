@@ -270,7 +270,7 @@ namespace Lan.Shapes.Custom
 
             var angle = GetAngleBetweenPoints(Start, End);
 
-            AddTagText(render, Start - new Vector(0, ShapeLayer.TagFontSize + StrokeThickness), angle);
+            AddTagText(render, Start - new Vector(0, AnnotationFontSize + StrokeThickness), angle);
             render.Close();
         }
 

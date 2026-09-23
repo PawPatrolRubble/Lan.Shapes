@@ -48,6 +48,8 @@ namespace Lan.Shapes
         public string Description { get; }
         public int MaximumThickenedShapeWidth { get; set; }
         public int TagFontSize { get; set; }
+        /// <summary>Annotation font size as a multiple of the normal drag-handle size.</summary>
+        public double AnnotationFontToHandleRatio { get; }
 
         public Brush TextForeground { get; } = Brushes.Black;
         public Brush BorderBackground { get; } = Brushes.LightBlue;
@@ -98,6 +100,13 @@ namespace Lan.Shapes
             Description = shapeLayerParameter.Description;
             MaximumThickenedShapeWidth = shapeLayerParameter.MaximumThickenedShapeWidth;
             TagFontSize = shapeLayerParameter.TagFontSize;
+            if (!double.IsFinite(shapeLayerParameter.AnnotationFontToHandleRatio) ||
+                shapeLayerParameter.AnnotationFontToHandleRatio <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(shapeLayerParameter),
+                    "AnnotationFontToHandleRatio must be finite and greater than zero.");
+            }
+            AnnotationFontToHandleRatio = shapeLayerParameter.AnnotationFontToHandleRatio;
             BorderBackground = shapeLayerParameter.BorderBackground;
             TextForeground = shapeLayerParameter.TextForeground;
 
@@ -143,6 +152,7 @@ namespace Lan.Shapes
                 Name = Name,
                 MaximumThickenedShapeWidth = MaximumThickenedShapeWidth,
                 TagFontSize = TagFontSize,
+                AnnotationFontToHandleRatio = AnnotationFontToHandleRatio,
                 TextForeground = TextForeground,
                 StyleSchema = new Dictionary<ShapeVisualState, ShapeStylerParameter>(
                     _stylers.Select(x => new KeyValuePair<ShapeVisualState, ShapeStylerParameter>(

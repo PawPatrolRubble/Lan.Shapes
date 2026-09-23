@@ -124,7 +124,6 @@ namespace Lan.Shapes.Shapes
 
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
-            _showText = true;
             base.OnMouseLeftButtonDown(mousePoint);
             if (!IsGeometryRendered)
             {
@@ -179,21 +178,20 @@ namespace Lan.Shapes.Shapes
             }
         }
 
-        private bool _showText = true;
-
         public override void OnMouseLeftButtonUp(Point newPoint)
         {
             base.OnMouseLeftButtonUp(newPoint);
             SelectedDragHandle = null;
-            _showText = false;
         }
 
         #endregion
 
-        private void DrawLengthText(DrawingContext renderContext)
+        private void DrawMeasurementText(DrawingContext renderContext)
         {
-            // Draw the length text
-            var length = Math.Sqrt(Math.Pow(End.X - Start.X, 2) + Math.Pow(End.Y - Start.Y, 2));
+            var dx = End.X - Start.X;
+            var dy = End.Y - Start.Y;
+            var length = Math.Sqrt(dx * dx + dy * dy);
+            var angleFromHorizontal = Math.Atan2(Math.Abs(dy), Math.Abs(dx)) * 180 / Math.PI;
             var lengthInMm = 0.0;
             var measurement = ShapeLayer.Measurement;
 
@@ -203,7 +201,7 @@ namespace Lan.Shapes.Shapes
             }
 
             var formattedText = CreateFormattedText(
-                $"{lengthInMm:f3} {measurement.UnitName}",
+                $"{lengthInMm:f3} {measurement.UnitName}\n{angleFromHorizontal:0.##}°",
                 ShapeStyler?.TagColor ?? Brushes.Red);
 
             renderContext.DrawText(formattedText, new Point((Start.X + End.X) / 2, (Start.Y + End.Y) / 2));
@@ -226,10 +224,7 @@ namespace Lan.Shapes.Shapes
             var renderContext = RenderOpen();
             renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometryGroup);
             DrawDragHandles(renderContext);
-            if (_showText)
-            {
-                DrawLengthText(renderContext);
-            }
+            DrawMeasurementText(renderContext);
 
             renderContext.Close();
         }

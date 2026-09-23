@@ -585,9 +585,13 @@ namespace Lan.Shapes.DialogGeometry
             _initialOffset = default;
             _accumulatedWpfTransform = Matrix.Identity;
             var dpiScale = 1.0;
-            if (Application.Current != null && Application.Current.MainWindow != null)
+            var application = Application.Current;
+            // MainWindow is dispatcher-affine, so only read it when this code already runs
+            // on the application's own thread. Headless hosts, worker threads and tests
+            // fall back to 1.0 instead of throwing a cross-thread InvalidOperationException.
+            if (application?.Dispatcher?.CheckAccess() == true && application.MainWindow is { } mainWindow)
             {
-                dpiScale = VisualTreeHelper.GetDpi(Application.Current.MainWindow).DpiScaleX;
+                dpiScale = VisualTreeHelper.GetDpi(mainWindow).DpiScaleX;
             }
 
             // The user inputs pixelToMmFactor based on physical image pixels, but WPF Canvas draws in Device-Independent Units.

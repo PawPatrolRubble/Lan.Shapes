@@ -15,6 +15,7 @@ namespace Lan.Shapes
         public string Description { get; set; }
         public int MaximumThickenedShapeWidth { get; set; }
         public int TagFontSize { get; set; }
+        public double AnnotationFontToHandleRatio { get; set; } = 1.5;
 
         [JsonConverter(typeof(BrushToHexConverter))]
         public Brush TextForeground { get; set; }
