@@ -81,6 +81,9 @@ namespace Lan.Shapes.Shapes
             Center + new Vector(0, Radius)
         };
 
+        public override Point? MoveSnapPoint => IsGeometryRendered && !IsLocked
+            && SelectedDragHandle == null ? Center : null;
+
         private double _x;
 
         public double X

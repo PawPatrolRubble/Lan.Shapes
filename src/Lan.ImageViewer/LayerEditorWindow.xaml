@@ -1,11 +1,15 @@
-<Window x:Class="Lan.ImageViewer.LayerEditorWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
-        Title="编辑图层" Width="390" SizeToContent="Height"
-        ResizeMode="NoResize" WindowStartupLocation="CenterOwner"
-        Background="{DynamicResource DarkPanel.Background}"
-        Foreground="{DynamicResource DarkPanel.ValueForeground}">
+<Window
+    x:Class="Lan.ImageViewer.LayerEditorWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+    Title="编辑图层"
+    Width="390"
+    Background="{DynamicResource DarkPanel.Background}"
+    Foreground="{DynamicResource DarkPanel.ValueForeground}"
+    ResizeMode="NoResize"
+    SizeToContent="Height"
+    WindowStartupLocation="CenterOwner">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -14,11 +18,11 @@
             <Style TargetType="TextBlock">
                 <Setter Property="Foreground" Value="{StaticResource DarkPanel.ValueForeground}" />
             </Style>
-            <Style TargetType="TextBox" BasedOn="{StaticResource DarkPropertyTextBoxStyle}" />
-            <Style TargetType="ComboBox" BasedOn="{StaticResource DarkComboBoxStyle}" />
-            <Style TargetType="ComboBoxItem" BasedOn="{StaticResource DarkComboBoxItemStyle}" />
-            <Style TargetType="Button" BasedOn="{StaticResource DarkButtonStyle}" />
-            <Style TargetType="xctk:ColorPicker" BasedOn="{StaticResource DarkColorPickerStyle}" />
+            <Style BasedOn="{StaticResource DarkPropertyTextBoxStyle}" TargetType="TextBox" />
+            <!--<Style BasedOn="{StaticResource DarkComboBoxStyle}" TargetType="ComboBox" />-->
+            <Style BasedOn="{StaticResource DarkComboBoxItemStyle}" TargetType="ComboBoxItem" />
+            <Style BasedOn="{StaticResource DarkButtonStyle}" TargetType="Button" />
+            <Style BasedOn="{StaticResource DarkColorPickerStyle}" TargetType="xctk:ColorPicker" />
         </ResourceDictionary>
     </Window.Resources>
     <Grid Margin="16">
@@ -38,37 +42,110 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="名称" VerticalAlignment="Center" />
-        <TextBox x:Name="NameBox" Grid.Row="0" Grid.Column="1" Margin="0,0,0,8" />
-        <TextBlock Grid.Row="1" Text="说明" VerticalAlignment="Center" />
-        <TextBox x:Name="DescriptionBox" Grid.Row="1" Grid.Column="1" Margin="0,0,0,8" />
-        <TextBlock Grid.Row="2" Text="样式状态" VerticalAlignment="Center" />
-        <ComboBox x:Name="StyleStateBox" Grid.Row="2" Grid.Column="1" Margin="0,4,0,10"
-                  SelectionChanged="StyleState_SelectionChanged" ToolTip="分别编辑各状态的图层样式">
+        <TextBlock
+            Grid.Row="0"
+            VerticalAlignment="Center"
+            Text="名称" />
+        <TextBox
+            x:Name="NameBox"
+            Grid.Row="0"
+            Grid.Column="1"
+            Margin="0,0,0,8" />
+        <TextBlock
+            Grid.Row="1"
+            VerticalAlignment="Center"
+            Text="说明" />
+        <TextBox
+            x:Name="DescriptionBox"
+            Grid.Row="1"
+            Grid.Column="1"
+            Margin="0,0,0,8" />
+        <TextBlock
+            Grid.Row="2"
+            VerticalAlignment="Center"
+            Text="样式状态" />
+        <ComboBox
+            x:Name="StyleStateBox"
+            Grid.Row="2"
+            Grid.Column="1"
+            Margin="0,4,0,10"
+            SelectionChanged="StyleState_SelectionChanged"
+            Style="{StaticResource DarkComboBoxStyle}"
+            ToolTip="分别编辑各状态的图层样式">
             <ComboBoxItem Content="普通" Tag="Normal" />
             <ComboBoxItem Content="鼠标悬停 (Hover)" Tag="MouseOver" />
             <ComboBoxItem Content="选中" Tag="Selected" />
             <ComboBoxItem Content="锁定" Tag="Locked" />
         </ComboBox>
-        <TextBlock Grid.Row="3" Text="线条颜色" VerticalAlignment="Center" />
-        <xctk:ColorPicker x:Name="StrokeColorPicker" Grid.Row="3" Grid.Column="1" Margin="0,0,0,8" />
-        <TextBlock Grid.Row="4" Text="填充颜色" VerticalAlignment="Center" />
-        <xctk:ColorPicker x:Name="FillColorPicker" Grid.Row="4" Grid.Column="1" Margin="0,0,0,8" />
-        <TextBlock Grid.Row="5" Text="线型" VerticalAlignment="Center" />
-        <ComboBox x:Name="DashStyleBox" Grid.Row="5" Grid.Column="1" Margin="0,0,0,8">
+        <TextBlock
+            Grid.Row="3"
+            VerticalAlignment="Center"
+            Text="线条颜色" />
+        <xctk:ColorPicker
+            x:Name="StrokeColorPicker"
+            Grid.Row="3"
+            Grid.Column="1"
+            Margin="0,0,0,8" />
+        <TextBlock
+            Grid.Row="4"
+            VerticalAlignment="Center"
+            Text="填充颜色" />
+        <xctk:ColorPicker
+            x:Name="FillColorPicker"
+            Grid.Row="4"
+            Grid.Column="1"
+            Margin="0,0,0,8" />
+        <TextBlock
+            Grid.Row="5"
+            VerticalAlignment="Center"
+            Text="线型" />
+        <ComboBox
+            x:Name="DashStyleBox"
+            Grid.Row="5"
+            Grid.Column="1"
+            Margin="0,0,0,8"
+            Style="{StaticResource DarkComboBoxStyle}">
             <ComboBoxItem Content="Solid" />
             <ComboBoxItem Content="Dash" />
             <ComboBoxItem Content="Dot" />
             <ComboBoxItem Content="DashDot" />
             <ComboBoxItem Content="DashDotDot" />
         </ComboBox>
-        <TextBlock Grid.Row="6" Text="线宽" VerticalAlignment="Center" />
-        <TextBox x:Name="StrokeThicknessBox" Grid.Row="6" Grid.Column="1" Margin="0,0,0,8" />
-        <TextBlock Grid.Row="7" Text="填充不透明度" VerticalAlignment="Center" />
-        <TextBox x:Name="FillOpacityBox" Grid.Row="7" Grid.Column="1" Margin="0,0,0,8" ToolTip="0 完全透明，1 完全不透明" />
-        <StackPanel Grid.Row="8" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-            <Button Content="取消" Width="75" Margin="0,0,8,0" IsCancel="True" />
-            <Button Content="应用" Width="75" IsDefault="True" Click="Apply_Click" />
+        <TextBlock
+            Grid.Row="6"
+            VerticalAlignment="Center"
+            Text="线宽" />
+        <TextBox
+            x:Name="StrokeThicknessBox"
+            Grid.Row="6"
+            Grid.Column="1"
+            Margin="0,0,0,8" />
+        <TextBlock
+            Grid.Row="7"
+            VerticalAlignment="Center"
+            Text="填充不透明度" />
+        <TextBox
+            x:Name="FillOpacityBox"
+            Grid.Row="7"
+            Grid.Column="1"
+            Margin="0,0,0,8"
+            ToolTip="0 完全透明，1 完全不透明" />
+        <StackPanel
+            Grid.Row="8"
+            Grid.ColumnSpan="2"
+            Margin="0,12,0,0"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal">
+            <Button
+                Width="75"
+                Margin="0,0,8,0"
+                Content="取消"
+                IsCancel="True" />
+            <Button
+                Width="75"
+                Click="Apply_Click"
+                Content="应用"
+                IsDefault="True" />
         </StackPanel>
     </Grid>
 </Window>

@@ -74,7 +74,7 @@ namespace Lan.Shapes
         public abstract Rect BoundsRect { get; }
 
         /// <summary>
-        /// Model-space anchors that other shapes can snap to while being drawn or resized.
+        /// Model-space anchors that other shapes can snap to while being drawn, resized, or moved.
         /// These do not depend on selection, locking, or visible drag handles.
         /// Override to opt a custom geometry into snapping.
         /// </summary>
@@ -87,6 +87,12 @@ namespace Lan.Shapes
         public virtual bool CanSnapDuringResize => IsGeometryRendered && !IsLocked
             && SelectedDragHandle != null
             && SelectedDragHandle.CursorLocation is not (DragLocation.Move or DragLocation.Rotate);
+
+        /// <summary>
+        /// Model-space anchor to snap while translating, or null when the active gesture
+        /// does not support move snapping. The pointer's offset from this anchor is preserved.
+        /// </summary>
+        public virtual Point? MoveSnapPoint => null;
 
         protected double DragHandleSize { get; set; }
 

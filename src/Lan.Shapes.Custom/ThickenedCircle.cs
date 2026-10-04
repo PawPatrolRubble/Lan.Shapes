@@ -53,6 +53,9 @@ namespace Lan.Shapes.Custom
             Center + new Vector(0, Radius)
         };
 
+        public override Point? MoveSnapPoint => IsGeometryRendered && !IsLocked
+            && SelectedDragHandle == null ? Center : null;
+
         protected override void OnStrokeThicknessChanges(double strokeThickness)
         {
             //update handle position

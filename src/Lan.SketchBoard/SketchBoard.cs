@@ -59,6 +59,7 @@ namespace Lan.SketchBoard
         private ShapeVisualBase? _snapTargetShape;
         private Point? _lastDragPoint;
         private Point? _resizeStartPoint;
+        private (ShapeVisualBase Shape, Point Start, Vector PointerOffset, bool HasMoved)? _moveSnapDrag;
         private Point? _lastRawDragPoint;
         private ModifierKeys _dragModifiers;
 
@@ -80,7 +81,7 @@ namespace Lan.SketchBoard
             set => SetValue(SketchBoardDataManagerProperty, value);
         }
 
-        /// <summary>Enables snapping to completed shapes while drawing or resizing geometry.</summary>
+        /// <summary>Enables snapping to completed shapes while drawing, resizing, or moving supported geometry.</summary>
         public bool IsSnappingEnabled
         {
             get => (bool)GetValue(IsSnappingEnabledProperty);
@@ -183,6 +184,7 @@ namespace Lan.SketchBoard
             sketchBoard.UpdateHoveredShape(null);
             sketchBoard._lastDragPoint = null;
             sketchBoard._resizeStartPoint = null;
+            sketchBoard._moveSnapDrag = null;
             sketchBoard._lastRawDragPoint = null;
             sketchBoard.EndMarquee();
             if (e.OldValue is ISketchBoardDataManager previous)
@@ -269,6 +271,7 @@ namespace Lan.SketchBoard
             }
             _lastDragPoint = null;
             _resizeStartPoint = null;
+            _moveSnapDrag = null;
             ClearSnapMarker();
             _lastRawDragPoint = null;
         }
@@ -298,6 +301,7 @@ namespace Lan.SketchBoard
             _suppressLeftDrag = false;
             _lastDragPoint = null;
             _resizeStartPoint = null;
+            _moveSnapDrag = null;
             _lastRawDragPoint = null;
             _dragModifiers = modifiers;
 
@@ -401,11 +405,22 @@ namespace Lan.SketchBoard
             }
             else
             {
-                SketchBoardDataManager.SelectedGeometry?.OnMouseLeftButtonDown(position);
+                var geometry = SketchBoardDataManager.SelectedGeometry;
+                var dragPosition = position;
+                if (geometry?.MoveSnapPoint != null && GetShapePoint(geometry, position) is Point localPoint
+                    && !geometry.HasDragHandleAt(localPoint))
+                    dragPosition = localPoint;
+                geometry?.OnMouseLeftButtonDown(dragPosition);
                 if (SketchBoardDataManager.SelectedGeometry?.CanSnapDuringResize == true)
                 {
                     _lastDragPoint = position;
                     _resizeStartPoint = position;
+                }
+                else if (SketchBoardDataManager.SelectedGeometry is { MoveSnapPoint: Point anchor } movingShape)
+                {
+                    _lastDragPoint = dragPosition;
+                    _moveSnapDrag = (movingShape, position,
+                        position - movingShape.TransformToAncestor(this).Transform(anchor), false);
                 }
             }
         }
@@ -421,6 +436,10 @@ namespace Lan.SketchBoard
 
         private bool ShouldSnapResize(ShapeVisualBase? shape, Point position) => shape?.CanSnapDuringResize == true
             && _resizeStartPoint is Point start && (position != start || _lastDragPoint != start);
+
+        private bool ShouldSnapMove(ShapeVisualBase? shape, Point position) => _moveSnapDrag is { } drag
+            && ReferenceEquals(shape, drag.Shape) && shape.MoveSnapPoint.HasValue
+            && (position != drag.Start || drag.HasMoved);
 
         private ShapeVisualBase? GetHitTestShape(Point mousePosition, bool includeLocked = false)
         {
@@ -558,9 +577,20 @@ namespace Lan.SketchBoard
                 : SketchBoardDataManager?.SelectedGeometry;
             var isResizing = !isDrawing && buttonState == MouseButtonState.Pressed
                 && ShouldSnapResize(shapeInEdit, position);
+            var isMoving = !isDrawing && buttonState == MouseButtonState.Pressed
+                && ShouldSnapMove(shapeInEdit, position);
+
+            if (_moveSnapDrag != null && !isDrawing && !isResizing && !isMoving
+                && buttonState == MouseButtonState.Pressed)
+            {
+                ClearSnapMarker();
+                return;
+            }
 
             if (isDrawing || isResizing)
                 position = ResolveEditPoint(position, shapeInEdit, modifiers);
+            else if (isMoving)
+                position = ResolveMovePoint(position, shapeInEdit!);
             else
                 ClearSnapMarker();
 
@@ -570,7 +600,7 @@ namespace Lan.SketchBoard
                 {
                     using (shapeInEdit.DeferVisualUpdates())
                         shapeInEdit.OnMouseMove(position, buttonState);
-                    if (isDrawing || isResizing) _lastDragPoint = position;
+                    if (isDrawing || isResizing || isMoving) _lastDragPoint = position;
                 }
             }
             else
@@ -676,9 +706,11 @@ namespace Lan.SketchBoard
                 : SketchBoardDataManager.SelectedGeometry;
             if (geometry == null) return;
 
-            if (wasDrawing || ShouldSnapResize(geometry, position))
+            var isMoving = !wasDrawing && ShouldSnapMove(geometry, position);
+            if (wasDrawing || ShouldSnapResize(geometry, position) || isMoving)
             {
-                position = ResolveEditPoint(position, geometry, modifiers);
+                position = isMoving ? ResolveMovePoint(position, geometry)
+                    : ResolveEditPoint(position, geometry, modifiers);
                 // Apply the release position as well: a move event may not have
                 // reached the last snap target before the button was released.
                 if ((!wasDrawing || !geometry.IsGeometryRendered)
@@ -687,6 +719,7 @@ namespace Lan.SketchBoard
             }
             _lastDragPoint = null;
             _resizeStartPoint = null;
+            _moveSnapDrag = null;
 
             var stagedSketch = geometry is IStagedSketch;
             var wasRendered = geometry.IsGeometryRendered;
@@ -721,6 +754,7 @@ namespace Lan.SketchBoard
                 _leftDragMouseCaptured = false;
                 EndMarquee();
                 _suppressLeftDrag = false;
+                _moveSnapDrag = null;
             }
         }
 
@@ -757,6 +791,24 @@ namespace Lan.SketchBoard
                 _marqueeActive && _selectionStart is Point start && _selectionEnd is Point end
                     ? new Rect(start, end) : null,
                 _selectionEnd?.X < _selectionStart?.X, manager?.ViewportScale ?? 1);
+        }
+
+        private Point ResolveMovePoint(Point position, ShapeVisualBase geometry)
+        {
+            if (_moveSnapDrag is not { } drag || geometry.MoveSnapPoint is not Point anchor
+                || _lastDragPoint is not Point previous
+                || geometry.TransformToAncestor(this).Inverse is not { } inverse)
+            {
+                ClearSnapMarker();
+                return position;
+            }
+
+            // Resolve the center from the raw pointer and its original grab offset.
+            // Use the model-space delta so a previous snap correction cannot accumulate.
+            drag.HasMoved = true;
+            _moveSnapDrag = drag;
+            var target = SnapPoint(position - drag.PointerOffset, geometry);
+            return previous + (inverse.Transform(target) - anchor);
         }
 
         private Point ResolveEditPoint(Point position, ShapeVisualBase? geometryInEdit, ModifierKeys modifiers)
@@ -880,7 +932,9 @@ namespace Lan.SketchBoard
                 UpdateHoveredShape(null);
                 return;
             }
-            if ((!IsDrawing && SketchBoardDataManager?.SelectedGeometry?.CanSnapDuringResize != true)
+            if ((!IsDrawing && SketchBoardDataManager?.SelectedGeometry?.CanSnapDuringResize != true
+                    && (_moveSnapDrag == null
+                        || !ReferenceEquals(SketchBoardDataManager?.SelectedGeometry, _moveSnapDrag.Value.Shape)))
                 || e.PropertyName == nameof(ISketchBoardDataManager.ViewportScale)
                 || e.PropertyName == nameof(ISketchBoardDataManager.SelectedGeometry))
                 ClearSnapMarker();
