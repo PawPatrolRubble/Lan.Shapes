@@ -147,6 +147,116 @@ namespace Lan.ImageViewer {
 
         #endregion
 
+        #nullable enable
+
+        #region canvas export
+
+        /// <summary>
+        /// Composes everything currently on the canvas — the loaded image plus every
+        /// rendered geometry — into one bitmap at the image's native pixel resolution.
+        /// Shapes are drawn at their image-space stroke thickness, so the result does not
+        /// depend on the current zoom. Returns <c>null</c> when there is nothing to render.
+        /// </summary>
+        public BitmapSource? RenderCanvasContent()
+        {
+            var image = ImageSource;
+            if (image == null)
+            {
+                return null;
+            }
+
+            var size = GetCanvasPixelSize();
+            if (size == null)
+            {
+                return null;
+            }
+
+            var width = size.Value.Width;
+            var height = size.Value.Height;
+            var board = GetSketchBoard();
+            var isBoardRendered = board is { Visibility: Visibility.Visible }
+                && board.ActualWidth > 0 && board.ActualHeight > 0;
+            var dataManager = SketchBoardDataManager;
+            var viewportScale = dataManager?.ViewportScale ?? 1.0;
+            // Stroke and handle sizes are kept constant on screen as base / viewportScale.
+            // Native-resolution output wants the base sizes instead of the current zoom's.
+            var normalizeScale = isBoardRendered && dataManager != null && Math.Abs(viewportScale - 1.0) > 0.0001;
+
+            try
+            {
+                if (normalizeScale)
+                {
+                    dataManager!.OnImageViewerPropertyChanged(1.0);
+                }
+
+                var canvas = new Rect(0, 0, width, height);
+                var content = new DrawingVisual();
+                using (var context = content.RenderOpen())
+                {
+                    context.DrawImage(image, canvas);
+                    if (isBoardRendered)
+                    {
+                        var boardLayer = new RenderTargetBitmap(
+                            (int)Math.Round(board!.ActualWidth),
+                            (int)Math.Round(board.ActualHeight),
+                            96, 96, PixelFormats.Pbgra32);
+                        boardLayer.Render(board);
+                        // Render() bakes in the board's layout offset (its template margin).
+                        // Board coordinates are image pixels, so undo it to keep them aligned.
+                        var boardOffset = VisualTreeHelper.GetOffset(board);
+                        context.PushTransform(new TranslateTransform(-boardOffset.X, -boardOffset.Y));
+                        context.DrawImage(boardLayer, canvas);
+                        context.Pop();
+                    }
+                }
+
+                var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+                bitmap.Render(content);
+                bitmap.Freeze();
+                return bitmap;
+            }
+            finally
+            {
+                if (normalizeScale)
+                {
+                    dataManager!.OnImageViewerPropertyChanged(viewportScale);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Saves <see cref="RenderCanvasContent"/> to <paramref name="filePath"/>, choosing
+        /// the encoder from the file extension (<c>.png</c>, <c>.jpg</c>/<c>.jpeg</c>, <c>.bmp</c>).
+        /// </summary>
+        /// <exception cref="InvalidOperationException">There is no canvas content to save.</exception>
+        public void SaveCanvasContent(string filePath)
+            => ImageViewerBasic.SaveImage(
+                RenderCanvasContent() ?? throw new InvalidOperationException("The canvas has no content to save."),
+                filePath);
+
+        /// <summary>Image pixel size of the canvas, falling back to the sketch board layout size.</summary>
+        private (int Width, int Height)? GetCanvasPixelSize()
+        {
+            var width = PixelWidth;
+            var height = PixelHeight;
+            if (width <= 0 || height <= 0)
+            {
+                var board = GetSketchBoard();
+                width = board?.ActualWidth ?? 0;
+                height = board?.ActualHeight ?? 0;
+            }
+
+            return width > 0 && height > 0
+                ? ((int)Math.Round(width), (int)Math.Round(height))
+                : ((int, int)?)null;
+        }
+
+        private FrameworkElement? GetSketchBoard()
+            => _sketchBoard ??= GetTemplateChild("SketchBoard") as FrameworkElement;
+
+        #endregion
+
+        #nullable restore
         #region events handlers
 
         #endregion

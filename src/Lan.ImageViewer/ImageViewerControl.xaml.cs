@@ -334,6 +334,31 @@ namespace Lan.ImageViewer
             catch (Exception error) { ShowLayerError(error); }
         }
 
+        private void SaveCanvas_Click(object sender, RoutedEventArgs e)
+        {
+            if (ImageViewer == null) return;
+            if (ImageViewer.ImageSource == null)
+            {
+                MessageBox.Show(Window.GetWindow(this), "没有可保存的画布内容。", "保存画布",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            var dialog = new SaveFileDialog
+            {
+                Title = "保存画布内容",
+                Filter = "PNG 图像 (*.png)|*.png|JPEG 图像 (*.jpg)|*.jpg|BMP 图像 (*.bmp)|*.bmp",
+                DefaultExt = ".png",
+                FileName = "Canvas"
+            };
+            if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
+            try { ImageViewer.SaveCanvasContent(dialog.FileName); }
+            catch (Exception error)
+            {
+                MessageBox.Show(Window.GetWindow(this), error.Message, "保存画布失败",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void AssignLayer_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is not IImageViewerViewModel vm || !vm.CanAssignSelectedLayer) return;

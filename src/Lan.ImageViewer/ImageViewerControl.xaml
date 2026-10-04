@@ -241,6 +241,25 @@
                             Fill="{Binding RelativeSource={RelativeSource AncestorType=ToggleButton}, Path=Foreground}"
                             Stretch="Uniform" />
                     </ToggleButton>
+
+                    <!--  Save canvas contents (image + geometries)  -->
+                    <Button
+                        x:Name="BtnSaveCanvas"
+                        Width="32"
+                        Height="32"
+                        Margin="2,0"
+                        Padding="0"
+                        AutomationProperties.Name="保存画布内容"
+                        Click="SaveCanvas_Click"
+                        Style="{StaticResource DarkButtonStyle}"
+                        ToolTip="保存画布内容（图像 + 图形）">
+                        <Path
+                            Width="16"
+                            Height="16"
+                            Data="{StaticResource Save}"
+                            Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                            Stretch="Uniform" />
+                    </Button>
                 </StackPanel>
             </Border>
 
