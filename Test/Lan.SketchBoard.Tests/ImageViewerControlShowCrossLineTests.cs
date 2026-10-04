@@ -2,6 +2,8 @@ using System;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Windows;
+using System.Windows.Automation;
+using System.Windows.Controls.Primitives;
 using Lan.ImageViewer;
 using Lan.ImageViewer.Prism;
 using Lan.Shapes;
@@ -91,6 +93,63 @@ public class ImageViewerControlShowCrossLineTests
             Assert.False(vm.ShowCrossLine);
             Assert.False(viewer.ShowCrossLine);
         });
+    }
+
+    [Fact]
+    public void CrossLineToggle_OnTheToolbar_TogglesTheCrosshairBothWays()
+    {
+        RunOnSta(() =>
+        {
+            var vm = CreateViewModel();
+            var control = new ImageViewerControl { DataContext = vm };
+            Layout(control, new Size(800, 450));
+            var viewer = Assert.IsType<Lan.ImageViewer.ImageViewer>(control.FindName("ImageViewer"));
+            var toggle = Assert.IsType<ToggleButton>(control.FindName("BtnToggleCrossLine"));
+
+            Assert.True(toggle.IsChecked);
+            Assert.True(viewer.ShowCrossLine);
+
+            // The user clicks the new button: view-model, control and inner viewer follow.
+            toggle.IsChecked = false;
+            Assert.False(vm.ShowCrossLine);
+            Assert.False(control.ShowCrossLine);
+            Assert.False(viewer.ShowCrossLine);
+
+            // A host or view-model change keeps the button in sync.
+            vm.ShowCrossLine = true;
+            Assert.True(toggle.IsChecked);
+            Assert.True(viewer.ShowCrossLine);
+
+            control.ShowCrossLine = false;
+            Assert.False(toggle.IsChecked);
+            Assert.False(vm.ShowCrossLine);
+            Assert.False(viewer.ShowCrossLine);
+        });
+    }
+
+    [Fact]
+    public void CrossLineToggle_ShowsACrosshairIconWithHintAndAccessibleName()
+    {
+        RunOnSta(() =>
+        {
+            var control = new ImageViewerControl { DataContext = CreateViewModel() };
+            Layout(control, new Size(800, 450));
+            var toggle = Assert.IsType<ToggleButton>(control.FindName("BtnToggleCrossLine"));
+
+            Assert.False(string.IsNullOrWhiteSpace(toggle.ToolTip as string));
+            Assert.False(string.IsNullOrWhiteSpace(AutomationProperties.GetName(toggle)));
+
+            var icon = Assert.IsType<System.Windows.Shapes.Path>(toggle.Content);
+            Assert.NotNull(icon.Data);
+            Assert.False(icon.Data.Bounds.IsEmpty);
+        });
+    }
+
+    private static void Layout(FrameworkElement element, Size size)
+    {
+        element.Measure(size);
+        element.Arrange(new Rect(size));
+        element.UpdateLayout();
     }
 
     private static ImageViewerControlViewModel CreateViewModel()

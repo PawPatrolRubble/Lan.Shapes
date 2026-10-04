@@ -226,6 +226,21 @@
                             </Path.Style>
                         </Path>
                     </ToggleButton>
+                    <!--  Crosshair Icon ToggleButton (Show / Hide the crosshair lines)  -->
+                    <ToggleButton
+                        x:Name="BtnToggleCrossLine"
+                        Margin="2,0"
+                        AutomationProperties.Name="显示/隐藏十字线"
+                        IsChecked="{Binding ShowCrossLine, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        Style="{StaticResource DarkIconButtonToggleStyle}"
+                        ToolTip="显示/隐藏十字线">
+                        <Path
+                            Width="16"
+                            Height="16"
+                            Data="{StaticResource Crosshair}"
+                            Fill="{Binding RelativeSource={RelativeSource AncestorType=ToggleButton}, Path=Foreground}"
+                            Stretch="Uniform" />
+                    </ToggleButton>
 
                     <!--  Gear Icon ToggleButton (Show / Hide Properties Panel)  -->
                     <ToggleButton
