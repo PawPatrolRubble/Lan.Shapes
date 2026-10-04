@@ -23,7 +23,10 @@ namespace Lan.ImageViewer.Prism
             var shapeLayerManager = containerProvider.Resolve<IShapeLayerManager>();
             if (!string.IsNullOrWhiteSpace(lanShapesConfigPath))
             {
-                var fullPath = ResolveLatestJsonFile(baseDirectory, lanShapesConfigPath);
+                // Load and save through the user's data folder: the shipped file lives in the
+                // build output, where the next build would restore it over saved layer edits.
+                var fullPath = LayerConfigurationStore.ResolveRuntimeFile(
+                    ResolveLatestJsonFile(baseDirectory, lanShapesConfigPath));
                 shapeLayerManager.ReadConfiguration(fullPath);
             }
 

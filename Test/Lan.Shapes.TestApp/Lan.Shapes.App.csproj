@@ -53,7 +53,7 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="LanShapesConfig.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
       <None Update="test0.bmp">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
