@@ -44,7 +44,7 @@ namespace Lan.Shapes.Shapes
             {
                 SetField(ref _center, value);
                 UpdateVerticalAndHorizontalLine();
-                UpdateVisual();
+                RequestVisualUpdate();
             }
         }
 
@@ -56,7 +56,7 @@ namespace Lan.Shapes.Shapes
             {
                 SetField(ref _height, value);
                 UpdateVerticalAndHorizontalLine();
-                UpdateVisual();
+                RequestVisualUpdate();
             }
         }
 
@@ -67,7 +67,7 @@ namespace Lan.Shapes.Shapes
             {
                 SetField(ref _width, value);
                 UpdateVerticalAndHorizontalLine();
-                UpdateVisual();
+                RequestVisualUpdate();
             }
         }
 
@@ -183,7 +183,7 @@ namespace Lan.Shapes.Shapes
             }
 
             base.OnMouseLeftButtonUp(point);
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         public void FromData(CrossData data)
@@ -194,7 +194,7 @@ namespace Lan.Shapes.Shapes
             ShapeStyler?.SetStrokeThickness(data.StrokeThickness);
             IsGeometryRendered = true;
             UpdatePanSensitiveArea();
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         public CrossData GetMetaData()

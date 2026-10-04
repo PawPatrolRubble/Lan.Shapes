@@ -15,12 +15,11 @@ namespace Lan.Shapes.Styler
 
         public IShapeStyler Clone()
         {
-            var clone = new ShapeStyler(FillColor, _sketchPen.Brush, _sketchPen.DashStyle, DragHandleSize)
+            var clone = new ShapeStyler(ToStylerParameter())
             {
                 TagColor = TagColor,
                 Name = Name
             };
-            clone.SetStrokeThickness(_sketchPen.Thickness);
             return clone;
         }
 
@@ -28,11 +27,12 @@ namespace Lan.Shapes.Styler
         {
             return new ShapeStylerParameter()
             {
-                DashStyle = _dashStyle,
+                DashStyle = _dashStyle ?? GetDashStyleName(_sketchPen.DashStyle),
                 DragHandleSize = DragHandleSize,
                 FillColor = FillColor,
                 StrokeColor = _sketchPen.Brush,
-                StrokeThickness = _sketchPen.Thickness
+                StrokeThickness = _sketchPen.Thickness,
+                FillOpacity = FillColor?.Opacity ?? 0
             };
         }
 
@@ -54,6 +54,15 @@ namespace Lan.Shapes.Styler
         public void SetPenDashStyle(DashStyle dashStyle)
         {
             _sketchPen.DashStyle = dashStyle;
+            _dashStyle = GetDashStyleName(dashStyle);
+        }
+
+        private static string GetDashStyleName(DashStyle dashStyle)
+        {
+            return dashStyle == DashStyles.Dash ? "Dash"
+                : dashStyle == DashStyles.Dot ? "Dot"
+                : dashStyle == DashStyles.DashDot ? "DashDot"
+                : dashStyle == DashStyles.DashDotDot ? "DashDotDot" : "Solid";
         }
 
         public double DragHandleSize { get; set; }
@@ -71,7 +80,7 @@ namespace Lan.Shapes.Styler
                 throw new ArgumentNullException(nameof(parameter));
             }
 
-            FillColor = parameter.FillColor;
+            FillColor = parameter.FillColor?.Clone();
             _sketchPen.Thickness = parameter.StrokeThickness > 0 ? parameter.StrokeThickness : 1;
             _sketchPen.Brush = parameter.StrokeColor;
             _sketchPen.DashStyle = ConvertStringToDashStyle(parameter.DashStyle);
@@ -116,6 +125,7 @@ namespace Lan.Shapes.Styler
             _sketchPen.Thickness = 1;
             _sketchPen.Brush = strokeColor;
             _sketchPen.DashStyle = dashStyle;
+            _dashStyle = GetDashStyleName(dashStyle);
             DragHandleSize = dragHandleSize;
         }
     }

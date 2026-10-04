@@ -10,7 +10,7 @@
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="/Lan.ImageViewer;component/Geometries.xaml" />
-        <ResourceDictionary Source="/Lan.ImageViewer;component/PropertyPanelTheme.xaml" />
+        <ResourceDictionary Source="/Lan.ImageViewer;component/DarkControlsTheme.xaml" />
 
         <!--<ResourceDictionary Source="pack://application:,,,/HandyControl;component/Themes/SkinDefault.xaml" />
                <ResourceDictionary Source="pack://application:,,,/HandyControl;component/Themes/Theme.xaml" />-->
@@ -19,6 +19,8 @@
 
 
     <converters:BooleanToVisibilityCollapsedInverseConverter x:Key="BooleanToVisibilityCollapsedConverter" />
+    <converters:BooleanInverseConverter x:Key="BooleanInverseConverter" />
+    <converters:AvailablePanelHeightConverter x:Key="AvailablePanelHeightConverter" />
     <converters:BooleanToGridLengthConverter x:Key="BooleanToGridLengthConverter" />
     <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
 

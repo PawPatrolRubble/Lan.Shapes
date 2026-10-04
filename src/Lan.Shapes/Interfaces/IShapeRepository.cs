@@ -34,6 +34,17 @@ namespace Lan.Shapes.Interfaces
         /// <summary>The shape currently selected by the user.</summary>
         ShapeVisualBase? SelectedGeometry { get; set; }
 
+        ReadOnlyObservableCollection<ShapeVisualBase> SelectedGeometries { get; }
+
+        /// <summary>Replaces selection with completed, visible shapes owned by this board.</summary>
+        void SetSelection(IEnumerable<ShapeVisualBase> shapes);
+
+        /// <summary>Moves completed, unlocked shapes to an independent board copy of the target layer.</summary>
+        int AssignShapesToLayer(IEnumerable<ShapeVisualBase> shapes, ShapeLayer targetLayer);
+
+        event EventHandler SelectionChanged;
+        event EventHandler LayerAssignmentsChanged;
+
         /// <summary>Clears the current selection without removing the shape.</summary>
         void UnselectGeometry();
 
@@ -49,6 +60,15 @@ namespace Lan.Shapes.Interfaces
 
         /// <summary>Sets the active layer that new shapes will be assigned to.</summary>
         void SetShapeLayer(ShapeLayer layer);
+
+        /// <summary>Shows or hides all shapes assigned to a layer on this board.</summary>
+        void SetLayerVisibility(int layerId, bool isVisible);
+
+        /// <summary>Gets the board-local visibility of a layer.</summary>
+        bool IsLayerVisible(int layerId);
+
+        /// <summary>Updates all board-owned copies of an edited layer and redraws its shapes.</summary>
+        void UpdateLayerConfiguration(ShapeLayerParameter parameter);
 
         /// <summary>Sets the active geometry type by <see cref="Type"/> directly.</summary>
         void SetGeometryType(Type type);

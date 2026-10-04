@@ -43,7 +43,7 @@ namespace Lan.Shapes.Shapes
                 {
                     _rectangleGeometry.Rect = new Rect(TopLeft, value);
                     UpdateHandleLocation();
-                    UpdateVisual();
+                    RequestVisualUpdate();
                 }
 
                 OnPropertyChanged(nameof(Width));
@@ -112,7 +112,7 @@ namespace Lan.Shapes.Shapes
                 }
 
                 UpdateHandleLocation();
-                UpdateVisual();
+                RequestVisualUpdate();
                 OnPropertyChanged(nameof(Width));
                 OnPropertyChanged(nameof(Height));
             }
@@ -198,8 +198,12 @@ namespace Lan.Shapes.Shapes
         {
             if (OldPointForTranslate.HasValue)
             {
-                TopLeft += newPoint - OldPointForTranslate.Value;
-                BottomRight += newPoint - OldPointForTranslate.Value;
+                var delta = newPoint - OldPointForTranslate.Value;
+                SetField(ref _topLeft, TopLeft + delta, nameof(TopLeft));
+                SetField(ref _bottomRight, BottomRight + delta, nameof(BottomRight));
+                if (_rectangleGeometry != null) _rectangleGeometry.Rect = new Rect(TopLeft, BottomRight);
+                UpdateHandleLocation();
+                RequestVisualUpdate();
                 OldPointForTranslate = newPoint;
             }
         }

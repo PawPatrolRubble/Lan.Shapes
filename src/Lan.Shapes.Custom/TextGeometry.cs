@@ -30,7 +30,7 @@ namespace Lan.Shapes.Custom
                 StrokeThickness = data.StrokeThickness
             };
             IsGeometryRendered = true;
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         public TextGeometryData GetMetaData()

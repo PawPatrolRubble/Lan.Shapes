@@ -498,8 +498,7 @@ namespace Lan.ImageViewer
         protected bool HandlePanMouseDown(Point position, MouseButton button, ModifierKeys modifiers)
         {
             if (_panButton.HasValue) return true;
-            if (button != MouseButton.Middle
-                && (button != MouseButton.Left || (modifiers & ModifierKeys.Control) == 0)) return false;
+            if (button != MouseButton.Middle) return false;
 
             _panButton = button;
             _mousePos = position;

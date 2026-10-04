@@ -8,6 +8,8 @@ using Lan.Shapes;
 using Lan.Shapes.Interfaces;
 using Lan.Shapes.Shapes;
 
+#nullable enable
+
 namespace Lan.ImageViewer
 {
     /// <summary>
@@ -40,6 +42,15 @@ namespace Lan.ImageViewer
         /// <c>CurrentGeometryInEdit</c>).
         /// </summary>
         ShapeVisualBase? SelectedShape { get; set; }
+        ReadOnlyObservableCollection<ShapeVisualBase> SelectedShapes { get; }
+        ShapeVisualBase? PropertyShape { get; }
+        int SelectedShapeCount { get; }
+        string SelectedLayerSummary { get; }
+        string SelectionPrompt { get; }
+        ShapeLayer? TargetShapeLayer { get; set; }
+        bool CanAssignSelectedLayer { get; }
+        int AssignSelectedShapesToLayer();
+        ICommand SelectionModeCommand { get; }
 
         /// <summary>Geometry type palette for the toolbar.</summary>
         ObservableCollection<GeometryType> GeometryTypeList { get; }
@@ -52,6 +63,16 @@ namespace Lan.ImageViewer
         double Scale { get; set; }
 
         ObservableCollection<ShapeLayer> Layers { get; set; }
+
+        /// <summary>Layers and their board shapes for the tree panel.</summary>
+        ObservableCollection<ShapeLayerTreeNode> LayerGroups { get; }
+
+        /// <summary>Applies and persists edits to a layer definition.</summary>
+        void UpdateLayerConfiguration(ShapeLayerParameter parameter);
+        ShapeLayer CreateLayer(ShapeLayerParameter parameter);
+        void SaveLayerConfiguration(string filePath = "");
+        string LayerConfigurationPath { get; }
+        string LayerConfigurationStatus { get; }
 
         /// <summary>Active layer for new shapes.</summary>
         ShapeLayer SelectedShapeLayer { get; set; }
@@ -67,7 +88,7 @@ namespace Lan.ImageViewer
         ICommand ScaleToFitCommand { get; }
         ICommand DeleteShapeCommand { get; }
 
-        /// <summary>When true, the shape list pane is shown; when false, canvas only.</summary>
+        /// <summary>When true, show only the canvas; when false, show the layer and property pane.</summary>
         bool ShowSimpleCanvas { get; set; }
 
         /// <summary>Controls visibility of geometry-type tools.</summary>

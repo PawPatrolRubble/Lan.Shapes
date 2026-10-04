@@ -95,7 +95,7 @@ namespace Lan.Shapes.Custom
             {
                 Start += newPoint - OldPointForTranslate.Value;
                 End += newPoint - OldPointForTranslate.Value;
-                UpdateVisual();
+                RequestVisualUpdate();
                 OldPointForTranslate = newPoint;
             }
         }
@@ -105,7 +105,7 @@ namespace Lan.Shapes.Custom
             _lineGeometry.EndPoint = End;
             _rightDragHandle.GeometryCenter = End;
             UpdateResizeHandleLocation();
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         /// <summary>
@@ -191,7 +191,7 @@ namespace Lan.Shapes.Custom
                     break;
             }
 
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
 
@@ -203,7 +203,7 @@ namespace Lan.Shapes.Custom
             //wait until end has value
             if (End == default) return;
             UpdateResizeHandleLocation();
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
 
@@ -295,7 +295,7 @@ namespace Lan.Shapes.Custom
                 End = data.DataPoints[1];
                 StrokeThickness = data.StrokeThickness;
                 IsGeometryRendered = true;
-                UpdateVisual();
+                RequestVisualUpdate();
             }
             else
             {

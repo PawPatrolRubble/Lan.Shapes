@@ -22,6 +22,8 @@ namespace Lan.Shapes
         private const double DefaultDragHandleSize = 10;
         private const string DefaultFontFamily = "Verdana";
         private const string DefaultCulture = "en-us";
+        private const int MaximumTextLayouts = 32;
+        private static readonly Typeface AnnotationTypeface = new Typeface(DefaultFontFamily);
 
         private static readonly IReadOnlyDictionary<DragLocation, Cursor> DragCursorMap =
             new Dictionary<DragLocation, Cursor>
@@ -50,6 +52,10 @@ namespace Lan.Shapes
         private bool _isLocked;
 
         private ShapeVisualState _state;
+        private int _visualUpdateDepth;
+        private bool _visualUpdatePending;
+        private readonly Dictionary<TextLayoutKey, DrawingGroup> _textDrawings = new();
+        private readonly record struct TextLayoutKey(string Text, double FontSize, double PixelsPerDip, Brush Foreground);
 
         protected readonly List<DragHandle> Handles = new List<DragHandle>();
 
@@ -127,6 +133,50 @@ namespace Lan.Shapes
 
         private ShapeLayer _shapeLayer;
 
+        private bool _isSelected;
+        private bool _showSelectionHandles = true;
+        public bool IsSelected => _isSelected;
+        public Rect SelectionBounds => Transform?.TransformBounds(BoundsRect) ?? BoundsRect;
+        protected bool ShowSelectionHandles => _showSelectionHandles;
+
+        /// <summary>Selection feedback driven by the owning repository.</summary>
+        public void SetSelectionAppearance(bool selected, bool showHandles)
+        {
+            var changed = _isSelected != selected || _showSelectionHandles != showHandles;
+            _isSelected = selected;
+            _showSelectionHandles = showHandles;
+            if (!changed) return;
+            OnPropertyChanged(nameof(IsSelected));
+            RefreshScaleDependentVisuals();
+        }
+
+        /// <summary>Tests model geometry only, excluding handles and labels. Custom shapes may override.</summary>
+        public virtual bool MatchesSelectionRectangle(Rect rectangle, bool crossing)
+        {
+            if (!IsGeometryRendered || BoundsRect.IsEmpty) return false;
+            if (!crossing) return rectangle.Contains(SelectionBounds);
+            var geometry = RenderGeometry;
+            if (Transform != null && !Transform.Value.IsIdentity)
+            {
+                geometry = geometry.CloneCurrentValue();
+                var transforms = new TransformGroup();
+                transforms.Children.Add(geometry.Transform);
+                transforms.Children.Add(Transform);
+                geometry.Transform = transforms;
+            }
+            var region = new RectangleGeometry(rectangle);
+            // Selection highlighting must not change which part of a shape can be selected.
+            var styler = ShapeLayer.GetStyler(ShapeVisualState.Normal);
+            return (HasVisibleBrush(styler.FillColor)
+                    && geometry.FillContainsWithDetail(region) is not (IntersectionDetail.Empty or IntersectionDetail.NotCalculated))
+                || (styler.SketchPen is Pen pen && HasVisibleBrush(pen.Brush)
+                    && geometry.StrokeContainsWithDetail(pen, region) is not (IntersectionDetail.Empty or IntersectionDetail.NotCalculated));
+        }
+
+        private static bool HasVisibleBrush(Brush? brush)
+            => brush != null && brush.Opacity > 0
+                && (brush is not SolidColorBrush solid || solid.Color.A > 0);
+
         public ShapeLayer ShapeLayer
         {
             get => _shapeLayer;
@@ -144,7 +194,7 @@ namespace Lan.Shapes
                 RefreshScaleDependentVisuals(ViewportScale);
                 if (!IsGeometryRendered)
                 {
-                    UpdateVisual();
+                    RequestVisualUpdate();
                 }
             }
         }
@@ -190,7 +240,7 @@ namespace Lan.Shapes
             {
                 if (SetField(ref _tag, value))
                 {
-                    UpdateVisual();
+                    RequestVisualUpdate();
                 }
             }
         }
@@ -236,7 +286,7 @@ namespace Lan.Shapes
                 case ShapeVisualState.Selected:
                 case ShapeVisualState.MouseOver:
                 case ShapeVisualState.Normal:
-                    UpdateVisual();
+                    RequestVisualUpdate();
                     break;
                 case ShapeVisualState.Locked:
                     UpdateVisualOnLocked();
@@ -248,7 +298,7 @@ namespace Lan.Shapes
 
         protected virtual void UpdateVisualOnLocked()
         {
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         public virtual void Lock()
@@ -299,7 +349,7 @@ namespace Lan.Shapes
         /// Drag handles are visible and interactive while a shape is being created or selected.
         /// </summary>
         protected virtual bool AreDragHandlesActive =>
-            !IsLocked && (!IsGeometryRendered || State == ShapeVisualState.Selected);
+            !IsLocked && (!IsGeometryRendered || (State == ShapeVisualState.Selected && ShowSelectionHandles));
 
         protected virtual Brush? GetDragHandleFill() => ShapeStyler?.FillColor;
 
@@ -349,7 +399,7 @@ namespace Lan.Shapes
 
             if (IsGeometryRendered)
             {
-                UpdateVisual();
+                RequestVisualUpdate();
             }
         }
 
@@ -503,7 +553,7 @@ namespace Lan.Shapes
 
             CreateHandles();
             UpdateGeometryGroup();
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         public virtual void OnMouseRightButtonUp(Point mousePosition)
@@ -595,6 +645,39 @@ namespace Lan.Shapes
             return false;
         }
 
+        /// <summary>Coalesces visual requests while a single geometry operation changes several properties.</summary>
+        public IDisposable DeferVisualUpdates()
+        {
+            _visualUpdateDepth++;
+            return new VisualUpdateScope(this);
+        }
+
+        /// <summary>Use from geometry setters so an active update scope renders only the final geometry.</summary>
+        protected void RequestVisualUpdate()
+        {
+            if (_visualUpdateDepth > 0) _visualUpdatePending = true;
+            else UpdateVisual();
+        }
+
+        private void EndVisualUpdate()
+        {
+            if (--_visualUpdateDepth != 0 || !_visualUpdatePending) return;
+            _visualUpdatePending = false;
+            UpdateVisual();
+        }
+
+        private sealed class VisualUpdateScope : IDisposable
+        {
+            private ShapeVisualBase? _shape;
+            public VisualUpdateScope(ShapeVisualBase shape) => _shape = shape;
+            public void Dispose()
+            {
+                var shape = _shape;
+                _shape = null;
+                shape?.EndVisualUpdate();
+            }
+        }
+
         public virtual void UpdateVisual()
         {
             if (ShapeStyler == null)
@@ -662,10 +745,31 @@ namespace Lan.Shapes
                 text,
                 CultureInfo.GetCultureInfo(DefaultCulture),
                 FlowDirection.LeftToRight,
-                new Typeface(DefaultFontFamily),
+                AnnotationTypeface,
                 AnnotationFontSize,
                 GetTextForeground(foreground),
                 pixelsPerDip);
+        }
+
+        /// <summary>Reuses glyph drawings when only a label's position changes.</summary>
+        protected void DrawCachedText(DrawingContext context, string text, Brush foreground, Point location)
+        {
+            var pixelsPerDip = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+            var brush = GetTextForeground(foreground);
+            var key = new TextLayoutKey(text, AnnotationFontSize, pixelsPerDip, brush);
+            if (!_textDrawings.TryGetValue(key, out var drawing))
+            {
+                drawing = new DrawingGroup();
+                using (var textContext = drawing.Open())
+                    textContext.DrawText(CreateFormattedText(text, foreground, pixelsPerDip), new Point());
+                // Never freeze a mutable brush owned by a layer; its changes must still propagate.
+                if (brush.IsFrozen && drawing.CanFreeze) drawing.Freeze();
+                if (_textDrawings.Count >= MaximumTextLayouts) _textDrawings.Clear();
+                _textDrawings.Add(key, drawing);
+            }
+            context.PushTransform(new TranslateTransform(location.X, location.Y));
+            context.DrawDrawing(drawing);
+            context.Pop();
         }
 
         protected void AddTagText(DrawingContext renderContext, Point location)
@@ -673,8 +777,7 @@ namespace Lan.Shapes
             if (!string.IsNullOrEmpty(Tag))
             {
                 var brush = ShapeStyler?.TagColor ?? Brushes.Red;
-                var formattedText = CreateFormattedText(Tag, brush);
-                renderContext.DrawText(formattedText, location);
+                DrawCachedText(renderContext, Tag, brush, location);
             }
         }
 
@@ -686,8 +789,7 @@ namespace Lan.Shapes
                 renderContext.PushTransform(rt);
 
                 var brush = ShapeStyler?.TagColor ?? Brushes.Red;
-                var formattedText = CreateFormattedText(Tag, brush);
-                renderContext.DrawText(formattedText, location);
+                DrawCachedText(renderContext, Tag, brush, location);
                 renderContext.Pop();
             }
         }
@@ -700,7 +802,7 @@ namespace Lan.Shapes
             }
 
             _textGeometries.Add((location.Value, content));
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         /// <summary>
@@ -710,15 +812,14 @@ namespace Lan.Shapes
         public virtual void ClearText()
         {
             _textGeometries.Clear();
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         protected void DrawText(DrawingContext renderContext)
         {
             foreach (var textGeometry in _textGeometries)
             {
-                var formattedText = CreateFormattedText(textGeometry.Content, Brushes.Red);
-                renderContext.DrawText(formattedText, textGeometry.Location);
+                DrawCachedText(renderContext, textGeometry.Content, Brushes.Red, textGeometry.Location);
             }
         }
 

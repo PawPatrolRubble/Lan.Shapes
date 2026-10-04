@@ -112,6 +112,13 @@ public class DxfDocumentServiceTests
             shape.State = ShapeVisualState.Selected;
             Assert.NotNull(shape.FindDragHandleMouseOver(rotationCenter));
 
+            shape.SetSelectionAppearance(selected: true, showHandles: false);
+            Assert.Null(shape.FindDragHandleMouseOver(center));
+            Assert.Null(shape.FindDragHandleMouseOver(rotationCenter));
+            shape.SetSelectionAppearance(selected: true, showHandles: true);
+            Assert.NotNull(shape.FindDragHandleMouseOver(center));
+            Assert.NotNull(shape.FindDragHandleMouseOver(rotationCenter));
+
             shape.State = ShapeVisualState.Normal;
             Assert.NotNull(shape.FindDragHandleMouseOver(center));
             Assert.Null(shape.FindDragHandleMouseOver(rotationCenter));

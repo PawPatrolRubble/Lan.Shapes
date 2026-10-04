@@ -4,6 +4,12 @@ namespace Lan.Shapes.Interfaces
 {
     public interface IShapeLayerManager
     {
+        /// <summary>The last configuration path, if one has been loaded or saved.</summary>
+        string ConfigurationFilePath { get; }
+        bool HasUnsavedChanges { get; }
+        ShapeLayer CreateLayer(ShapeLayerParameter definition);
+        void UpdateLayer(ShapeLayerParameter definition);
+        event System.EventHandler<ShapeLayer> LayerDefinitionChanged;
         /// <summary>
         /// Global Lan.Shapes configuration currently used by the layer collection.
         /// </summary>

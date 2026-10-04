@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows.Media;
 using Lan.Shapes.Enums;
@@ -19,7 +20,7 @@ namespace Lan.Shapes
     /// Layer definitions and their shared measurement calibration are typically loaded
     /// from <see cref="LanShapesConfiguration"/>.
     /// </summary>
-    public class ShapeLayer
+    public class ShapeLayer : INotifyPropertyChanged
     {
         /// <summary>States that must be present in a layer configuration.</summary>
         public static readonly ShapeVisualState[] RequiredStylerStates =
@@ -36,6 +37,9 @@ namespace Lan.Shapes
         };
 
         private readonly Dictionary<ShapeVisualState, IShapeStyler> _stylers;
+        private readonly IShapeStylerFactory _stylerFactory;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>Stylers keyed by visual state. Mutated at runtime for zoom scale only.</summary>
         public Dictionary<ShapeVisualState, IShapeStyler> Stylers => _stylers;
@@ -44,15 +48,15 @@ namespace Lan.Shapes
         public ShapeMeasurementSettings Measurement { get; }
 
         public int LayerId { get; }
-        public string Name { get; }
-        public string Description { get; }
+        public string Name { get; private set; }
+        public string Description { get; private set; }
         public int MaximumThickenedShapeWidth { get; set; }
         public int TagFontSize { get; set; }
         /// <summary>Annotation font size as a multiple of the normal drag-handle size.</summary>
-        public double AnnotationFontToHandleRatio { get; }
+        public double AnnotationFontToHandleRatio { get; private set; }
 
-        public Brush TextForeground { get; } = Brushes.Black;
-        public Brush BorderBackground { get; } = Brushes.LightBlue;
+        public Brush TextForeground { get; private set; } = Brushes.Black;
+        public Brush BorderBackground { get; private set; } = Brushes.LightBlue;
 
         /// <summary>
         /// Builds a layer from configuration using the default <see cref="ShapeStylerFactory"/>.
@@ -94,6 +98,7 @@ namespace Lan.Shapes
 
             Measurement = measurement ?? throw new ArgumentNullException(nameof(measurement));
             Measurement.Validate();
+            _stylerFactory = stylerFactory;
 
             LayerId = shapeLayerParameter.LayerId;
             Name = shapeLayerParameter.Name;
@@ -161,6 +166,37 @@ namespace Lan.Shapes
             };
         }
 
+        /// <summary>Applies an edited definition while retaining this layer's identity and measurement.</summary>
+        public void ApplyConfiguration(ShapeLayerParameter parameter)
+        {
+            if (parameter == null) throw new ArgumentNullException(nameof(parameter));
+            if (parameter.LayerId != LayerId)
+                throw new ArgumentException("A layer ID cannot be changed while editing a layer.", nameof(parameter));
+            if (string.IsNullOrWhiteSpace(parameter.Name))
+                throw new ArgumentException("A layer name is required.", nameof(parameter));
+            if (!double.IsFinite(parameter.AnnotationFontToHandleRatio) ||
+                parameter.AnnotationFontToHandleRatio <= 0)
+                throw new ArgumentOutOfRangeException(nameof(parameter));
+
+            var schema = parameter.StyleSchema
+                ?? throw new ArgumentException("A layer style schema is required.", nameof(parameter));
+            EnsureRequiredStylerStates(schema, parameter.Name, LayerId);
+            var stylers = schema.ToDictionary(x => x.Key, x => _stylerFactory.CreateStyler(x.Value));
+
+            Name = parameter.Name.Trim();
+            Description = parameter.Description ?? string.Empty;
+            MaximumThickenedShapeWidth = parameter.MaximumThickenedShapeWidth;
+            TagFontSize = parameter.TagFontSize;
+            AnnotationFontToHandleRatio = parameter.AnnotationFontToHandleRatio;
+            TextForeground = parameter.TextForeground;
+            BorderBackground = parameter.BorderBackground;
+            foreach (var key in _stylers.Keys.ToArray()) _stylers.Remove(key);
+            foreach (var entry in stylers) _stylers.Add(entry.Key, entry.Value);
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Description)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Stylers)));
+        }
+
         /// <summary>
         /// Returns a new layer with the same configuration but independent
         /// <see cref="IShapeStyler"/> instances. Use when a board/manager must
@@ -172,7 +208,7 @@ namespace Lan.Shapes
             return new ShapeLayer(
                 ToShapeLayerParameter(),
                 Measurement,
-                new ShapeStylerFactory());
+                _stylerFactory);
         }
 
         /// <summary>

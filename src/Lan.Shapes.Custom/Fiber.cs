@@ -74,7 +74,7 @@ namespace Lan.Shapes.Custom
                 {
                     OnPropertyChanged(nameof(Radius));
                     UpdateFilletCircle();
-                    UpdateVisual();
+                    RequestVisualUpdate();
                     OnPropertyChanged(nameof(FilletCenter));
                 }
             }
@@ -293,7 +293,7 @@ namespace Lan.Shapes.Custom
             }
 
             IsGeometryRendered = true;
-            UpdateVisual();
+            RequestVisualUpdate();
             OnPropertyChanged(nameof(Width));
             OnPropertyChanged(nameof(Height));
             OnPropertyChanged(nameof(Radius));
@@ -361,7 +361,7 @@ namespace Lan.Shapes.Custom
                 (RectTopLeft.Y + RectBottomRight.Y) / 2.0);
 
             _fiberAngle = GetFiberAngleInDeg();
-            UpdateVisual();
+            RequestVisualUpdate();
             OnPropertyChanged(nameof(Width));
             OnPropertyChanged(nameof(Height));
             OnPropertyChanged(nameof(Radius));

@@ -59,7 +59,7 @@ namespace Lan.Shapes.Custom
             if (Radius > 0)
             {
                 DistanceResizeHandle.GeometryCenter = Center + new Vector(0, -(Radius + StrokeThickness / 2));
-                UpdateVisual();
+                RequestVisualUpdate();
             }
         }
 
@@ -71,7 +71,7 @@ namespace Lan.Shapes.Custom
             {
                 SetField(ref _center, value);
                 CreateOrTranslateGeometry(_center);
-                UpdateVisual();
+                RequestVisualUpdate();
             }
         }
 
@@ -87,7 +87,7 @@ namespace Lan.Shapes.Custom
             {
                 SetField(ref _radius, value);
                 ResizeGeometry(_radius);
-                UpdateVisual();
+                RequestVisualUpdate();
             }
         }
 
@@ -216,7 +216,7 @@ namespace Lan.Shapes.Custom
             Radius = data.RadiusX;
             StrokeThickness = data.StrokeThickness;
             IsGeometryRendered = true;
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         public EllipseData GetMetaData()

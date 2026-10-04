@@ -36,17 +36,16 @@ public class ImageViewerPanTests
     }
 
     [Fact]
-    public void ControlLeftDrag_UsesSamePanBehavior()
+    public void ControlLeftDrag_DoesNotPan()
     {
         RunOnSta(() =>
         {
             var viewer = CreateViewer();
-            Assert.True(viewer.Press(new Point(10, 20), MouseButton.Left, ModifierKeys.Control));
-            Assert.True(viewer.Move(new Point(35, 50), left: MouseButtonState.Pressed));
-            Assert.True(viewer.Release(MouseButton.Left));
+            Assert.False(viewer.Press(new Point(10, 20), MouseButton.Left, ModifierKeys.Control));
+            Assert.False(viewer.Move(new Point(35, 50), left: MouseButtonState.Pressed));
+            Assert.False(viewer.Release(MouseButton.Left));
 
-            Assert.Equal(25, viewer.Matrix.OffsetX);
-            Assert.Equal(30, viewer.Matrix.OffsetY);
+            Assert.Equal(Matrix.Identity, viewer.Matrix);
         });
     }
 

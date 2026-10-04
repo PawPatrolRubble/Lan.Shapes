@@ -97,7 +97,7 @@ namespace Lan.Shapes.Custom
             Center = data.Center;
             Radius = data.RadiusX;
             IsGeometryRendered = true;
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         public EllipseData GetMetaData()
@@ -152,7 +152,7 @@ namespace Lan.Shapes.Custom
         {
             _baseEllipseGeometry.Center = center;
             UpdateHandlePosition(center, Radius);
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         /// <summary>
@@ -193,7 +193,7 @@ namespace Lan.Shapes.Custom
             {
                 IsBeingDraggedOrPanMoving = true;
                 HandleResizing(point);
-                UpdateVisual();
+                RequestVisualUpdate();
             }
         }
 

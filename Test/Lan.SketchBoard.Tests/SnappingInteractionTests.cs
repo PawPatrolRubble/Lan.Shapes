@@ -724,7 +724,7 @@ public class SnappingInteractionTests
             board.SketchBoardDataManager = null;
             Assert.True(board.MarkerBounds.IsEmpty);
             Assert.Empty(manager.VisualCollection);
-            Assert.Equal(1, VisualTreeHelper.GetChildrenCount(board));
+            Assert.Equal(2, VisualTreeHelper.GetChildrenCount(board)); // Selection overlay and snap marker only.
         });
     }
 

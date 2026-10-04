@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -47,6 +48,11 @@ namespace Lan.SketchBoard
             value => value is LineDirectionMode mode && Enum.IsDefined(mode));
 
         private readonly SnapMarkerVisual _snapMarker = new SnapMarkerVisual();
+        private readonly SelectionVisual _selectionVisual = new SelectionVisual();
+        private Point? _selectionStart;
+        private Point? _selectionEnd;
+        private bool _selectionAdditive;
+        private bool _marqueeActive;
         // During a manager rebind, WPF still enumerates the old mirror while
         // its children are detached, even though the dependency property changed.
         private ISketchBoardDataManager? _visualDataManager;
@@ -100,6 +106,7 @@ namespace Lan.SketchBoard
 
         public SketchBoard()
         {
+            AddVisualChild(_selectionVisual);
             AddVisualChild(_snapMarker);
             // Stroke/handle sizing is driven solely by ImageViewer LocalScale →
             // SketchBoardDataManager.OnImageViewerPropertyChanged. Window resize
@@ -113,11 +120,40 @@ namespace Lan.SketchBoard
             base.OnKeyDown(e);
             if (e.Key is Key.LeftShift or Key.RightShift)
                 HandleModifierKeysChanged(Keyboard.Modifiers);
-            if (e.Key == Key.Delete && SketchBoardDataManager?.SelectedGeometry != null)
-            {
-                SketchBoardDataManager?.RemoveShape(SketchBoardDataManager.SelectedGeometry);
-            }
+            if (HandleSelectionKey(e.Key, Keyboard.Modifiers)) e.Handled = true;
         }
+
+        protected bool HandleSelectionKey(Key key, ModifierKeys modifiers)
+        {
+            var manager = SketchBoardDataManager;
+            if (manager == null) return false;
+            if (key == Key.Escape)
+            {
+                EndMarquee();
+                if (manager.CurrentGeometryInEdit is { IsGeometryRendered: false } unfinished)
+                    manager.RemoveShape(unfinished);
+                manager.UnselectGeometry();
+                manager.UnselectGeometryType();
+                return true;
+            }
+            if (IsDrawing) return false;
+            if (key == Key.A && (modifiers & ModifierKeys.Control) != 0)
+            {
+                manager.SetSelection(manager.Shapes.Where(IsSelectable));
+                return true;
+            }
+            if (key == Key.Delete && manager.SelectedGeometries.Count > 0)
+            {
+                var selected = manager.SelectedGeometries.ToList();
+                if (selected.All(x => !x.IsLocked))
+                    foreach (var shape in selected) manager.RemoveShape(shape);
+                return true;
+            }
+            return false;
+        }
+
+        private bool IsSelectable(ShapeVisualBase shape) => shape.IsGeometryRendered && !shape.IsLocked
+            && SketchBoardDataManager?.IsLayerVisible(shape.ShapeLayer.LayerId) == true;
 
         protected override void OnKeyUp(KeyEventArgs e)
         {
@@ -148,11 +184,13 @@ namespace Lan.SketchBoard
             sketchBoard._lastDragPoint = null;
             sketchBoard._resizeStartPoint = null;
             sketchBoard._lastRawDragPoint = null;
+            sketchBoard.EndMarquee();
             if (e.OldValue is ISketchBoardDataManager previous)
             {
                 previous.GeometryTypeSelected -= sketchBoard.OnDrawingToolChanged;
                 previous.GeometryTypeUnselected -= sketchBoard.OnDrawingToolChanged;
                 previous.Shapes.CollectionChanged -= sketchBoard.OnShapesChanged;
+                previous.SelectionChanged -= sketchBoard.OnSelectionChanged;
                 if (previous is INotifyPropertyChanged observable)
                     observable.PropertyChanged -= sketchBoard.OnManagerPropertyChanged;
                 if (ReferenceEquals(previous.SketchBoard, sketchBoard))
@@ -166,9 +204,11 @@ namespace Lan.SketchBoard
                 dataManager.GeometryTypeSelected += sketchBoard.OnDrawingToolChanged;
                 dataManager.GeometryTypeUnselected += sketchBoard.OnDrawingToolChanged;
                 dataManager.Shapes.CollectionChanged += sketchBoard.OnShapesChanged;
+                dataManager.SelectionChanged += sketchBoard.OnSelectionChanged;
                 if (dataManager is INotifyPropertyChanged observable)
                     observable.PropertyChanged += sketchBoard.OnManagerPropertyChanged;
             }
+            sketchBoard.UpdateSelectionVisual();
         }
 
         private static void OnSnappingSettingsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -188,12 +228,13 @@ namespace Lan.SketchBoard
 
         protected override int VisualChildrenCount
         {
-            get => (_visualDataManager?.VisualCollection.Count ?? 0) + 1;
+            get => (_visualDataManager?.VisualCollection.Count ?? 0) + 2;
         }
 
         protected override Visual GetVisualChild(int index)
         {
-            if (index == (_visualDataManager?.VisualCollection.Count ?? 0)) return _snapMarker;
+            if (index == (_visualDataManager?.VisualCollection.Count ?? 0)) return _selectionVisual;
+            if (index == (_visualDataManager?.VisualCollection.Count ?? 0) + 1) return _snapMarker;
             return _visualDataManager?.VisualCollection[index] ?? throw new InvalidOperationException();
         }
 
@@ -253,6 +294,7 @@ namespace Lan.SketchBoard
         {
             if (SketchBoardDataManager == null) return;
 
+            EndMarquee();
             _suppressLeftDrag = false;
             _lastDragPoint = null;
             _resizeStartPoint = null;
@@ -302,6 +344,31 @@ namespace Lan.SketchBoard
             // unlock cannot accidentally create a new shape over them.
             var hitShape = GetHitTestShape(position, includeLocked: true);
             _mouseDownHitExistingShape = hitShape != null;
+
+            if ((modifiers & ModifierKeys.Control) != 0)
+            {
+                if (hitShape != null)
+                {
+                    if (IsSelectable(hitShape))
+                    {
+                        var selected = SketchBoardDataManager.SelectedGeometries.Where(IsSelectable).ToList();
+                        if (!selected.Remove(hitShape)) selected.Add(hitShape);
+                        SketchBoardDataManager.SetSelection(selected);
+                    }
+                    _suppressLeftDrag = true;
+                }
+                else BeginMarquee(position, additive: true);
+                UpdateHoveredShape(null);
+                return;
+            }
+
+            if (hitShape == null)
+            {
+                SketchBoardDataManager.SelectedGeometry = null;
+                BeginMarquee(position, additive: false);
+                UpdateHoveredShape(null);
+                return;
+            }
 
             if (clickCount == 2 && hitShape?.IsGeometryRendered == true)
             {
@@ -407,7 +474,9 @@ namespace Lan.SketchBoard
             // stops at transparent filled geometry and hides shapes underneath.
             VisualTreeHelper.HitTest(this, null, result =>
             {
-                if (result.VisualHit is ShapeVisualBase shape && !candidates.Contains(shape))
+                if (result.VisualHit is ShapeVisualBase shape
+                    && SketchBoardDataManager.IsLayerVisible(shape.ShapeLayer.LayerId)
+                    && !candidates.Contains(shape))
                     candidates.Add(shape);
                 return HitTestResultBehavior.Continue;
             }, new PointHitTestParameters(mousePosition));
@@ -416,7 +485,8 @@ namespace Lan.SketchBoard
             for (var i = SketchBoardDataManager.Shapes.Count - 1; i >= 0; i--)
             {
                 var shape = SketchBoardDataManager.Shapes[i];
-                if (!candidates.Contains(shape) && GetShapePoint(shape, mousePosition) is Point localPoint
+                if (SketchBoardDataManager.IsLayerVisible(shape.ShapeLayer.LayerId)
+                    && !candidates.Contains(shape) && GetShapePoint(shape, mousePosition) is Point localPoint
                     && shape.HasDragHandleAt(localPoint))
                     candidates.Add(shape);
             }
@@ -464,6 +534,12 @@ namespace Lan.SketchBoard
 
         protected void HandleMouseMove(Point position, MouseButtonState buttonState, ModifierKeys modifiers)
         {
+            if (_selectionStart.HasValue)
+            {
+                if (buttonState == MouseButtonState.Pressed) UpdateMarquee(position);
+                else EndMarquee();
+                return;
+            }
             if (buttonState == MouseButtonState.Pressed && _suppressLeftDrag) return;
 
             if (buttonState == MouseButtonState.Pressed)
@@ -492,7 +568,8 @@ namespace Lan.SketchBoard
             {
                 if (shapeInEdit != null && !shapeInEdit.IsLocked)
                 {
-                    shapeInEdit.OnMouseMove(position, buttonState);
+                    using (shapeInEdit.DeferVisualUpdates())
+                        shapeInEdit.OnMouseMove(position, buttonState);
                     if (isDrawing || isResizing) _lastDragPoint = position;
                 }
             }
@@ -570,6 +647,20 @@ namespace Lan.SketchBoard
 
         protected void HandleLeftButtonUp(Point position, ModifierKeys modifiers)
         {
+            if (_selectionStart is Point start)
+            {
+                UpdateMarquee(position);
+                if (_marqueeActive && SketchBoardDataManager is { } manager)
+                {
+                    var rectangle = new Rect(start, position);
+                    var candidates = manager.Shapes.Where(IsSelectable)
+                        .Where(x => x.MatchesSelectionRectangle(rectangle, position.X < start.X));
+                    manager.SetSelection(_selectionAdditive
+                        ? manager.SelectedGeometries.Where(IsSelectable).Concat(candidates) : candidates);
+                }
+                EndMarquee();
+                return;
+            }
             _lastRawDragPoint = null;
             if (_suppressLeftDrag)
             {
@@ -622,6 +713,52 @@ namespace Lan.SketchBoard
             base.OnMouseLeave(e);
         }
 
+        protected override void OnLostMouseCapture(MouseEventArgs e)
+        {
+            base.OnLostMouseCapture(e);
+            if (ReferenceEquals(e.OriginalSource, this))
+            {
+                _leftDragMouseCaptured = false;
+                EndMarquee();
+                _suppressLeftDrag = false;
+            }
+        }
+
+        private void BeginMarquee(Point position, bool additive)
+        {
+            _selectionStart = _selectionEnd = position;
+            _selectionAdditive = additive;
+            _marqueeActive = false;
+        }
+
+        private void UpdateMarquee(Point position)
+        {
+            if (_selectionStart is not Point start) return;
+            _selectionEnd = position;
+            var scale = SketchBoardDataManager?.ViewportScale ?? 1;
+            _marqueeActive |= Math.Abs(position.X - start.X) * scale >= SystemParameters.MinimumHorizontalDragDistance
+                || Math.Abs(position.Y - start.Y) * scale >= SystemParameters.MinimumVerticalDragDistance;
+            UpdateSelectionVisual();
+        }
+
+        private void EndMarquee()
+        {
+            _selectionStart = _selectionEnd = null;
+            _marqueeActive = false;
+            UpdateSelectionVisual();
+        }
+
+        private void OnSelectionChanged(object? sender, EventArgs e) => UpdateSelectionVisual();
+
+        private void UpdateSelectionVisual()
+        {
+            var manager = SketchBoardDataManager;
+            _selectionVisual.Update(manager?.SelectedGeometries ?? Enumerable.Empty<ShapeVisualBase>(),
+                _marqueeActive && _selectionStart is Point start && _selectionEnd is Point end
+                    ? new Rect(start, end) : null,
+                _selectionEnd?.X < _selectionStart?.X, manager?.ViewportScale ?? 1);
+        }
+
         private Point ResolveEditPoint(Point position, ShapeVisualBase? geometryInEdit, ModifierKeys modifiers)
         {
             var mode = LineDirectionMode;
@@ -668,7 +805,8 @@ namespace Lan.SketchBoard
             for (var i = manager.Shapes.Count - 1; i >= 0; i--)
             {
                 var shape = manager.Shapes[i];
-                if (!shape.IsGeometryRendered || ReferenceEquals(shape, geometryInEdit)
+                if (!manager.IsLayerVisible(shape.ShapeLayer.LayerId)
+                    || !shape.IsGeometryRendered || ReferenceEquals(shape, geometryInEdit)
                     || ReferenceEquals(shape, manager.CurrentGeometryInEdit)) continue;
                 GeneralTransform? transform = null;
                 foreach (var anchor in shape.GetSnapPoints())
@@ -722,6 +860,7 @@ namespace Lan.SketchBoard
 
         private void OnDrawingToolChanged(object? sender, Type type)
         {
+            EndMarquee();
             ClearSnapMarker();
             if (IsDrawing) UpdateHoveredShape(null);
         }
@@ -734,6 +873,13 @@ namespace Lan.SketchBoard
 
         private void OnManagerPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            UpdateSelectionVisual();
+            if (e.PropertyName == nameof(ISketchBoardDataManager.LayerVisibilityRevision))
+            {
+                ClearSnapMarker();
+                UpdateHoveredShape(null);
+                return;
+            }
             if ((!IsDrawing && SketchBoardDataManager?.SelectedGeometry?.CanSnapDuringResize != true)
                 || e.PropertyName == nameof(ISketchBoardDataManager.ViewportScale)
                 || e.PropertyName == nameof(ISketchBoardDataManager.SelectedGeometry))
@@ -760,6 +906,29 @@ namespace Lan.SketchBoard
                 drawing.DrawLine(pen, center - new Vector(0, 3 / scale), center + new Vector(0, 3 / scale));
             }
 
+            protected override HitTestResult? HitTestCore(PointHitTestParameters hitTestParameters) => null;
+            protected override GeometryHitTestResult? HitTestCore(GeometryHitTestParameters hitTestParameters) => null;
+        }
+
+        private sealed class SelectionVisual : DrawingVisual
+        {
+            public void Update(IEnumerable<ShapeVisualBase> shapes, Rect? marquee, bool crossing, double scale)
+            {
+                using var drawing = RenderOpen();
+                var selected = shapes.ToList();
+                var pen = new Pen(Brushes.DeepSkyBlue, 1.5 / scale);
+                if (selected.Count > 1)
+                    foreach (var shape in selected)
+                        if (!shape.BoundsRect.IsEmpty) drawing.DrawRectangle(null, pen, shape.SelectionBounds);
+                if (marquee is Rect rectangle)
+                {
+                    var color = crossing ? Colors.LimeGreen : Colors.DeepSkyBlue;
+                    var fill = new SolidColorBrush(Color.FromArgb(35, color.R, color.G, color.B));
+                    var border = new Pen(new SolidColorBrush(color), 1 / scale);
+                    if (crossing) border.DashStyle = DashStyles.Dash;
+                    drawing.DrawRectangle(fill, border, rectangle);
+                }
+            }
             protected override HitTestResult? HitTestCore(PointHitTestParameters hitTestParameters) => null;
             protected override GeometryHitTestResult? HitTestCore(GeometryHitTestParameters hitTestParameters) => null;
         }

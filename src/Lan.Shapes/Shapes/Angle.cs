@@ -105,7 +105,7 @@ namespace Lan.Shapes.Shapes
                 new Pen(Brushes.Black, 12 / ViewportScale));
             OnPropertyChanged(nameof(AngleDegrees));
             OnPropertyChanged(nameof(BoundsRect));
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         protected override void CreateHandles() { }

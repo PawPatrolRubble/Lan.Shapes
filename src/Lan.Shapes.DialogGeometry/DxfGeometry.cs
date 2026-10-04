@@ -76,10 +76,10 @@ namespace Lan.Shapes.DialogGeometry
             // handles are creating during ReadDxfFile
         }
 
-        protected override bool AreDragHandlesActive => !IsLocked;
+        protected override bool AreDragHandlesActive => !IsLocked && ShowSelectionHandles;
 
         private bool AreSelectionHandlesVisible =>
-            !IsGeometryRendered || State == ShapeVisualState.Selected;
+            ShowSelectionHandles && (!IsGeometryRendered || State == ShapeVisualState.Selected);
 
         protected override void OnDragHandleSizeChanges(double dragHandleSize)
         {
@@ -146,7 +146,7 @@ namespace Lan.Shapes.DialogGeometry
 
         public override DragHandle? FindDragHandleMouseOver(Point p)
         {
-            if (IsLocked)
+            if (!AreDragHandlesActive)
             {
                 return null;
             }
@@ -430,21 +430,21 @@ namespace Lan.Shapes.DialogGeometry
                     UpdateMouseCursor(DragLocation.Move);
                     HandleTranslate(point);
                     UpdateGeometryGroup();
-                    UpdateVisual();
+                    RequestVisualUpdate();
                 }
                 else if (SelectedDragHandle != null)
                 {
                     IsBeingDraggedOrPanMoving = true;
                     HandleResizing(point);
                     UpdateGeometryGroup();
-                    UpdateVisual();
+                    RequestVisualUpdate();
                 }
                 else
                 {
                     IsBeingDraggedOrPanMoving = true;
                     HandleTranslate(point);
                     UpdateGeometryGroup();
-                    UpdateVisual();
+                    RequestVisualUpdate();
                 }
             }
             else
@@ -542,7 +542,7 @@ namespace Lan.Shapes.DialogGeometry
             _dxfGeometryWrapper.Transform = Transform.Identity;
 
             UpdateHandleLocation();
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         public override void OnMouseLeftButtonDown(Point mousePoint)
@@ -558,7 +558,7 @@ namespace Lan.Shapes.DialogGeometry
                         if (x.Result == DialogResult.Ok && !string.IsNullOrWhiteSpace(x.FilePath))
                         {
                             ReadDxfFile(x.FilePath, mousePoint, x.PixelToMmFactor);
-                            UpdateVisual();
+                            RequestVisualUpdate();
                             IsGeometryRendered = true;
                         }
                         else

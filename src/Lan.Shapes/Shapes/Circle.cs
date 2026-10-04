@@ -38,7 +38,7 @@ namespace Lan.Shapes.Shapes
             Y = data.Center.Y;
             Radius = data.RadiusX;
             IsGeometryRendered = true;
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         public EllipseData GetMetaData()
@@ -159,11 +159,10 @@ namespace Lan.Shapes.Shapes
                 lengthInMm = Radius * measurement.UnitsPerMillimeter / measurement.PixelPerUnit;
             }
 
-            var formattedText = CreateFormattedText(
+            DrawCachedText(renderContext,
                 $"{lengthInMm:f3} {measurement.UnitName}",
-                ShapeStyler?.TagColor ?? Brushes.Red);
-
-            renderContext.DrawText(formattedText, new Point(Center.X, Center.Y));
+                ShapeStyler?.TagColor ?? Brushes.Red,
+                Center);
         }
 
         protected override void DrawGeometryInMouseMove(Point oldPoint, Point newPoint)
@@ -200,8 +199,9 @@ namespace Lan.Shapes.Shapes
             var matrix = new Matrix();
             matrix.Translate(newPoint.X - OldPointForTranslate.Value.X, newPoint.Y - OldPointForTranslate.Value.Y);
             var transformedPoint = matrix.Transform(Center);
-            X = transformedPoint.X;
-            Y = transformedPoint.Y;
+            SetField(ref _x, transformedPoint.X, nameof(X));
+            SetField(ref _y, transformedPoint.Y, nameof(Y));
+            Center = transformedPoint;
             OldPointForTranslate = newPoint;
         }
 
@@ -290,7 +290,7 @@ namespace Lan.Shapes.Shapes
 
                     _horizontalLine.StartPoint = new Point(_center.X, _center.Y) + new Vector(-crossSize * 1.0 / 2, 0);
                     _horizontalLine.EndPoint = new Point(_center.X, _center.Y) + new Vector(crossSize * 1.0 / 2, 0);
-                    UpdateVisual();
+                    RequestVisualUpdate();
 
                     break;
 
@@ -302,7 +302,7 @@ namespace Lan.Shapes.Shapes
                         _ellipseGeometry.RadiusY = Radius;
                         _dragHandle.GeometryCenter = _ellipseGeometry.Center + new Vector(Radius, 0);
                     }
-                    UpdateVisual();
+                    RequestVisualUpdate();
                     break;
 
             }

@@ -121,7 +121,7 @@ namespace Lan.Shapes.Shapes
                 _points.Add(_points.Count, newPoint);
             }
 
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         protected override void DrawGeometryInMouseMove(Point oldPoint, Point newPoint)
@@ -141,7 +141,7 @@ namespace Lan.Shapes.Shapes
 
                 SelectedDragHandle.GeometryCenter = point;
 
-                UpdateVisual();
+                RequestVisualUpdate();
             }
         }
 
@@ -220,7 +220,7 @@ namespace Lan.Shapes.Shapes
                         //handle translation
                         HandleTranslate(point);
 
-                    UpdateVisual();
+                    RequestVisualUpdate();
                 }
             }
         }

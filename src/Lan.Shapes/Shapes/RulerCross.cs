@@ -44,7 +44,7 @@ namespace Lan.Shapes.Shapes
                 if (SetField(ref _center, center))
                 {
                     UpdateGeometry();
-                    UpdateVisual();
+                    RequestVisualUpdate();
                 }
             }
         }
@@ -82,7 +82,7 @@ namespace Lan.Shapes.Shapes
             _center = new Point(Width / 2, Height / 2);
             OnPropertyChanged(nameof(Center));
             UpdateGeometry();
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         protected override void CreateHandles()
@@ -111,7 +111,7 @@ namespace Lan.Shapes.Shapes
         public override void OnMouseLeftButtonUp(Point newPoint)
         {
             base.OnMouseLeftButtonUp(newPoint);
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         private void SetDimensions(double width, double height)
@@ -249,7 +249,7 @@ namespace Lan.Shapes.Shapes
             ShapeStyler?.SetStrokeThickness(data.StrokeThickness);
             IsGeometryRendered = true;
             UpdateGeometry();
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         public RulerCrossData GetMetaData()

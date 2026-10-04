@@ -47,7 +47,7 @@ namespace Lan.Shapes.Custom
                 if (_bottomRight != default)
                 {
                     ResizeByCornerPoint(DragLocation.BottomRight, _bottomRight);
-                    UpdateVisual();
+                    RequestVisualUpdate();
                 }
             }
         }
@@ -65,7 +65,7 @@ namespace Lan.Shapes.Custom
                     else
                         ResizeByCornerPoint(DragLocation.TopLeft, _topLeft);
 
-                    UpdateVisual();
+                    RequestVisualUpdate();
                 }
             }
         }
@@ -103,7 +103,7 @@ namespace Lan.Shapes.Custom
             BottomRight = data.DataPoints[1];
             StrokeThickness = data.StrokeThickness;
             IsGeometryRendered = true;
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         /// <summary>
@@ -244,7 +244,7 @@ namespace Lan.Shapes.Custom
                                                   new Vector(_middleRectangleGeometry.Rect.Width / 2,
                                                       -StrokeThickness / 2);
 
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
 

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Windows;
@@ -34,6 +36,9 @@ namespace Lan.ImageViewer.Prism
         private bool _hideShapeList;
         private bool _showCrossLine = true;
         private ObservableCollection<GeometryType> _geometryTypeList = new();
+        private ObservableCollection<ShapeLayer> _layers = new();
+        private readonly HashSet<ShapeVisualBase> _observedShapes = new();
+        private ShapeLayer? _targetShapeLayer;
 
         public ImageViewerControlViewModel(
             IShapeLayerManager shapeLayerManager,
@@ -69,7 +74,7 @@ namespace Lan.ImageViewer.Prism
             GeometryTypeList = new ObservableCollection<GeometryType>();
 
             Scale = 1;
-            ShowSimpleCanvas = true;
+            ShowSimpleCanvas = false;
             CreateGeometryTypeList();
             Image = CreateEmptyImageSource(2048, 2048);
 
@@ -81,9 +86,39 @@ namespace Lan.ImageViewer.Prism
             ScaleToFitCommand = new DelegateCommand(() => Scale = -1);
             ScaleToOriginalSizeCommand = new DelegateCommand(() => Scale = 0);
             ChooseGeometryTypeCommand = new DelegateCommand<GeometryType>(ChooseGeometryTypeCommandImpl);
-            DeleteShapeCommand = new DelegateCommand(DeleteShapeCommandExecute);
+            DeleteShapeCommand = new DelegateCommand(DeleteShapeCommandExecute,
+                () => SelectedShapes.Count > 0 && SelectedShapes.All(x => !x.IsLocked));
+            SelectionModeCommand = new DelegateCommand(() =>
+            {
+                if (ShapeRepository.CurrentGeometryInEdit is { IsGeometryRendered: false } unfinished)
+                    ShapeRepository.RemoveShape(unfinished);
+                ShapeRepository.UnselectGeometry();
+                ShapeRepository.UnselectGeometryType();
+            });
 
-            Layers = new ObservableCollection<ShapeLayer>(_shapeLayerManager.Layers);
+            Layers = _shapeLayerManager.Layers;
+            Shapes.CollectionChanged += Shapes_CollectionChanged;
+            SyncShapeSubscriptions();
+            RebuildLayerGroups();
+
+            ShapeRepository.SelectionChanged += (_, _) => RefreshSelection();
+            ShapeRepository.LayerAssignmentsChanged += (_, _) =>
+            {
+                RebuildLayerGroups();
+                RefreshSelection();
+            };
+            _shapeLayerManager.LayerDefinitionChanged += (_, layer) =>
+            {
+                ShapeRepository.UpdateLayerConfiguration(layer.ToShapeLayerParameter());
+                RebuildLayerGroups();
+                RefreshSelection();
+            };
+            if (_shapeLayerManager is INotifyPropertyChanged layerNotifications)
+                layerNotifications.PropertyChanged += (_, _) =>
+                {
+                    RaisePropertyChanged(nameof(LayerConfigurationStatus));
+                    RaisePropertyChanged(nameof(LayerConfigurationPath));
+                };
 
             ShapeRepository.GeometryTypeUnselected += ShapeRepository_GeometryTypeUnselected;
 
@@ -96,6 +131,9 @@ namespace Lan.ImageViewer.Prism
 
         private void Board_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == nameof(ISketchBoardDataManager.LayerVisibilityRevision))
+                foreach (var node in LayerGroups)
+                    node.SyncVisibility(ShapeRepository.IsLayerVisible(node.LayerId));
             if (e.PropertyName is null
                 or nameof(IShapeRepository.SelectedGeometry)
                 or nameof(SketchBoardDataManager.SelectedGeometry))
@@ -126,6 +164,42 @@ namespace Lan.ImageViewer.Prism
 
         /// <inheritdoc />
         public ObservableCollection<ShapeVisualBase> Shapes => ShapeRepository.Shapes;
+        public ReadOnlyObservableCollection<ShapeVisualBase> SelectedShapes => ShapeRepository.SelectedGeometries;
+        public int SelectedShapeCount => SelectedShapes.Count;
+        public ShapeVisualBase? PropertyShape => SelectedShapeCount == 1 ? SelectedShape : null;
+        public string SelectedLayerSummary => SelectedShapeCount == 0 ? "未选择图形"
+            : SelectedShapes.Select(x => x.ShapeLayer.LayerId).Distinct().Count() == 1
+                ? SelectedShapes[0].ShapeLayer.Name : "混合图层";
+        public string SelectionPrompt => SelectedShapeCount > 1 ? $"已选 {SelectedShapeCount} 个图形\n可统一修改所属图层"
+            : "未选择图形\n请在列表或画布中选择图形";
+        public ICommand SelectionModeCommand { get; }
+        public ShapeLayer? TargetShapeLayer
+        {
+            get => _targetShapeLayer;
+            set
+            {
+                if (SetProperty(ref _targetShapeLayer, value)) RaisePropertyChanged(nameof(CanAssignSelectedLayer));
+            }
+        }
+        public bool CanAssignSelectedLayer => TargetShapeLayer != null && SelectedShapeCount > 0
+            && SelectedShapes.All(x => x.IsGeometryRendered && !x.IsLocked);
+
+        public int AssignSelectedShapesToLayer()
+        {
+            var target = Layers.FirstOrDefault(x => x.LayerId == TargetShapeLayer?.LayerId)
+                ?? throw new InvalidOperationException("请选择目标图层。");
+            return ShapeRepository.AssignShapesToLayer(SelectedShapes.ToList(), target);
+        }
+
+        private void RefreshSelection()
+        {
+            TargetShapeLayer = SelectedShapeCount > 0 && SelectedShapes.Select(x => x.ShapeLayer.LayerId).Distinct().Count() == 1
+                ? Layers.FirstOrDefault(x => x.LayerId == SelectedShapes[0].ShapeLayer.LayerId) : null;
+            foreach (var property in new[] { nameof(SelectedShape), nameof(PropertyShape), nameof(SelectedShapeCount),
+                nameof(SelectedLayerSummary), nameof(SelectionPrompt), nameof(CanAssignSelectedLayer) })
+                RaisePropertyChanged(property);
+            ((DelegateCommand)DeleteShapeCommand).RaiseCanExecuteChanged();
+        }
 
         /// <inheritdoc />
         public ShapeVisualBase? SelectedShape
@@ -133,7 +207,7 @@ namespace Lan.ImageViewer.Prism
             get => ShapeRepository.SelectedGeometry;
             set
             {
-                if (ReferenceEquals(ShapeRepository.SelectedGeometry, value))
+                if (ReferenceEquals(ShapeRepository.SelectedGeometry, value) && SelectedShapeCount <= 1)
                 {
                     return;
                 }
@@ -145,7 +219,100 @@ namespace Lan.ImageViewer.Prism
 
         public ObservableCollection<GeometryType> GeometryTypeList { get; }
 
-        public ObservableCollection<ShapeLayer> Layers { get; set; }
+        public ObservableCollection<ShapeLayer> Layers
+        {
+            get => _layers;
+            set
+            {
+                if (ReferenceEquals(_layers, value)) return;
+                _layers.CollectionChanged -= Layers_CollectionChanged;
+                _layers = value ?? throw new ArgumentNullException(nameof(value));
+                _layers.CollectionChanged += Layers_CollectionChanged;
+                RaisePropertyChanged();
+                RebuildLayerGroups();
+            }
+        }
+
+        public ObservableCollection<ShapeLayerTreeNode> LayerGroups { get; } = new();
+
+        public void UpdateLayerConfiguration(ShapeLayerParameter parameter)
+        {
+            _shapeLayerManager.UpdateLayer(parameter);
+        }
+
+        public ShapeLayer CreateLayer(ShapeLayerParameter parameter)
+        {
+            var layer = _shapeLayerManager.CreateLayer(parameter);
+            SelectedShapeLayer = layer;
+            return layer;
+        }
+        public void SaveLayerConfiguration(string filePath = "") => _shapeLayerManager.SaveConfiguration(filePath);
+        public string LayerConfigurationPath => _shapeLayerManager.ConfigurationFilePath;
+        public string LayerConfigurationStatus => (string.IsNullOrWhiteSpace(LayerConfigurationPath)
+            ? "未保存到文件" : Path.GetFileName(LayerConfigurationPath))
+            + (_shapeLayerManager.HasUnsavedChanges ? " · 未保存修改" : " · 已保存");
+
+        private void Layers_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (Layers.Count > 0 && !Layers.Contains(_selectedShapeLayer)) SelectedShapeLayer = Layers[0];
+            RebuildLayerGroups();
+        }
+
+        private void Shapes_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            SyncShapeSubscriptions();
+            RebuildLayerGroups();
+        }
+
+        private void SyncShapeSubscriptions()
+        {
+            var current = new HashSet<ShapeVisualBase>(Shapes);
+            foreach (var shape in _observedShapes.Where(x => !current.Contains(x)).ToList())
+            {
+                shape.PropertyChanged -= Shape_PropertyChanged;
+                _observedShapes.Remove(shape);
+            }
+            foreach (var shape in current.Where(x => !_observedShapes.Contains(x)))
+            {
+                shape.PropertyChanged += Shape_PropertyChanged;
+                _observedShapes.Add(shape);
+            }
+        }
+
+        private void Shape_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is nameof(ShapeVisualBase.IsLocked) or nameof(ShapeVisualBase.IsGeometryRendered))
+                RefreshSelection();
+        }
+
+        private void RebuildLayerGroups()
+        {
+            var layers = Layers.Concat(Shapes.Select(x => x.ShapeLayer))
+                .GroupBy(x => x.LayerId).Select(x => x.First()).ToList();
+            var desiredIds = new HashSet<int>(layers.Select(x => x.LayerId));
+            foreach (var obsolete in LayerGroups.Where(x => !desiredIds.Contains(x.LayerId)).ToList())
+            {
+                LayerGroups.Remove(obsolete);
+                obsolete.Dispose();
+            }
+
+            for (var index = 0; index < layers.Count; index++)
+            {
+                var layer = layers[index];
+                var node = LayerGroups.FirstOrDefault(x => x.LayerId == layer.LayerId);
+                if (node == null)
+                {
+                    node = new ShapeLayerTreeNode(layer,
+                        ShapeRepository.IsLayerVisible(layer.LayerId),
+                        (id, visible) => ShapeRepository.SetLayerVisibility(id, visible));
+                    LayerGroups.Insert(index, node);
+                }
+                else if (LayerGroups.IndexOf(node) != index)
+                    LayerGroups.Move(LayerGroups.IndexOf(node), index);
+
+                node.Update(layer, Shapes.Where(x => x.ShapeLayer.LayerId == layer.LayerId));
+            }
+        }
 
         public ShapeLayer SelectedShapeLayer
         {
@@ -246,12 +413,9 @@ namespace Lan.ImageViewer.Prism
 
         private void DeleteShapeCommandExecute()
         {
-            // List selection maps to SelectedShape (SelectedGeometry), not the
-            // in-progress sketch CurrentGeometryInEdit.
-            if (SelectedShape != null)
-            {
-                ShapeRepository.RemoveShape(SelectedShape);
-            }
+            var selected = SelectedShapes.ToList();
+            if (selected.Any(x => x.IsLocked)) return;
+            foreach (var shape in selected) ShapeRepository.RemoveShape(shape);
         }
 
         private void CreateGeometryTypeList()

@@ -316,7 +316,7 @@ namespace Lan.Shapes.Custom
             UpdateHandleLocation();
 
             IsGeometryRendered = true;
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         /// <summary>
@@ -388,7 +388,7 @@ namespace Lan.Shapes.Custom
                 HorizontalTopLeft += offset;
 
                 UpdateHandleLocation();
-                UpdateVisual();
+                RequestVisualUpdate();
                 OldPointForTranslate = newPoint;
             }
         }
@@ -423,7 +423,7 @@ namespace Lan.Shapes.Custom
                 if (!IsGeometryRendered)
                 {
                     VerticalBottomRight = GetValidValueFromPoint(DragLocations.VBottomRight, point);
-                    UpdateVisual();
+                    RequestVisualUpdate();
                 }
                 else if (SelectedDragHandle != null)
                 {
@@ -462,7 +462,7 @@ namespace Lan.Shapes.Custom
                     }
 
                     UpdateHandleLocation();
-                    UpdateVisual();
+                    RequestVisualUpdate();
                 }
                 else
                 {

@@ -98,7 +98,7 @@ namespace Lan.Shapes.Shapes
             _rightDragHandle.GeometryCenter = End;
             _panHandle.GeometryCenter = new Point((Start.X + End.X) / 2, (Start.Y + End.Y) / 2);
 
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         protected override void CreateHandles()
@@ -115,9 +115,10 @@ namespace Lan.Shapes.Shapes
         {
             if (OldPointForTranslate.HasValue)
             {
-                Start += newPoint - OldPointForTranslate.Value;
-                End += newPoint - OldPointForTranslate.Value;
-                UpdateVisual();
+                var delta = newPoint - OldPointForTranslate.Value;
+                SetField(ref _start, Start + delta, nameof(Start));
+                SetField(ref _end, End + delta, nameof(End));
+                UpdateGeometry();
                 OldPointForTranslate = newPoint;
             }
         }
@@ -200,18 +201,17 @@ namespace Lan.Shapes.Shapes
                 lengthInMm = length * measurement.UnitsPerMillimeter / measurement.PixelPerUnit;
             }
 
-            var formattedText = CreateFormattedText(
+            DrawCachedText(renderContext,
                 $"{lengthInMm:f3} {measurement.UnitName}\n{angleFromHorizontal:0.##}°",
-                ShapeStyler?.TagColor ?? Brushes.Red);
-
-            renderContext.DrawText(formattedText, new Point((Start.X + End.X) / 2, (Start.Y + End.Y) / 2));
+                ShapeStyler?.TagColor ?? Brushes.Red,
+                new Point((Start.X + End.X) / 2, (Start.Y + End.Y) / 2));
         }
 
         #region Overrides of ShapeVisualBase
 
         protected override void UpdateVisualOnLocked()
         {
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         public override void UpdateVisual()
@@ -242,7 +242,7 @@ namespace Lan.Shapes.Shapes
             Start = data.DataPoints[0];
             End = data.DataPoints[1];
             IsGeometryRendered = true;
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         public PointsData GetMetaData()

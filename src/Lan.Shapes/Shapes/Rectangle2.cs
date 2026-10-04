@@ -151,7 +151,7 @@ namespace Lan.Shapes.Shapes
             _tagPosition = data.TagPosition;
             IsGeometryRendered = true;
             Tag = data.Tag;
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         public Rectangle2Data GetMetaData()
@@ -190,7 +190,7 @@ namespace Lan.Shapes.Shapes
                 _creationStart = mousePoint;
                 ApplyParameters(mousePoint, 0, Rectangle2Math.MinimumHalfLength,
                     Rectangle2Math.MinimumHalfLength, redraw: false);
-                UpdateVisual();
+                RequestVisualUpdate();
                 return;
             }
 
@@ -233,7 +233,7 @@ namespace Lan.Shapes.Shapes
             }
 
             OldPointForTranslate = point;
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         public override void OnMouseLeftButtonUp(Point newPoint)
@@ -428,7 +428,7 @@ namespace Lan.Shapes.Shapes
             RebuildGeometry();
             if (redraw)
             {
-                UpdateVisual();
+                RequestVisualUpdate();
             }
         }
 

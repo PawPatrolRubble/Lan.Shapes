@@ -78,6 +78,50 @@ ratio: an 8 px handle gives a 12 px label. Both scale together with zoom, and
 the label does not change size when the shape is selected or locked. The older
 `TagFontSize` setting remains available for custom shapes that use it directly.
 
+The toolbar's layer selector sets the current layer for newly drawn shapes and
+stays synchronized with `SelectedShapeLayer`. The property pane shows configured layers as a tree, with each layer's
+shapes beneath it. The checkbox hides or restores every shape on that layer for
+the current board; hidden shapes stay in the repository and cannot be picked or
+used as snap targets. The Edit button changes the layer name and description.
+Choose Normal, Mouse hover, Selected, or Locked in the style-state selector to
+edit that state's stroke/fill colors, dash pattern, stroke width, and fill opacity.
+For a visible hover fill, set its color and an opacity above zero (0 is transparent,
+1 is opaque). Switching states preserves the edits in the dialog draft; Apply
+commits all edited states, while Cancel leaves the layer unchanged.
+Existing shapes refresh immediately. If the layer manager loaded a configuration
+file, edits are saved to that file. Stroke widths are treated as their on-screen
+width at zoom 1 and scale with the viewport.
+
+Use **Select** to enter selection mode. Ctrl-click toggles shapes, dragging from
+empty space selects shapes fully inside the rectangle (left to right) or crossing
+it (right to left), and Ctrl-drag adds to the selection. The tree also supports
+Ctrl-click, Shift-click ranges, and selecting a layer's visible unlocked shapes.
+Ctrl+A selects eligible shapes and Esc clears selection; the middle mouse button
+pans the image. The **Assigned layer** selector applies to one or several selected
+shapes, preserving their geometry and identity. Hidden target layers hide the
+transferred shapes and remove them from selection.
+
+The layer pane provides **New**, **Save**, and **Save as**. New layers copy the
+current definition's full state styles and receive a unique ID; edited names must
+be nonempty and unique. With an existing configuration path, confirming new or
+edited definitions saves them automatically. Without a path, changes remain in
+memory until Save chooses a JSON file. Saves replace the file only after writing
+a complete temporary file, and failed saves preserve the previous file and path.
+Layer configuration files contain layer definitions and global settings; drawing
+geometry and shape-to-layer assignments are not included in this configuration.
+
+Custom implementations of `IShapeRepository`, `IShapeLayerManager`, and
+`IImageViewerViewModel` must implement the new selection and layer-management
+members. Shapes with custom handle visibility should honor `ShowSelectionHandles`
+when multiple shapes are selected.
+
+Pointer updates coalesce geometry render requests so coordinate changes within a
+single drag sample produce one redraw. Custom shape setters should call
+`RequestVisualUpdate()`; `UpdateVisual()` remains the immediate drawing operation.
+Use `DeferVisualUpdates()` to group related programmatic changes. Built-in tags
+and line/circle measurement labels reuse glyph drawings when only their position
+changes, with separate entries for font size, DPI, text, and foreground.
+
 Full IoC walkthrough: [`scripts/IImageViewerViewModel-IoC使用说明.md`](scripts/IImageViewerViewModel-IoC使用说明.md).
 
 
@@ -99,7 +143,7 @@ Resolve `IImageViewerViewModel` from `IServiceProvider` the same way as any othe
 ### Navigation Controls
 
 - **Zoom**: Use mouse wheel to zoom in/out
-- **Pan**: Hold the middle mouse button (press the scroll wheel) and drag to move the sketch area. CTRL + Left mouse button and drag also pans.
+- **Pan**: Hold the middle mouse button (press the scroll wheel) and drag to move the sketch area. Ctrl + left mouse gestures select shapes or add a selection rectangle.
 - **Select overlapping geometry**: Click its outline; outlines and active resize handles take priority over shape interiors. Hold ALT and click repeatedly at the same point to cycle through overlapping unlocked geometries from topmost to bottommost. ALT + click selects without dragging or toggling locks. You can also select a geometry directly in the shape list.
 - **Lock / unlock**: Double-click a completed geometry to lock it; its text turns gray. Double-click it again to unlock it and restore the usual text color.
 - **Drawing**: With a drawing tool active, clicks create or continue the new geometry, including over existing shapes. Selection and double-click locking resume when drawing finishes; right-click ends the active sketch.

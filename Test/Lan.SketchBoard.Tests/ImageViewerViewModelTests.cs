@@ -9,6 +9,7 @@ using Lan.ImageViewer.Prism;
 using Lan.Shapes;
 using Lan.Shapes.Interfaces;
 using Lan.Shapes.Shapes;
+using Lan.Shapes.Enums;
 using Lan.SketchBoard;
 using Newtonsoft.Json;
 using Xunit;
@@ -197,6 +198,82 @@ public class ImageViewerViewModelTests
         vm.ChooseGeometryTypeCommand.Execute(lineType);
 
         Assert.True(vm.ShowGeometries);
+    }
+
+    [Fact]
+    public void LayerTree_HidesAndRestoresAllShapesIncludingNewOnes()
+    {
+        var (vm, manager, _) = CreateViewModel();
+        manager.InitializeVisualCollection(new ContainerVisual());
+        var first = new Line(manager.CurrentShapeLayer!);
+        manager.AddShape(first);
+        manager.SelectedGeometry = first;
+
+        var group = Assert.Single(vm.LayerGroups);
+        Assert.Single(group.Shapes);
+        group.IsVisible = false;
+
+        Assert.Null(manager.SelectedGeometry);
+        Assert.Empty(manager.VisualCollection.Cast<Visual>());
+        Assert.Single(manager.Shapes);
+
+        manager.AddShape(new Line(manager.CurrentShapeLayer!));
+        Assert.Equal(2, group.Shapes.Count);
+        Assert.Empty(manager.VisualCollection.Cast<Visual>());
+
+        group.IsVisible = true;
+        Assert.Equal(2, manager.VisualCollection.Count);
+
+        manager.SetLayerVisibility(group.LayerId, false);
+        Assert.False(group.IsVisible);
+    }
+
+    [Fact]
+    public void EditingLayer_RefreshesOwnedShapesAndKeepsWidthThroughZoom()
+    {
+        var (vm, manager, layer) = CreateViewModel();
+        var shape = new Line(manager.CurrentShapeLayer!);
+        manager.AddShape(shape);
+        var parameter = layer.ToShapeLayerParameter();
+        parameter.Name = "Edited";
+        parameter.StyleSchema[ShapeVisualState.Normal].StrokeColor = Brushes.Red;
+        parameter.StyleSchema[ShapeVisualState.Normal].StrokeThickness = 3;
+        parameter.StyleSchema[ShapeVisualState.Normal].DashStyle = "Dash";
+
+        vm.UpdateLayerConfiguration(parameter);
+        manager.OnImageViewerPropertyChanged(2);
+
+        Assert.Equal("Edited", Assert.Single(vm.LayerGroups).Name);
+        Assert.Equal("Edited", shape.ShapeLayer.Name);
+        Assert.Equal(1.5, shape.ShapeStyler!.SketchPen.Thickness);
+        Assert.Equal(DashStyles.Dash, shape.ShapeStyler.SketchPen.DashStyle);
+        Assert.Equal(Colors.Red, ((SolidColorBrush)shape.ShapeStyler.SketchPen.Brush).Color);
+        Assert.Equal(3, layer.ToShapeLayerParameter()
+            .StyleSchema[ShapeVisualState.Normal].StrokeThickness);
+    }
+
+    [Fact]
+    public void HidingOneLayer_LeavesOtherLayerOnCanvas()
+    {
+        var (vm, manager, firstLayer) = CreateViewModel();
+        manager.InitializeVisualCollection(new ContainerVisual());
+        manager.AddShape(new Line(manager.CurrentShapeLayer!));
+
+        var secondParameter = firstLayer.ToShapeLayerParameter();
+        secondParameter.LayerId = 2;
+        secondParameter.Name = "Second";
+        var secondLayer = new ShapeLayer(secondParameter);
+        vm.Layers.Add(secondLayer);
+        vm.SelectedShapeLayer = secondLayer;
+        var secondShape = new Line(manager.CurrentShapeLayer!);
+        manager.AddShape(secondShape);
+
+        vm.LayerGroups.Single(x => x.LayerId == firstLayer.LayerId).IsVisible = false;
+
+        Assert.Equal(2, manager.Shapes.Count);
+        Assert.Single(manager.VisualCollection.Cast<Visual>());
+        Assert.Same(secondShape, manager.VisualCollection[0]);
+        Assert.Single(vm.LayerGroups.Single(x => x.LayerId == 2).Shapes);
     }
 
     private static (ImageViewerControlViewModel Vm, SketchBoardDataManager Manager, ShapeLayer Layer)

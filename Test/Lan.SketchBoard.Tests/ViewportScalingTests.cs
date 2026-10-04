@@ -58,8 +58,8 @@ public class ViewportScalingTests
         var managerA = new SketchBoardDataManager(optionsA);
         var managerB = new SketchBoardDataManager(optionsB);
 
-        var layerA = TestShapeLayer.CreateWithThickness(stroke: 1, handle: 10);
-        var layerB = TestShapeLayer.CreateWithThickness(stroke: 1, handle: 20);
+        var layerA = TestShapeLayer.CreateWithThickness(stroke: 2, handle: 10);
+        var layerB = TestShapeLayer.CreateWithThickness(stroke: 4, handle: 20);
 
         managerA.SetShapeLayer(layerA);
         managerB.SetShapeLayer(layerB);
@@ -120,7 +120,7 @@ public class ViewportScalingTests
     {
         var options = new ViewportScalingOptions(baseStrokeThickness: 2.0, baseDragHandleSize: 16.0);
         var manager = new SketchBoardDataManager(options);
-        manager.SetShapeLayer(TestShapeLayer.CreateWithThickness(stroke: 1, handle: 16));
+        manager.SetShapeLayer(TestShapeLayer.CreateWithThickness(stroke: 2, handle: 16));
         manager.InitializeVisualCollection(new ContainerVisual());
 
         var shape = manager.LoadShape<Line, PointsData>(
@@ -333,7 +333,7 @@ public class ViewportScalingTests
         manager.SetShapeLayer(layer);
 
         var styler = manager.CurrentShapeLayer!.Stylers[ShapeVisualState.Normal];
-        Assert.Equal(2.0, styler.SketchPen.Thickness);
+        Assert.Equal(49.5, styler.SketchPen.Thickness);
         Assert.Equal(10.0, styler.DragHandleSize);
         // Config layer left untouched.
         Assert.Equal(99, layer.Stylers[ShapeVisualState.Normal].SketchPen.Thickness);

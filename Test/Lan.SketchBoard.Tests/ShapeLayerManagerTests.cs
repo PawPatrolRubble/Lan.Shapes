@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using Lan.ImageViewer.Prism;
 using Lan.Shapes;
+using Lan.Shapes.Enums;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit;
@@ -17,6 +18,9 @@ public class ShapeLayerManagerTests
         try
         {
             var layer = TestShapeLayer.Create().ToShapeLayerParameter();
+            var second = TestShapeLayer.Create().ToShapeLayerParameter();
+            second.LayerId = 2;
+            second.Name = "Second";
             var configuration = new LanShapesConfiguration
             {
                 AvailableGeometryTypes = new List<string> { "Line", "DxfGeometry" },
@@ -26,7 +30,7 @@ public class ShapeLayerManagerTests
                     UnitsPerMillimeter = 1000,
                     UnitName = "um"
                 },
-                ShapeLayers = new List<ShapeLayerParameter> { layer, layer }
+                ShapeLayers = new List<ShapeLayerParameter> { layer, second }
             };
             File.WriteAllText(path, JsonConvert.SerializeObject(configuration));
             var manager = new ShapeLayerManager();
@@ -56,6 +60,8 @@ public class ShapeLayerManagerTests
         var destinationPath = Path.GetTempFileName();
         try
         {
+            var layer = TestShapeLayer.Create().ToShapeLayerParameter();
+            layer.StyleSchema[ShapeVisualState.Normal].FillOpacity = 0.4;
             var configuration = new LanShapesConfiguration
             {
                 AvailableGeometryTypes = new List<string> { "Line", "DxfGeometry" },
@@ -67,7 +73,7 @@ public class ShapeLayerManagerTests
                 },
                 ShapeLayers = new List<ShapeLayerParameter>
                 {
-                    TestShapeLayer.Create().ToShapeLayerParameter()
+                    layer
                 }
             };
             File.WriteAllText(sourcePath, JsonConvert.SerializeObject(configuration));
@@ -84,6 +90,7 @@ public class ShapeLayerManagerTests
             Assert.Null(saved["ShapeLayers"]?[0]?["PixelPerUnit"]);
             Assert.Null(saved["ShapeLayers"]?[0]?["UnitsPerMillimeter"]);
             Assert.Null(saved["ShapeLayers"]?[0]?["UnitName"]);
+            Assert.Equal(0.4, saved["ShapeLayers"]?[0]?["StyleSchema"]?["Normal"]?["FillOpacity"]?.Value<double>());
         }
         finally
         {

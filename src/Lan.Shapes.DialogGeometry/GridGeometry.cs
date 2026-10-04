@@ -46,7 +46,7 @@ namespace Lan.Shapes.DialogGeometry
             _boundGeometry.Rect = new Rect(
                 topLeft,
                 (BottomRight.X == 0 && BottomRight.Y == 0) ? topLeft : BottomRight);
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         public Point BottomRight
@@ -62,7 +62,7 @@ namespace Lan.Shapes.DialogGeometry
         private void OnBottomRightChanges(Point bottomRight)
         {
             _boundGeometry.Rect = new Rect(TopLeft, bottomRight);
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         public int RowCount { get; set; } = 1;
@@ -94,7 +94,7 @@ namespace Lan.Shapes.DialogGeometry
             RebuildGapsFromBounds();
             RebuildLineGeometries();
             IsGeometryRendered = true;
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         public GridGeometryData GetMetaData()
@@ -171,7 +171,7 @@ namespace Lan.Shapes.DialogGeometry
                 });
             }
 
-            UpdateVisual();
+            RequestVisualUpdate();
         }
 
         private void RebuildGapsFromBounds()

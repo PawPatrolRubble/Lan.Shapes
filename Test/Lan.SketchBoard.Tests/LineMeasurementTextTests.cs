@@ -46,6 +46,37 @@ public class LineMeasurementTextTests
         });
     }
 
+    [Fact]
+    public void CachedMeasurementLabel_UpdatesMutableColorsAndLockState()
+    {
+        RunOnSta(() =>
+        {
+            var layer = TestShapeLayer.Create();
+            var color = new SolidColorBrush(Colors.Orange);
+            layer.GetStyler(ShapeVisualState.Normal).TagColor = color;
+            var line = new Line(layer);
+            line.FromData(new PointsData(1, new List<Point> { new(10, 10), new(100, 10) }));
+            Assert.False(color.IsFrozen);
+            Assert.Equal(Colors.Orange, ReadTextColor(VisualTreeHelper.GetDrawing(line)));
+            color.Color = Colors.Green;
+            line.UpdateVisual();
+            Assert.Equal(Colors.Green, ReadTextColor(VisualTreeHelper.GetDrawing(line)));
+            line.Lock();
+            Assert.Equal(Colors.Gray, ReadTextColor(VisualTreeHelper.GetDrawing(line)));
+            line.IsLocked = false;
+            Assert.Equal(Colors.Green, ReadTextColor(VisualTreeHelper.GetDrawing(line)));
+        });
+    }
+
+    private static Color? ReadTextColor(Drawing? drawing)
+    {
+        if (drawing is GlyphRunDrawing glyphs)
+            return Assert.IsType<SolidColorBrush>(glyphs.ForegroundBrush).Color;
+        if (drawing is DrawingGroup group)
+            return group.Children.Select(ReadTextColor).FirstOrDefault(color => color.HasValue);
+        return null;
+    }
+
     private static string ReadText(Drawing? drawing)
     {
         if (drawing is GlyphRunDrawing glyphs)

@@ -35,6 +35,7 @@ namespace Lan.Shapes
                     $"{nameof(ShapeLayers)} must contain at least one layer.");
             }
 
+            var ids = new HashSet<int>();
             foreach (var parameter in ShapeLayers)
             {
                 if (parameter == null)
@@ -42,6 +43,9 @@ namespace Lan.Shapes
                     throw new InvalidOperationException(
                         $"{nameof(ShapeLayers)} must not contain null entries.");
                 }
+
+                if (!ids.Add(parameter.LayerId))
+                    throw new InvalidOperationException($"Duplicate layer ID: {parameter.LayerId}.");
 
                 ShapeLayer.EnsureRequiredStylerStates(
                     parameter.StyleSchema,

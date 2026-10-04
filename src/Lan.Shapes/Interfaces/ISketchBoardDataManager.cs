@@ -36,6 +36,9 @@ namespace Lan.Shapes.Interfaces
         /// <summary>Image-to-view zoom scale, used for distances measured on screen.</summary>
         double ViewportScale { get; }
 
+        /// <summary>Changes whenever a layer is shown or hidden on this board.</summary>
+        long LayerVisibilityRevision { get; }
+
         /// <summary>
         /// Attaches this manager to a WPF <see cref="Visual"/> (the <c>SketchBoard</c> canvas)
         /// and initialises the <see cref="VisualCollection"/>.
