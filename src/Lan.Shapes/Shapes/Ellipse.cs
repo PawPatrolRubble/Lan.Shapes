@@ -34,7 +34,7 @@ namespace Lan.Shapes.Shapes
         /// <summary>
         /// 
         /// </summary>
-        public override Rect BoundsRect { get; }
+        public override Rect BoundsRect => RenderGeometry.Bounds;
 
         public Point Center
         {
@@ -45,6 +45,7 @@ namespace Lan.Shapes.Shapes
                 _ellipseGeometry.Center = value;
                 _rightDragHandle.GeometryCenter = value + new Vector(RadiusX, 0);
                 _topDragHandle.GeometryCenter = value + new Vector(0, -RadiusY);
+                RequestVisualUpdate();
             }
         }
 
@@ -56,6 +57,7 @@ namespace Lan.Shapes.Shapes
                 SetField(ref _radiusX, value);
                 _ellipseGeometry.RadiusX = value;
                 _rightDragHandle.GeometryCenter = Center + new Vector(value, 0);
+                RequestVisualUpdate();
             }
         }
 
@@ -67,6 +69,7 @@ namespace Lan.Shapes.Shapes
                 SetField(ref _radiusY, value);
                 _ellipseGeometry.RadiusY = value;
                 _topDragHandle.GeometryCenter = Center + new Vector(0, -value);
+                RequestVisualUpdate();
             }
         }
 
@@ -118,22 +121,13 @@ namespace Lan.Shapes.Shapes
         {
             if (!MouseDownPoint.HasValue) return;
 
-            var matrix = new Matrix();
-            matrix.Translate(newPoint.X - MouseDownPoint.Value.X, newPoint.Y - MouseDownPoint.Value.Y);
-            Center = matrix.Transform(Center);
+            Translate(newPoint - MouseDownPoint.Value);
             MouseDownPoint = newPoint;
         }
 
-        /// <summary>
-        /// Handle mouse left button up - clean up state
-        /// </summary>
-        public override void OnMouseLeftButtonUp(Point newPoint)
-        {
-            base.OnMouseLeftButtonUp(newPoint);
-            // Clear mouse tracking points to prevent stale state
-            OldPointForTranslate = null;
-            MouseDownPoint = null;
-        }
+        public override bool CanTranslate => true;
+
+        protected override void TranslateCore(Vector delta) => Center += delta;
 
         /// <summary>
         /// add geometries to group
@@ -142,18 +136,14 @@ namespace Lan.Shapes.Shapes
         {
         }
 
-        public override void UpdateVisual()
+        protected override void DrawShape(DrawingContext renderContext)
         {
-            var renderContext = RenderOpen();
             if (ShapeStyler != null && _rightDragHandle != null && _topDragHandle != null)
             {
                 renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometry);
 
                 AddTagText(renderContext, Center);
-                DrawDragHandles(renderContext);
             }
-
-            renderContext.Close();
         }
 
         #endregion

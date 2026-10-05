@@ -399,6 +399,7 @@
                                             Padding="4,0"
                                             Click="EditLayer_Click"
                                             Content="编辑"
+                                            IsEnabled="{Binding CanEdit}"
                                             Style="{StaticResource DarkButtonStyle}"
                                             ToolTip="编辑图层样式" />
                                         <Button
@@ -473,6 +474,43 @@
                                         FontSize="10"
                                         Foreground="{StaticResource DarkPanel.LabelForeground}"
                                         Text="移入隐藏图层后，图形将在画布隐藏"
+                                        TextWrapping="Wrap" />
+                                    <Separator
+                                        Height="1"
+                                        Margin="0,9,0,8"
+                                        Background="{StaticResource DarkPanel.Border}" />
+                                    <TextBlock
+                                        x:Name="SelectedGroupSummaryText"
+                                        Foreground="{StaticResource DarkPanel.HeaderForeground}"
+                                        Text="{Binding SelectedGroupSummary}"
+                                        TextTrimming="CharacterEllipsis"
+                                        ToolTip="{Binding SelectedGroupSummary}" />
+                                    <Grid Margin="0,6,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button
+                                            x:Name="GroupShapesButton"
+                                            Margin="0,0,3,0"
+                                            Command="{Binding GroupShapesCommand}"
+                                            Content="组合"
+                                            Style="{StaticResource DarkButtonStyle}"
+                                            ToolTip="将所选图形组合在一起（Ctrl+G）" />
+                                        <Button
+                                            x:Name="UngroupShapesButton"
+                                            Grid.Column="1"
+                                            Margin="3,0,0,0"
+                                            Command="{Binding UngroupShapesCommand}"
+                                            Content="取消组合"
+                                            Style="{StaticResource DarkButtonStyle}"
+                                            ToolTip="取消所选图形的组合（Ctrl+Shift+G）" />
+                                    </Grid>
+                                    <TextBlock
+                                        Margin="0,5,0,0"
+                                        FontSize="10"
+                                        Foreground="{StaticResource DarkPanel.LabelForeground}"
+                                        Text="{Binding GroupingPrompt}"
                                         TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>

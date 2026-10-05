@@ -27,9 +27,10 @@ namespace Lan.SketchBoard
             new Dictionary<string, Type>(StringComparer.Ordinal);
 
         private readonly ShapeFactory _shapeFactory = new ShapeFactory();
-        private readonly ObservableCollection<ShapeVisualBase> _shapes =
-            new ObservableCollection<ShapeVisualBase>();
+        private readonly ManagedShapeCollection _shapes;
         private readonly ObservableCollection<ShapeVisualBase> _selection = new();
+        private readonly ObservableCollection<ShapeGroup> _groups = new();
+        private readonly Dictionary<ShapeVisualBase, ShapeGroup> _groupsByShape = new();
         private readonly Dictionary<int, ShapeLayer> _ownedLayers = new();
         private readonly Dictionary<int, ShapeLayer> _layerDefinitions = new();
         private bool _updatingLayers;
@@ -64,8 +65,10 @@ namespace Lan.SketchBoard
         /// </summary>
         public SketchBoardDataManager(ViewportScalingOptions scalingOptions)
         {
+            _shapes = new ManagedShapeCollection(this);
             _scalingOptions = scalingOptions ?? ViewportScalingOptions.Default;
             SelectedGeometries = new ReadOnlyObservableCollection<ShapeVisualBase>(_selection);
+            Groups = new ReadOnlyObservableCollection<ShapeGroup>(_groups);
         }
 
         /// <summary>Per-board fallback stroke/handle sizes used when a shape has no configured baseline.</summary>
@@ -99,18 +102,124 @@ namespace Lan.SketchBoard
             set
             {
                 if (value != null && !IsLayerVisible(value.ShapeLayer.LayerId)) return;
-                ApplySelection(value == null ? new List<ShapeVisualBase>() : new List<ShapeVisualBase> { value });
+                ApplySelection(value == null ? new List<ShapeVisualBase>() : ExpandGroups(new[] { value }));
             }
         }
 
         public ReadOnlyObservableCollection<ShapeVisualBase> SelectedGeometries { get; }
+        public ReadOnlyObservableCollection<ShapeGroup> Groups { get; }
         public event EventHandler? SelectionChanged;
         public event EventHandler? LayerAssignmentsChanged;
+        public event EventHandler? GroupsChanged;
+
+        public ShapeGroup? GetGroup(ShapeVisualBase shape)
+        {
+            if (shape == null) throw new ArgumentNullException(nameof(shape));
+            return _groupsByShape.TryGetValue(shape, out var group) ? group : null;
+        }
+
+        public bool CanGroupShapes(IEnumerable<ShapeVisualBase> shapes)
+        {
+            if (shapes == null) throw new ArgumentNullException(nameof(shapes));
+            var candidates = shapes.Distinct().ToList();
+            return candidates.Count >= 2
+                && candidates.All(x => x != null && Shapes.Contains(x) && x.IsGeometryRendered
+                    && !x.IsLocked && x.CanTranslate && IsLayerVisible(x.ShapeLayer.LayerId)
+                    && !_groupsByShape.ContainsKey(x) && TryGetTranslationMatrix(x, out _))
+                && candidates.Select(x => x.ShapeLayer.LayerId).Distinct().Count() == 1;
+        }
+
+        public ShapeGroup GroupShapes(IEnumerable<ShapeVisualBase> shapes, string? name = null)
+        {
+            if (shapes == null) throw new ArgumentNullException(nameof(shapes));
+            var candidates = shapes.Distinct().ToList();
+            if (!CanGroupShapes(candidates))
+                throw new ArgumentException("Groups require at least two independent, completed, visible, unlocked, movable shapes on one board layer.", nameof(shapes));
+            var group = new ShapeGroup(candidates, name);
+            foreach (var member in group.Members) _groupsByShape.Add(member, group);
+            _groups.Add(group);
+            ApplySelection(ExpandGroups(_selection));
+            GroupsChanged?.Invoke(this, EventArgs.Empty);
+            return group;
+        }
+
+        public int UngroupShapes(IEnumerable<ShapeVisualBase> shapes)
+        {
+            if (shapes == null) throw new ArgumentNullException(nameof(shapes));
+            var candidates = shapes.Distinct().ToList();
+            if (candidates.Any(x => x == null || !Shapes.Contains(x)))
+                throw new ArgumentException("Only shapes on this board can be ungrouped.", nameof(shapes));
+            var groups = candidates.Select(GetGroup).Where(x => x != null).Distinct().ToList();
+            foreach (var group in groups) RemoveGroup(group!);
+            return groups.Count;
+        }
+
+        public int TranslateShapes(IEnumerable<ShapeVisualBase> shapes, Vector delta)
+        {
+            if (shapes == null) throw new ArgumentNullException(nameof(shapes));
+            if (!IsFinite(delta.X) || !IsFinite(delta.Y))
+                throw new ArgumentException("A finite displacement is required.", nameof(delta));
+            var candidates = ExpandGroups(shapes);
+            if (candidates.Any(x => x == null || !Shapes.Contains(x) || !x.IsGeometryRendered
+                || x.IsLocked || !x.CanTranslate || !IsLayerVisible(x.ShapeLayer.LayerId)))
+                throw new ArgumentException("Only completed, visible, unlocked, movable shapes on this board can be translated.", nameof(shapes));
+
+            var displacements = new Dictionary<ShapeVisualBase, Vector>();
+            foreach (var shape in candidates)
+            {
+                if (!TryGetTranslationMatrix(shape, out var matrix))
+                    throw new ArgumentException("Every shape must have a finite, invertible visual transform.", nameof(shapes));
+                var localDelta = matrix.Transform(delta);
+                if (!IsFinite(localDelta.X) || !IsFinite(localDelta.Y))
+                    throw new ArgumentException("Every shape must have a finite local displacement.", nameof(shapes));
+                displacements.Add(shape, localDelta);
+            }
+            if (delta.X == 0 && delta.Y == 0) return 0;
+            foreach (var shape in candidates) shape.Translate(displacements[shape]);
+            return candidates.Count;
+        }
+
+        private static bool IsFinite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
+
+        private static bool TryGetTranslationMatrix(ShapeVisualBase shape, out Matrix inverse)
+        {
+            inverse = shape.Transform?.Value ?? Matrix.Identity;
+            if (!IsFiniteMatrix(inverse) || !inverse.HasInverse) return false;
+            inverse.Invert();
+            return IsFiniteMatrix(inverse);
+        }
+
+        private static bool IsFiniteMatrix(Matrix matrix) => IsFinite(matrix.M11) && IsFinite(matrix.M12)
+            && IsFinite(matrix.M21) && IsFinite(matrix.M22)
+            && IsFinite(matrix.OffsetX) && IsFinite(matrix.OffsetY);
+
+        private List<ShapeVisualBase> ExpandGroups(IEnumerable<ShapeVisualBase> shapes)
+        {
+            var expanded = new List<ShapeVisualBase>();
+            var seen = new HashSet<ShapeVisualBase>();
+            foreach (var shape in shapes)
+            {
+                if (shape != null && _groupsByShape.TryGetValue(shape, out var group))
+                {
+                    foreach (var member in group.Members)
+                        if (seen.Add(member)) expanded.Add(member);
+                }
+                else if (seen.Add(shape!)) expanded.Add(shape!);
+            }
+            return expanded;
+        }
+
+        private void RemoveGroup(ShapeGroup group)
+        {
+            foreach (var member in group.Members) _groupsByShape.Remove(member);
+            _groups.Remove(group);
+            GroupsChanged?.Invoke(this, EventArgs.Empty);
+        }
 
         public void SetSelection(IEnumerable<ShapeVisualBase> shapes)
         {
             if (shapes == null) throw new ArgumentNullException(nameof(shapes));
-            var desired = shapes.Distinct().ToList();
+            var desired = ExpandGroups(shapes);
             if (desired.Any(x => x == null || !Shapes.Contains(x) || !x.IsGeometryRendered
                 || !IsLayerVisible(x.ShapeLayer.LayerId)))
                 throw new ArgumentException("Selection must contain completed, visible shapes on this board.", nameof(shapes));
@@ -123,6 +232,7 @@ namespace Lan.SketchBoard
             foreach (var shape in _selection.Except(desired).ToList())
             {
                 var locked = shape.IsLocked;
+                shape.CancelInteraction();
                 shape.OnDeselected();
                 shape.State = locked || shape.IsLocked ? ShapeVisualState.Locked : ShapeVisualState.Normal;
                 shape.SetSelectionAppearance(false, true);
@@ -152,7 +262,7 @@ namespace Lan.SketchBoard
         {
             if (shapes == null) throw new ArgumentNullException(nameof(shapes));
             if (targetLayer == null) throw new ArgumentNullException(nameof(targetLayer));
-            var candidates = shapes.Distinct().ToList();
+            var candidates = ExpandGroups(shapes);
             if (candidates.Any(x => x == null || !Shapes.Contains(x) || !x.IsGeometryRendered || x.IsLocked))
                 throw new ArgumentException("Only completed, unlocked shapes on this board can change layers.", nameof(shapes));
             var moved = candidates.Where(x => x.ShapeLayer.LayerId != targetLayer.LayerId).ToList();
@@ -240,9 +350,17 @@ namespace Lan.SketchBoard
             GeometryTypeUnselected?.Invoke(this, previousType);
         }
 
+        public void CancelCurrentSketch()
+        {
+            if (CurrentGeometryInEdit is { IsGeometryRendered: false } unfinished)
+                RemoveShape(unfinished);
+            CurrentGeometryInEdit = null;
+            UnselectGeometryType();
+        }
+
         public void AddShape(ShapeVisualBase shape)
         {
-            AddShapeCore(shape, Shapes.Count);
+            Shapes.Add(shape);
         }
 
         public void AddShape(ShapeVisualBase shape, int index)
@@ -252,7 +370,7 @@ namespace Lan.SketchBoard
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
 
-            AddShapeCore(shape, index);
+            Shapes.Insert(index, shape);
         }
 
         public void RemoveShape(ShapeVisualBase shape)
@@ -262,24 +380,7 @@ namespace Lan.SketchBoard
                 throw new ArgumentNullException(nameof(shape));
             }
 
-            var index = Shapes.IndexOf(shape);
-            if (index < 0)
-            {
-                return;
-            }
-
-            if (_selection.Contains(shape)) ApplySelection(_selection.Where(x => !ReferenceEquals(x, shape)).ToList());
-
-            if (ReferenceEquals(CurrentGeometryInEdit, shape))
-            {
-                CurrentGeometryInEdit = null;
-            }
-
-            shape.ShapeCreationCancelled -= OnShapeCreationCancelled;
-            shape.PropertyChanged -= OnManagedShapePropertyChanged;
-            _visualCollection?.Remove(shape);
-            Shapes.RemoveAt(index);
-            ShapeRemoved?.Invoke(this, shape);
+            Shapes.Remove(shape);
         }
 
         public void RemoveShapes(Func<ShapeVisualBase, bool> predicate)
@@ -325,11 +426,7 @@ namespace Lan.SketchBoard
 
         public void ClearAllShapes()
         {
-            foreach (var shape in Shapes.ToList())
-            {
-                RemoveShape(shape);
-            }
-
+            Shapes.Clear();
             CurrentGeometryInEdit = null;
         }
 
@@ -366,9 +463,9 @@ namespace Lan.SketchBoard
 
             // Own independent styler instances so concurrent viewers that share
             // config-layer objects cannot clobber each other's zoom scale.
-            _currentShapeLayer = GetOwnedLayer(layer);
+            SetField(ref _currentShapeLayer, GetOwnedLayer(layer), nameof(CurrentShapeLayer));
 
-            ApplyScaleToOwnedLayers(_viewportScale, refreshShapes: false);
+            ApplyScaleToOwnedLayers(_viewportScale, refreshShapes: true);
         }
 
         private ShapeLayer GetOwnedLayer(ShapeLayer definition)
@@ -380,15 +477,24 @@ namespace Lan.SketchBoard
                 _layerDefinitions.Add(layer.LayerId, definition);
                 CaptureConfiguredHandleSizes(layer);
             }
-            else if (!ReferenceEquals(layer, definition) && !ReferenceEquals(_layerDefinitions[layer.LayerId], definition))
+            else if (!ReferenceEquals(layer, definition)
+                && (!_layerDefinitions.TryGetValue(layer.LayerId, out var previousDefinition)
+                    || !ReferenceEquals(previousDefinition, definition)))
             {
-                layer.ApplyConfiguration(definition.ToShapeLayerParameter());
+                layer.ApplyDefinition(definition);
                 _layerDefinitions[layer.LayerId] = definition;
                 _configuredHandleSizes.Remove(layer);
                 _configuredStrokeThicknesses.Remove(layer);
                 CaptureConfiguredHandleSizes(layer);
             }
             return layer;
+        }
+
+        private ShapeLayer GetLayerForShape(ShapeLayer layer)
+        {
+            // A shape may arrive with a shared definition or another board's scaled copy.
+            // An existing board layer is authoritative; only definition APIs replace it.
+            return _ownedLayers.TryGetValue(layer.LayerId, out var owned) ? owned : GetOwnedLayer(layer);
         }
 
         public bool IsLayerVisible(int layerId) => !_hiddenLayerIds.Contains(layerId);
@@ -401,8 +507,7 @@ namespace Lan.SketchBoard
                 ApplySelection(_selection.Where(x => x.ShapeLayer.LayerId != layerId).ToList());
                 if (CurrentGeometryInEdit?.ShapeLayer.LayerId == layerId)
                 {
-                    CurrentGeometryInEdit = null;
-                    UnselectGeometryType();
+                    CancelCurrentSketch();
                 }
             }
             RebuildVisualCollection();
@@ -422,11 +527,52 @@ namespace Lan.SketchBoard
             ApplyScaleToOwnedLayers(_viewportScale, refreshShapes: true);
         }
 
+        public void ApplyLayerDefinitions(IEnumerable<ShapeLayer> definitions)
+        {
+            if (definitions == null) throw new ArgumentNullException(nameof(definitions));
+            var layers = definitions.ToList();
+            if (layers.Any(x => x == null) || layers.Select(x => x.LayerId).Distinct().Count() != layers.Count)
+                throw new ArgumentException("Layer definitions must have unique IDs and contain no null entries.", nameof(definitions));
+            var configuredIds = new HashSet<int>(layers.Select(x => x.LayerId));
+            if (CurrentGeometryInEdit is { IsGeometryRendered: false } unfinished
+                && !configuredIds.Contains(unfinished.ShapeLayer.LayerId))
+                CancelCurrentSketch();
+
+            foreach (var definition in layers) GetOwnedLayer(definition);
+            var referencedIds = new HashSet<int>(Shapes.Select(x => x.ShapeLayer.LayerId));
+            foreach (var id in _ownedLayers.Keys.Where(x => !configuredIds.Contains(x)).ToList())
+            {
+                _layerDefinitions.Remove(id);
+                if (referencedIds.Contains(id))
+                    _hiddenLayerIds.Remove(id);
+                else
+                {
+                    var obsolete = _ownedLayers[id];
+                    _ownedLayers.Remove(id);
+                    _configuredHandleSizes.Remove(obsolete);
+                    _configuredStrokeThicknesses.Remove(obsolete);
+                    _hiddenLayerIds.Remove(id);
+                }
+            }
+            // Previously orphaned layers may also have been hidden since the last reload.
+            foreach (var id in referencedIds.Where(x => !configuredIds.Contains(x))) _hiddenLayerIds.Remove(id);
+            var current = _currentShapeLayer != null && configuredIds.Contains(_currentShapeLayer.LayerId)
+                ? _ownedLayers[_currentShapeLayer.LayerId]
+                : layers.Count > 0 ? _ownedLayers[layers[0].LayerId] : null;
+            SetField(ref _currentShapeLayer, current, nameof(CurrentShapeLayer));
+            if (current == null) UnselectGeometryType();
+            ApplyScaleToOwnedLayers(_viewportScale, refreshShapes: true);
+            RebuildVisualCollection();
+            _layerVisibilityRevision++;
+            OnPropertyChanged(nameof(LayerVisibilityRevision));
+            LayerAssignmentsChanged?.Invoke(this, EventArgs.Empty);
+        }
+
         public ShapeVisualBase? CreateNewGeometry(Point mousePosition)
         {
             _ = mousePosition;
 
-            if (_currentGeometryType == null || _currentShapeLayer == null)
+            if (_currentGeometryType == null || _currentShapeLayer == null || !IsLayerVisible(_currentShapeLayer.LayerId))
             {
                 return null;
             }
@@ -469,6 +615,15 @@ namespace Lan.SketchBoard
 
             SketchBoardManagerInitialized?.Invoke(this, this);
             HostInitialized?.Invoke(this, this);
+        }
+
+        public void DetachVisualHost()
+        {
+            _visualCollection?.Clear();
+            _visualCollection = null;
+            _sketchBoard = null;
+            OnPropertyChanged(nameof(SketchBoard));
+            OnPropertyChanged(nameof(VisualCollection));
         }
 
         public void OnImageViewerPropertyChanged(double scale)
@@ -520,22 +675,7 @@ namespace Lan.SketchBoard
 
         private IEnumerable<ShapeLayer> GetLayersAffectedByScale()
         {
-            var layers = new HashSet<ShapeLayer>();
-            foreach (var layer in _ownedLayers.Values) layers.Add(layer);
-            if (_currentShapeLayer != null)
-            {
-                layers.Add(_currentShapeLayer);
-            }
-
-            foreach (var shape in Shapes)
-            {
-                if (shape.ShapeLayer != null)
-                {
-                    layers.Add(shape.ShapeLayer);
-                }
-            }
-
-            return layers;
+            return _ownedLayers.Values;
         }
 
         private void CaptureConfiguredHandleSizes(ShapeLayer layer)
@@ -565,19 +705,37 @@ namespace Lan.SketchBoard
             return _configuredStrokeThicknesses[layer];
         }
 
-        private void RebuildVisualCollection()
+        private void RebuildVisualCollection(IEnumerable<ShapeVisualBase>? shapes = null)
         {
             if (_visualCollection == null) return;
             _visualCollection.Clear();
-            foreach (var shape in Shapes)
+            foreach (var shape in shapes ?? Shapes)
                 if (IsLayerVisible(shape.ShapeLayer.LayerId)) _visualCollection.Add(shape);
         }
 
         private void OnManagedShapePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName != nameof(ShapeVisualBase.ShapeLayer) || sender is not ShapeVisualBase shape)
+            if (sender is not ShapeVisualBase shape) return;
+            if (e.PropertyName == nameof(ShapeVisualBase.IsGeometryRendered) && !shape.IsGeometryRendered)
+            {
+                if (_groupsByShape.TryGetValue(shape, out var unfinishedGroup)) RemoveGroup(unfinishedGroup);
+                ApplySelection(_selection.Where(x => !ReferenceEquals(x, shape)).ToList());
                 return;
+            }
+            if (e.PropertyName != nameof(ShapeVisualBase.ShapeLayer)) return;
             if (_updatingLayers) return;
+            _updatingLayers = true;
+            try
+            {
+                shape.ShapeLayer = GetLayerForShape(shape.ShapeLayer);
+            }
+            finally
+            {
+                _updatingLayers = false;
+            }
+            if (_groupsByShape.TryGetValue(shape, out var group)
+                && group.Members.Select(x => x.ShapeLayer.LayerId).Distinct().Count() != 1)
+                RemoveGroup(group);
             if (!IsLayerVisible(shape.ShapeLayer.LayerId))
             {
                 ApplySelection(_selection.Where(x => !ReferenceEquals(x, shape)).ToList());
@@ -607,7 +765,7 @@ namespace Lan.SketchBoard
             NewShapeSketched?.Invoke(this, shape);
         }
 
-        private void AddShapeCore(ShapeVisualBase shape, int index)
+        private void PrepareShape(ShapeVisualBase shape)
         {
             if (shape == null)
             {
@@ -618,6 +776,18 @@ namespace Lan.SketchBoard
             {
                 throw new InvalidOperationException("The shape is already managed by this sketch board.");
             }
+            if (VisualTreeHelper.GetParent(shape) != null)
+                throw new ArgumentException("The shape already belongs to another visual host.", nameof(shape));
+
+            var layer = GetLayerForShape(shape.ShapeLayer);
+            ApplyScaleToOwnedLayers(_viewportScale, refreshShapes: false);
+            shape.ShapeLayer = layer;
+            shape.RefreshScaleDependentVisuals(_viewportScale);
+        }
+
+        private void InsertShapeCore(ShapeVisualBase shape, int index, Action publish)
+        {
+            PrepareShape(shape);
 
             // Update the visual mirror first. ObservableCollection listeners then see
             // a consistent state when the collection-changed event is raised.
@@ -626,13 +796,119 @@ namespace Lan.SketchBoard
                 var visualIndex = Shapes.Take(index).Count(x => IsLayerVisible(x.ShapeLayer.LayerId));
                 _visualCollection.Insert(visualIndex, shape);
             }
-            Shapes.Insert(index, shape);
             shape.ShapeCreationCancelled += OnShapeCreationCancelled;
             shape.PropertyChanged += OnManagedShapePropertyChanged;
-            // Shapes created after a zoom change must initialize adornment
-            // positions with the manager's current viewport scale.
-            shape.RefreshScaleDependentVisuals(_viewportScale);
+            publish();
             ShapeCreated?.Invoke(this, shape);
+        }
+
+        private void DetachShape(ShapeVisualBase shape)
+        {
+            if (_groupsByShape.TryGetValue(shape, out var group)) RemoveGroup(group);
+            if (_selection.Contains(shape)) ApplySelection(_selection.Where(x => !ReferenceEquals(x, shape)).ToList());
+            if (ReferenceEquals(CurrentGeometryInEdit, shape)) CurrentGeometryInEdit = null;
+            shape.ShapeCreationCancelled -= OnShapeCreationCancelled;
+            shape.PropertyChanged -= OnManagedShapePropertyChanged;
+            _visualCollection?.Remove(shape);
+        }
+
+        private void RemoveShapeCore(int index, Action publish)
+        {
+            var shape = Shapes[index];
+            DetachShape(shape);
+            publish();
+            ShapeRemoved?.Invoke(this, shape);
+        }
+
+        private void ReplaceShapeCore(int index, ShapeVisualBase shape, Action publish)
+        {
+            var previous = Shapes[index];
+            if (ReferenceEquals(previous, shape)) return;
+            PrepareShape(shape);
+            if (_visualCollection != null && IsLayerVisible(shape.ShapeLayer.LayerId))
+            {
+                try
+                {
+                    // Attach first: a rejected visual must not detach the original shape.
+                    _visualCollection.Insert(Shapes.Take(index).Count(x => IsLayerVisible(x.ShapeLayer.LayerId)), shape);
+                }
+                catch
+                {
+                    // WPF can attach the child before OnVisualParentChanged throws.
+                    _visualCollection.Remove(shape);
+                    throw;
+                }
+            }
+            DetachShape(previous);
+            shape.ShapeCreationCancelled += OnShapeCreationCancelled;
+            shape.PropertyChanged += OnManagedShapePropertyChanged;
+            publish();
+            ShapeRemoved?.Invoke(this, previous);
+            ShapeCreated?.Invoke(this, shape);
+        }
+
+        private void ClearShapesCore(Action publish)
+        {
+            var removed = Shapes.ToList();
+            ApplySelection(new List<ShapeVisualBase>());
+            if (_groups.Count > 0)
+            {
+                _groupsByShape.Clear();
+                _groups.Clear();
+                GroupsChanged?.Invoke(this, EventArgs.Empty);
+            }
+            CurrentGeometryInEdit = null;
+            foreach (var shape in removed)
+            {
+                shape.ShapeCreationCancelled -= OnShapeCreationCancelled;
+                shape.PropertyChanged -= OnManagedShapePropertyChanged;
+            }
+            _visualCollection?.Clear();
+            publish();
+            foreach (var shape in removed) ShapeRemoved?.Invoke(this, shape);
+        }
+
+        private void MoveShapeCore(int oldIndex, int newIndex, Action publish)
+        {
+            var ordered = Shapes.ToList();
+            var moved = ordered[oldIndex];
+            ordered.RemoveAt(oldIndex);
+            ordered.Insert(newIndex, moved);
+            RebuildVisualCollection(ordered);
+            publish();
+        }
+
+        // Keep the public ObservableCollection contract while routing every write through
+        // the same ownership, visual-tree, selection, and event lifecycle as repository methods.
+        private sealed class ManagedShapeCollection : ObservableCollection<ShapeVisualBase>
+        {
+            private readonly SketchBoardDataManager _owner;
+            public ManagedShapeCollection(SketchBoardDataManager owner) => _owner = owner;
+            protected override void InsertItem(int index, ShapeVisualBase item)
+            {
+                CheckReentrancy();
+                _owner.InsertShapeCore(item, index, () => base.InsertItem(index, item));
+            }
+            protected override void RemoveItem(int index)
+            {
+                CheckReentrancy();
+                _owner.RemoveShapeCore(index, () => base.RemoveItem(index));
+            }
+            protected override void SetItem(int index, ShapeVisualBase item)
+            {
+                CheckReentrancy();
+                _owner.ReplaceShapeCore(index, item, () => base.SetItem(index, item));
+            }
+            protected override void ClearItems()
+            {
+                CheckReentrancy();
+                _owner.ClearShapesCore(base.ClearItems);
+            }
+            protected override void MoveItem(int oldIndex, int newIndex)
+            {
+                CheckReentrancy();
+                _owner.MoveShapeCore(oldIndex, newIndex, () => base.MoveItem(oldIndex, newIndex));
+            }
         }
 
         private ShapeLayer GetRequiredShapeLayer()

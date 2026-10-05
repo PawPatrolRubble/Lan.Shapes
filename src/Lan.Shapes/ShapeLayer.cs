@@ -1,8 +1,10 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Windows;
 using System.Windows.Media;
 using Lan.Shapes.Enums;
 using Lan.Shapes.Styler;
@@ -38,20 +40,37 @@ namespace Lan.Shapes
 
         private readonly Dictionary<ShapeVisualState, IShapeStyler> _stylers;
         private readonly IShapeStylerFactory _stylerFactory;
+        private readonly ReadOnlyDictionary<ShapeVisualState, IShapeStyler> _stylerView;
+        private readonly HashSet<Freezable> _observedVisuals = new();
+        private int _maximumThickenedShapeWidth;
+        private int _tagFontSize;
 
         public event PropertyChangedEventHandler? PropertyChanged;
+        /// <summary>Allows an owning catalogue to validate edits before they are committed.</summary>
+        public event EventHandler<ShapeLayerParameter>? ConfigurationChanging;
+        /// <summary>One notification for each supported definition or style edit.</summary>
+        public event EventHandler? DefinitionChanged;
+        internal static readonly EventArgs CatalogueCommitNotification = new EventArgs();
 
-        /// <summary>Stylers keyed by visual state. Mutated at runtime for zoom scale only.</summary>
-        public Dictionary<ShapeVisualState, IShapeStyler> Stylers => _stylers;
+        /// <summary>Stylers keyed by visual state. Structure is read-only; supported value edits notify owners.</summary>
+        public IReadOnlyDictionary<ShapeVisualState, IShapeStyler> Stylers => _stylerView;
 
         /// <summary>Global measurement calibration shared by all configured layers.</summary>
-        public ShapeMeasurementSettings Measurement { get; }
+        public ShapeMeasurementSettings Measurement { get; private set; }
 
         public int LayerId { get; }
         public string Name { get; private set; }
         public string Description { get; private set; }
-        public int MaximumThickenedShapeWidth { get; set; }
-        public int TagFontSize { get; set; }
+        public int MaximumThickenedShapeWidth
+        {
+            get => _maximumThickenedShapeWidth;
+            set => SetDimension(ref _maximumThickenedShapeWidth, value, nameof(MaximumThickenedShapeWidth));
+        }
+        public int TagFontSize
+        {
+            get => _tagFontSize;
+            set => SetDimension(ref _tagFontSize, value, nameof(TagFontSize));
+        }
         /// <summary>Annotation font size as a multiple of the normal drag-handle size.</summary>
         public double AnnotationFontToHandleRatio { get; private set; }
 
@@ -100,11 +119,13 @@ namespace Lan.Shapes
             Measurement.Validate();
             _stylerFactory = stylerFactory;
 
+            shapeLayerParameter = shapeLayerParameter.CreateValidatedCopy();
+
             LayerId = shapeLayerParameter.LayerId;
             Name = shapeLayerParameter.Name;
             Description = shapeLayerParameter.Description;
-            MaximumThickenedShapeWidth = shapeLayerParameter.MaximumThickenedShapeWidth;
-            TagFontSize = shapeLayerParameter.TagFontSize;
+            _maximumThickenedShapeWidth = shapeLayerParameter.MaximumThickenedShapeWidth;
+            _tagFontSize = shapeLayerParameter.TagFontSize;
             if (!double.IsFinite(shapeLayerParameter.AnnotationFontToHandleRatio) ||
                 shapeLayerParameter.AnnotationFontToHandleRatio <= 0)
             {
@@ -125,6 +146,8 @@ namespace Lan.Shapes
                 schema.Select(x => new KeyValuePair<ShapeVisualState, IShapeStyler>(
                     x.Key,
                     stylerFactory.CreateStyler(x.Value))));
+            _stylerView = new ReadOnlyDictionary<ShapeVisualState, IShapeStyler>(_stylers);
+            ObserveStylers();
         }
 
         /// <summary>
@@ -152,13 +175,13 @@ namespace Lan.Shapes
             return new ShapeLayerParameter
             {
                 LayerId = LayerId,
-                BorderBackground = BorderBackground,
+                BorderBackground = BorderBackground?.Clone(),
                 Description = Description,
                 Name = Name,
                 MaximumThickenedShapeWidth = MaximumThickenedShapeWidth,
                 TagFontSize = TagFontSize,
                 AnnotationFontToHandleRatio = AnnotationFontToHandleRatio,
-                TextForeground = TextForeground,
+                TextForeground = TextForeground?.Clone(),
                 StyleSchema = new Dictionary<ShapeVisualState, ShapeStylerParameter>(
                     _stylers.Select(x => new KeyValuePair<ShapeVisualState, ShapeStylerParameter>(
                         x.Key,
@@ -168,33 +191,117 @@ namespace Lan.Shapes
 
         /// <summary>Applies an edited definition while retaining this layer's identity and measurement.</summary>
         public void ApplyConfiguration(ShapeLayerParameter parameter)
+            => ApplyConfiguration(parameter, Measurement);
+
+        /// <summary>Rebinds a board copy to a complete definition, including global calibration.</summary>
+        public void ApplyDefinition(ShapeLayer definition)
+        {
+            if (definition == null) throw new ArgumentNullException(nameof(definition));
+            ApplyConfiguration(definition.ToShapeLayerParameter(), definition.Measurement);
+        }
+
+        private void ApplyConfiguration(ShapeLayerParameter parameter, ShapeMeasurementSettings measurement)
+        {
+            var commit = PrepareConfiguration(parameter, measurement);
+            commit();
+            NotifyConfigurationChanged(committedToCatalogue: false);
+        }
+
+        // The catalogue prepares every fallible operation before persisting. The returned
+        // commit retains layer identity and does not publish events until the owner is ready.
+        internal Action PrepareConfiguration(ShapeLayerParameter parameter)
+            => PrepareConfiguration(parameter, Measurement);
+
+        private Action PrepareConfiguration(ShapeLayerParameter parameter, ShapeMeasurementSettings measurement)
         {
             if (parameter == null) throw new ArgumentNullException(nameof(parameter));
             if (parameter.LayerId != LayerId)
                 throw new ArgumentException("A layer ID cannot be changed while editing a layer.", nameof(parameter));
-            if (string.IsNullOrWhiteSpace(parameter.Name))
-                throw new ArgumentException("A layer name is required.", nameof(parameter));
-            if (!double.IsFinite(parameter.AnnotationFontToHandleRatio) ||
-                parameter.AnnotationFontToHandleRatio <= 0)
-                throw new ArgumentOutOfRangeException(nameof(parameter));
+            parameter = parameter.CreateValidatedCopy();
+            measurement.Validate();
+            var stylers = parameter.StyleSchema.ToDictionary(x => x.Key, x => _stylerFactory.CreateStyler(x.Value));
+            ConfigurationChanging?.Invoke(this, parameter.CreateValidatedCopy());
+            return () =>
+            {
+                UnobserveStylers();
+                Name = parameter.Name;
+                Description = parameter.Description;
+                _maximumThickenedShapeWidth = parameter.MaximumThickenedShapeWidth;
+                _tagFontSize = parameter.TagFontSize;
+                Measurement = measurement;
+                AnnotationFontToHandleRatio = parameter.AnnotationFontToHandleRatio;
+                TextForeground = parameter.TextForeground;
+                BorderBackground = parameter.BorderBackground;
+                _stylers.Clear();
+                foreach (var entry in stylers) _stylers.Add(entry.Key, entry.Value);
+                ObserveStylers();
+            };
+        }
 
-            var schema = parameter.StyleSchema
-                ?? throw new ArgumentException("A layer style schema is required.", nameof(parameter));
-            EnsureRequiredStylerStates(schema, parameter.Name, LayerId);
-            var stylers = schema.ToDictionary(x => x.Key, x => _stylerFactory.CreateStyler(x.Value));
-
-            Name = parameter.Name.Trim();
-            Description = parameter.Description ?? string.Empty;
-            MaximumThickenedShapeWidth = parameter.MaximumThickenedShapeWidth;
-            TagFontSize = parameter.TagFontSize;
-            AnnotationFontToHandleRatio = parameter.AnnotationFontToHandleRatio;
-            TextForeground = parameter.TextForeground;
-            BorderBackground = parameter.BorderBackground;
-            foreach (var key in _stylers.Keys.ToArray()) _stylers.Remove(key);
-            foreach (var entry in stylers) _stylers.Add(entry.Key, entry.Value);
+        internal void NotifyConfigurationChanged(bool committedToCatalogue)
+        {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Description)));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Stylers)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Measurement)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TagFontSize)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MaximumThickenedShapeWidth)));
+            DefinitionChanged?.Invoke(this, committedToCatalogue ? CatalogueCommitNotification : EventArgs.Empty);
+        }
+
+        private void SetDimension(ref int field, int value, string propertyName)
+        {
+            if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));
+            if (field == value) return;
+            field = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            DefinitionChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void ObserveStylers()
+        {
+            foreach (var styler in _stylers.Values)
+            {
+                if (styler is INotifyPropertyChanged notifications)
+                    notifications.PropertyChanged += Styler_PropertyChanged;
+                ObserveVisual(styler.SketchPen);
+                ObserveVisual(styler.FillColor);
+                ObserveVisual(styler.TagColor);
+            }
+            ObserveVisual(TextForeground);
+            ObserveVisual(BorderBackground);
+        }
+
+        private void ObserveVisual(Freezable? visual)
+        {
+            if (visual != null && !visual.IsFrozen && _observedVisuals.Add(visual)) visual.Changed += Visual_Changed;
+        }
+
+        private void UnobserveStylers()
+        {
+            foreach (var styler in _stylers.Values)
+                if (styler is INotifyPropertyChanged notifications)
+                    notifications.PropertyChanged -= Styler_PropertyChanged;
+            foreach (var visual in _observedVisuals) visual.Changed -= Visual_Changed;
+            _observedVisuals.Clear();
+        }
+
+        private void Styler_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is nameof(IShapeStyler.FillColor) or nameof(IShapeStyler.TagColor))
+            {
+                UnobserveStylers();
+                ObserveStylers();
+            }
+            NotifyStyleChanged();
+        }
+
+        private void Visual_Changed(object? sender, EventArgs e) => NotifyStyleChanged();
+
+        private void NotifyStyleChanged()
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Stylers)));
+            DefinitionChanged?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>

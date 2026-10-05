@@ -1,15 +1,29 @@
 using System;
+using System.ComponentModel;
 using System.Windows.Controls;
 using System.Windows.Media;
 
 namespace Lan.Shapes.Styler
 {
-    public class ShapeStyler : IShapeStyler
+    public class ShapeStyler : IShapeStyler, INotifyPropertyChanged
     {
         private Pen _sketchPen = new Pen();
         private string _dashStyle;
         public Pen SketchPen => _sketchPen;
-        public Brush FillColor { get; set; }
+        private Brush _fillColor;
+        private double _dragHandleSize;
+        private Brush _tagColor = Brushes.Red;
+        public event PropertyChangedEventHandler PropertyChanged;
+        public Brush FillColor
+        {
+            get => _fillColor;
+            set
+            {
+                if (ReferenceEquals(_fillColor, value)) return;
+                _fillColor = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FillColor)));
+            }
+        }
 
         public string Name { get; set; }
 
@@ -17,7 +31,7 @@ namespace Lan.Shapes.Styler
         {
             var clone = new ShapeStyler(ToStylerParameter())
             {
-                TagColor = TagColor,
+                TagColor = TagColor?.Clone(),
                 Name = Name
             };
             return clone;
@@ -27,10 +41,10 @@ namespace Lan.Shapes.Styler
         {
             return new ShapeStylerParameter()
             {
-                DashStyle = _dashStyle ?? GetDashStyleName(_sketchPen.DashStyle),
+                DashStyle = GetDashStyleName(_sketchPen.DashStyle),
                 DragHandleSize = DragHandleSize,
-                FillColor = FillColor,
-                StrokeColor = _sketchPen.Brush,
+                FillColor = FillColor?.Clone(),
+                StrokeColor = _sketchPen.Brush?.Clone(),
                 StrokeThickness = _sketchPen.Thickness,
                 FillOpacity = FillColor?.Opacity ?? 0
             };
@@ -65,9 +79,28 @@ namespace Lan.Shapes.Styler
                 : dashStyle == DashStyles.DashDotDot ? "DashDotDot" : "Solid";
         }
 
-        public double DragHandleSize { get; set; }
+        public double DragHandleSize
+        {
+            get => _dragHandleSize;
+            set
+            {
+                if (!double.IsFinite(value) || value < 0) throw new ArgumentOutOfRangeException(nameof(value));
+                if (_dragHandleSize == value) return;
+                _dragHandleSize = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DragHandleSize)));
+            }
+        }
 
-        public Brush TagColor { get; set; } = Brushes.Red;
+        public Brush TagColor
+        {
+            get => _tagColor;
+            set
+            {
+                if (ReferenceEquals(_tagColor, value)) return;
+                _tagColor = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TagColor)));
+            }
+        }
 
         public ShapeStyler()
         {
@@ -82,9 +115,9 @@ namespace Lan.Shapes.Styler
 
             FillColor = parameter.FillColor?.Clone();
             _sketchPen.Thickness = parameter.StrokeThickness > 0 ? parameter.StrokeThickness : 1;
-            _sketchPen.Brush = parameter.StrokeColor;
-            _sketchPen.DashStyle = ConvertStringToDashStyle(parameter.DashStyle);
-            _dashStyle = parameter.DashStyle;
+            _sketchPen.Brush = parameter.StrokeColor?.Clone();
+            _dashStyle = NormalizeDashStyle(parameter.DashStyle);
+            _sketchPen.DashStyle = ConvertStringToDashStyle(_dashStyle);
             DragHandleSize = parameter.DragHandleSize;
             if (FillColor != null)
             {
@@ -117,6 +150,14 @@ namespace Lan.Shapes.Styler
             }
 
             return dashStyle;
+        }
+
+        public static string NormalizeDashStyle(string dashStyleName)
+        {
+            if (string.IsNullOrWhiteSpace(dashStyleName)) return "Solid";
+            foreach (var name in new[] { "Solid", "Dash", "Dot", "DashDot", "DashDotDot" })
+                if (string.Equals(name, dashStyleName.Trim(), StringComparison.OrdinalIgnoreCase)) return name;
+            throw new ArgumentException("Invalid dash style name.", nameof(dashStyleName));
         }
 
         public ShapeStyler(Brush fillColor, Brush strokeColor, DashStyle dashStyle, double dragHandleSize)

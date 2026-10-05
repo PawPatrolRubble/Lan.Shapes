@@ -34,7 +34,7 @@ namespace Lan.Shapes.Custom
         /// <summary>
         /// 
         /// </summary>
-        public override Rect BoundsRect { get; }
+        public override Rect BoundsRect => RenderGeometry.Bounds;
 
         public override bool CanSnapDuringResize => base.CanSnapDuringResize
             && !ReferenceEquals(SelectedDragHandle, DistanceResizeHandle);
@@ -90,6 +90,7 @@ namespace Lan.Shapes.Custom
         /// </summary>
         public override void OnDeselected()
         {
+            base.OnDeselected();
         }
 
 
@@ -103,6 +104,16 @@ namespace Lan.Shapes.Custom
         protected override Brush? GetDragHandleFill() => DragHandleFillColor;
 
         protected override Pen? GetDragHandlePen() => DragHandlePen;
+
+        protected override Pen? GetSelectionPen()
+        {
+            var pen = base.GetSelectionPen()?.CloneCurrentValue();
+            if (pen != null)
+            {
+                pen.Thickness = StrokeThickness;
+            }
+            return pen;
+        }
 
         protected abstract void OnStrokeThicknessChanges(double strokeThickness);
 

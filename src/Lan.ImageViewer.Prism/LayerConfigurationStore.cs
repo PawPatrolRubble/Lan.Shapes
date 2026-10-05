@@ -2,6 +2,7 @@
 
 using System;
 using System.IO;
+using System.Reflection;
 
 namespace Lan.ImageViewer.Prism
 {
@@ -26,11 +27,14 @@ namespace Lan.ImageViewer.Prism
 
         /// <summary>
         /// Directory holding the runtime layer configuration. Defaults to
-        /// <c>%LOCALAPPDATA%\Lan.Shapes</c>.
+        /// <c>%LOCALAPPDATA%\Lan.Shapes\{entry application}</c>.
         /// </summary>
-        public static string RuntimeDirectory => Path.Combine(
+        private static string ApplicationsDirectory => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             ApplicationFolderName);
+
+        public static string RuntimeDirectory => Path.Combine(ApplicationsDirectory,
+            Assembly.GetEntryAssembly()?.GetName().Name ?? "DefaultApplication");
 
         /// <summary>
         /// Returns the path of the runtime configuration file, creating it from
@@ -39,14 +43,16 @@ namespace Lan.ImageViewer.Prism
         /// builds, cleans and deployments.
         /// </summary>
         /// <param name="shippedConfigurationPath">Read-only default shipped with the application.</param>
-        /// <param name="runtimeDirectory">Overrides <see cref="RuntimeDirectory"/> (tests).</param>
+        /// <param name="runtimeDirectory">Explicit directory, already scoped by the host when applicationId is omitted.</param>
         /// <param name="fileName">Overrides the file name taken from the shipped path (tests).</param>
+        /// <param name="applicationId">Optional stable host identity; appended to the supplied directory or the applications directory.</param>
         /// <exception cref="ArgumentException"><paramref name="shippedConfigurationPath"/> is empty.</exception>
         /// <exception cref="InvalidOperationException">The shipped default is missing.</exception>
         public static string ResolveRuntimeFile(
             string shippedConfigurationPath,
             string? runtimeDirectory = null,
-            string? fileName = null)
+            string? fileName = null,
+            string? applicationId = null)
         {
             if (string.IsNullOrWhiteSpace(shippedConfigurationPath))
             {
@@ -56,6 +62,14 @@ namespace Lan.ImageViewer.Prism
 
             var shipped = Path.GetFullPath(shippedConfigurationPath);
             var directory = string.IsNullOrWhiteSpace(runtimeDirectory) ? RuntimeDirectory : runtimeDirectory;
+            if (!string.IsNullOrWhiteSpace(applicationId))
+            {
+                var identity = applicationId.Trim();
+                if (identity is "." or ".." || identity.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                    throw new ArgumentException("The application identity must be a single directory name.", nameof(applicationId));
+                directory = Path.Combine(string.IsNullOrWhiteSpace(runtimeDirectory)
+                    ? ApplicationsDirectory : runtimeDirectory, identity);
+            }
             var name = string.IsNullOrWhiteSpace(fileName)
                 ? Path.GetFileName(shipped)
                 : fileName;

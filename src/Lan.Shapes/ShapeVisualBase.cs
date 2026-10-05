@@ -50,6 +50,7 @@ namespace Lan.Shapes
         private bool _isBeingDraggedOrPanMoving;
         private bool _isGeometryRendered;
         private bool _isLocked;
+        private bool _isHovered;
 
         private ShapeVisualState _state;
         private int _visualUpdateDepth;
@@ -63,6 +64,9 @@ namespace Lan.Shapes
 
         protected Point? OldPointForTranslate;
 
+        /// <summary>Whether a mouse-down gesture is still active. Cleared by CancelInteraction.</summary>
+        protected bool HasPointerInteraction => MouseDownPoint.HasValue || OldPointForTranslate.HasValue;
+
         protected readonly CombinedGeometry PanSensitiveArea = new CombinedGeometry();
 
         private readonly List<(Point Location, string Content)> _textGeometries = new List<(Point Location, string Content)>();
@@ -71,7 +75,48 @@ namespace Lan.Shapes
 
         #region Properties
 
-        public abstract Rect BoundsRect { get; }
+        /// <summary>Model-space bounds, excluding interaction handles and annotations.</summary>
+        public virtual Rect BoundsRect => RenderGeometry.Bounds;
+
+        /// <summary>
+        /// Whether this shape supports rigid translation of its model coordinates.
+        /// Custom shapes opt in by overriding this property and TranslateCore.
+        /// </summary>
+        public virtual bool CanTranslate => false;
+
+        /// <summary>
+        /// Moves a completed, unlocked shape by a finite vector in its local model space.
+        /// Model geometry, handles and attached text move together; the visual Transform is preserved.
+        /// </summary>
+        public virtual void Translate(Vector delta)
+        {
+            if (!double.IsFinite(delta.X) || !double.IsFinite(delta.Y))
+                throw new ArgumentOutOfRangeException(nameof(delta), "Translation must be finite.");
+            if (!CanTranslate)
+                throw new NotSupportedException($"{GeometryType} does not support model translation.");
+            if (!IsGeometryRendered || IsLocked)
+                throw new InvalidOperationException("Only completed, unlocked shapes can be translated.");
+            if (delta.X == 0 && delta.Y == 0) return;
+
+            using (DeferVisualUpdates())
+            {
+                TranslateCore(delta);
+                for (var i = 0; i < _textGeometries.Count; i++)
+                {
+                    var text = _textGeometries[i];
+                    _textGeometries[i] = (text.Location + delta, text.Content);
+                }
+                CreateHandles();
+                UpdateGeometryGroup();
+                RequestVisualUpdate();
+                OnPropertyChanged(nameof(BoundsRect));
+                OnPropertyChanged(nameof(SelectionBounds));
+            }
+        }
+
+        /// <summary>Updates model coordinates and their geometry without changing pointer state.</summary>
+        protected virtual void TranslateCore(Vector delta)
+            => throw new NotSupportedException($"{GeometryType} does not support model translation.");
 
         /// <summary>
         /// Model-space anchors that other shapes can snap to while being drawn, resized, or moved.
@@ -118,7 +163,13 @@ namespace Lan.Shapes
         public bool IsGeometryRendered
         {
             get => _isGeometryRendered;
-            protected set => SetField(ref _isGeometryRendered, value);
+            protected set
+            {
+                if (SetField(ref _isGeometryRendered, value))
+                {
+                    RequestVisualUpdate();
+                }
+            }
         }
 
         public bool IsLocked
@@ -126,9 +177,13 @@ namespace Lan.Shapes
             get => _isLocked;
             set
             {
-                State = value ? ShapeVisualState.Locked : ShapeVisualState.Normal;
+                if (!SetField(ref _isLocked, value)) return;
+                if (value) CancelInteraction();
+                UpdateAppearanceState();
             }
         }
+
+        public bool IsHovered => _isHovered;
 
         public virtual Geometry RenderGeometry
         {
@@ -142,41 +197,112 @@ namespace Lan.Shapes
         private bool _isSelected;
         private bool _showSelectionHandles = true;
         public bool IsSelected => _isSelected;
-        public Rect SelectionBounds => Transform?.TransformBounds(BoundsRect) ?? BoundsRect;
+        public Rect SelectionBounds
+        {
+            get
+            {
+                var geometry = GetSelectionGeometry();
+                var clip = GetSelectionClip();
+                return clip == null ? ToSelectionCoordinates(geometry).Bounds
+                    : GetClippedSelectionBounds(GetClippedSelectionGeometry(geometry, clip), clip);
+            }
+        }
         protected bool ShowSelectionHandles => _showSelectionHandles;
 
         /// <summary>Selection feedback driven by the owning repository.</summary>
         public void SetSelectionAppearance(bool selected, bool showHandles)
         {
-            var changed = _isSelected != selected || _showSelectionHandles != showHandles;
-            _isSelected = selected;
-            _showSelectionHandles = showHandles;
-            if (!changed) return;
-            OnPropertyChanged(nameof(IsSelected));
-            RefreshScaleDependentVisuals();
+            using (DeferVisualUpdates())
+            {
+                var selectionChanged = SetField(ref _isSelected, selected, nameof(IsSelected));
+                var handlesChanged = _showSelectionHandles != showHandles;
+                _showSelectionHandles = showHandles;
+                if (!selectionChanged && !handlesChanged) return;
+                if (!selected) CancelInteraction();
+                UpdateAppearanceState();
+                RequestVisualUpdate();
+            }
+        }
+
+        /// <summary>Updates pointer feedback without changing selection or locking.</summary>
+        public void SetHoverAppearance(bool hovered)
+        {
+            if (SetField(ref _isHovered, hovered, nameof(IsHovered))) UpdateAppearanceState();
         }
 
         /// <summary>Tests model geometry only, excluding handles and labels. Custom shapes may override.</summary>
         public virtual bool MatchesSelectionRectangle(Rect rectangle, bool crossing)
         {
-            if (!IsGeometryRendered || BoundsRect.IsEmpty) return false;
-            if (!crossing) return rectangle.Contains(SelectionBounds);
-            var geometry = RenderGeometry;
-            if (Transform != null && !Transform.Value.IsIdentity)
-            {
-                geometry = geometry.CloneCurrentValue();
-                var transforms = new TransformGroup();
-                transforms.Children.Add(geometry.Transform);
-                transforms.Children.Add(Transform);
-                geometry.Transform = transforms;
-            }
+            if (!IsGeometryRendered) return false;
+            var geometry = GetSelectionGeometry();
+            if (geometry.IsEmpty()) return false;
             var region = new RectangleGeometry(rectangle);
+            var clip = GetSelectionClip();
+            if (clip != null)
+            {
+                var visibleGeometry = GetClippedSelectionGeometry(geometry, clip);
+                if (visibleGeometry.IsEmpty()) return false;
+                return crossing
+                    ? visibleGeometry.FillContainsWithDetail(region) is not (IntersectionDetail.Empty or IntersectionDetail.NotCalculated)
+                    : rectangle.Contains(GetClippedSelectionBounds(visibleGeometry, clip));
+            }
+            if (!crossing) return rectangle.Contains(ToSelectionCoordinates(geometry).Bounds);
             // Selection highlighting must not change which part of a shape can be selected.
             var styler = ShapeLayer.GetStyler(ShapeVisualState.Normal);
             return (HasVisibleBrush(styler.FillColor)
-                    && geometry.FillContainsWithDetail(region) is not (IntersectionDetail.Empty or IntersectionDetail.NotCalculated))
-                || (styler.SketchPen is Pen pen && HasVisibleBrush(pen.Brush)
-                    && geometry.StrokeContainsWithDetail(pen, region) is not (IntersectionDetail.Empty or IntersectionDetail.NotCalculated));
+                    && ToSelectionCoordinates(geometry).FillContainsWithDetail(region) is not (IntersectionDetail.Empty or IntersectionDetail.NotCalculated))
+                || (GetSelectionPen() is Pen pen && HasVisibleBrush(pen.Brush)
+                    && ToSelectionCoordinates(geometry.GetWidenedPathGeometry(pen)).FillContainsWithDetail(region)
+                        is not (IntersectionDetail.Empty or IntersectionDetail.NotCalculated));
+        }
+
+        /// <summary>The model geometry used for selection; custom drawing must expose the same body here.</summary>
+        protected virtual Geometry GetSelectionGeometry() => RenderGeometry;
+
+        /// <summary>Stable model stroke used for selection, independent of hover/selection highlighting.</summary>
+        protected virtual Pen? GetSelectionPen() => ShapeLayer.GetStyler(ShapeVisualState.Normal).SketchPen;
+
+        private Geometry? GetSelectionClip()
+        {
+            var drawingClip = DrawingClip;
+            var visualClip = Clip;
+            if (drawingClip == null) return visualClip == null ? null : ToSelectionCoordinates(visualClip);
+            if (visualClip == null) return ToSelectionCoordinates(drawingClip);
+            return Geometry.Combine(ToSelectionCoordinates(drawingClip), ToSelectionCoordinates(visualClip),
+                GeometryCombineMode.Intersect, null);
+        }
+
+        private Geometry GetClippedSelectionGeometry(Geometry geometry, Geometry clip)
+        {
+            Geometry body = Geometry.Empty;
+            if (HasVisibleBrush(ShapeLayer.GetStyler(ShapeVisualState.Normal).FillColor))
+                body = ToSelectionCoordinates(geometry);
+            if (GetSelectionPen() is Pen pen && HasVisibleBrush(pen.Brush))
+                body = Geometry.Combine(body, ToSelectionCoordinates(geometry.GetWidenedPathGeometry(pen)),
+                    GeometryCombineMode.Union, null);
+            // Open paths must be widened before clipping; their fill alone can be empty.
+            return Geometry.Combine(body, clip, GeometryCombineMode.Intersect, null);
+        }
+
+        private static Rect GetClippedSelectionBounds(Geometry visibleGeometry, Geometry clip)
+        {
+            var bounds = visibleGeometry.Bounds;
+            // WPF boolean geometry can round vertices slightly beyond a clip edge.
+            bounds.Intersect(clip.Bounds);
+            return bounds;
+        }
+
+        private Geometry ToSelectionCoordinates(Geometry geometry)
+        {
+            if (Transform == null || Transform.Value.IsIdentity) return geometry;
+            // Primitive Geometry.Bounds may transform an already axis-aligned bounding box.
+            // A path computes bounds from the transformed model, including rotated line endpoints.
+            var transformed = PathGeometry.CreateFromGeometry(geometry).CloneCurrentValue();
+            var transforms = new TransformGroup();
+            if (transformed.Transform != null) transforms.Children.Add(transformed.Transform);
+            transforms.Children.Add(Transform);
+            transformed.Transform = transforms;
+            return transformed;
         }
 
         private static bool HasVisibleBrush(Brush? brush)
@@ -198,10 +324,6 @@ namespace Lan.Shapes
                 OnPropertyChanged(nameof(ShapeStyler));
 
                 RefreshScaleDependentVisuals(ViewportScale);
-                if (!IsGeometryRendered)
-                {
-                    RequestVisualUpdate();
-                }
             }
         }
 
@@ -210,31 +332,54 @@ namespace Lan.Shapes
             get => ShapeLayer?.GetStyler(State);
         }
 
+        /// <summary>
+        /// Effective style state. Prefer SetSelectionAppearance, SetHoverAppearance and IsLocked.
+        /// Legacy Selected assignments explicitly select and unlock; Normal clears selection and hover.
+        /// Hover and Normal assignments never unlock a shape.
+        /// </summary>
         public ShapeVisualState State
         {
             get => _state;
             set
             {
-                if (_state == value)
+                if (!Enum.IsDefined(value)) throw new ArgumentOutOfRangeException(nameof(value));
+                using (DeferVisualUpdates())
                 {
-                    return;
-                }
-
-                var wasLocked = _isLocked;
-                _state = value;
-                _isLocked = value == ShapeVisualState.Locked;
-
-                DragHandleSize = ShapeStyler?.DragHandleSize ?? DefaultDragHandleSize;
-                OnDragHandleSizeChanges(DragHandleSize);
-                UpdateVisualOnStateChanged();
-
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(ShapeStyler));
-                if (wasLocked != _isLocked)
-                {
-                    OnPropertyChanged(nameof(IsLocked));
+                    switch (value)
+                    {
+                        case ShapeVisualState.Locked:
+                            IsLocked = true;
+                            break;
+                        case ShapeVisualState.Selected:
+                            IsLocked = false;
+                            SetHoverAppearance(false);
+                            SetSelectionAppearance(true, _showSelectionHandles);
+                            break;
+                        case ShapeVisualState.MouseOver:
+                            SetHoverAppearance(true);
+                            break;
+                        case ShapeVisualState.Normal:
+                            SetHoverAppearance(false);
+                            SetSelectionAppearance(false, _showSelectionHandles);
+                            break;
+                    }
                 }
             }
+        }
+
+        private void UpdateAppearanceState()
+        {
+            var state = IsLocked ? ShapeVisualState.Locked
+                : IsSelected ? ShapeVisualState.Selected
+                : IsHovered ? ShapeVisualState.MouseOver
+                : ShapeVisualState.Normal;
+            if (_state == state) return;
+            _state = state;
+            DragHandleSize = ShapeStyler?.DragHandleSize ?? DefaultDragHandleSize;
+            OnDragHandleSizeChanges(DragHandleSize);
+            UpdateVisualOnStateChanged();
+            OnPropertyChanged(nameof(State));
+            OnPropertyChanged(nameof(ShapeStyler));
         }
 
         private string? _tag;
@@ -355,7 +500,7 @@ namespace Lan.Shapes
         /// Drag handles are visible and interactive while a shape is being created or selected.
         /// </summary>
         protected virtual bool AreDragHandlesActive =>
-            !IsLocked && (!IsGeometryRendered || (State == ShapeVisualState.Selected && ShowSelectionHandles));
+            !IsLocked && (!IsGeometryRendered || (IsSelected && ShowSelectionHandles));
 
         protected virtual Brush? GetDragHandleFill() => ShapeStyler?.FillColor;
 
@@ -364,7 +509,7 @@ namespace Lan.Shapes
         /// <summary>
         /// Draws every registered handle exactly once, independently of model geometry.
         /// </summary>
-        protected void DrawDragHandles(DrawingContext renderContext)
+        protected virtual void DrawDragHandles(DrawingContext renderContext)
         {
             if (!AreDragHandlesActive)
             {
@@ -393,18 +538,12 @@ namespace Lan.Shapes
 
         public void RefreshScaleDependentVisuals(double viewportScale)
         {
-            ViewportScale = viewportScale > 0 &&
-                            !double.IsNaN(viewportScale) &&
-                            !double.IsInfinity(viewportScale)
-                ? viewportScale
-                : 1.0;
-
-            DragHandleSize = ShapeStyler?.DragHandleSize ?? DefaultDragHandleSize;
-            OnDragHandleSizeChanges(DragHandleSize);
-            OnViewportScaleChanged(ViewportScale);
-
-            if (IsGeometryRendered)
+            using (DeferVisualUpdates())
             {
+                ViewportScale = double.IsFinite(viewportScale) && viewportScale > 0 ? viewportScale : 1.0;
+                DragHandleSize = ShapeStyler?.DragHandleSize ?? DefaultDragHandleSize;
+                OnDragHandleSizeChanges(DragHandleSize);
+                OnViewportScaleChanged(ViewportScale);
                 RequestVisualUpdate();
             }
         }
@@ -467,10 +606,30 @@ namespace Lan.Shapes
 
         public virtual void OnDeselected()
         {
+            CancelInteraction();
+        }
+
+        /// <summary>Ends pointer tracking without completing or reverting the current geometry.</summary>
+        public virtual void CancelInteraction()
+        {
+            SelectedDragHandle = null;
+            IsBeingDraggedOrPanMoving = false;
+            _canMoveWithHand = false;
+            MouseDownPoint = null;
+            OldPointForTranslate = null;
+        }
+
+        /// <summary>Staged sketches can override the condition for committing their model geometry.</summary>
+        protected virtual bool CanCompleteCreation => !RenderGeometry.IsEmpty();
+
+        protected void CompleteCreation()
+        {
+            if (!IsGeometryRendered && CanCompleteCreation) IsGeometryRendered = true;
         }
 
         public virtual void OnMouseLeftButtonDown(Point mousePoint)
         {
+            if (IsLocked) return;
             FindSelectedHandle(mousePoint);
             _canMoveWithHand = !IsLocked && PanSensitiveArea.FillContains(mousePoint);
 
@@ -480,18 +639,16 @@ namespace Lan.Shapes
 
         public virtual void OnMouseLeftButtonUp(Point newPoint)
         {
-            if (!IsGeometryRendered && RenderGeometryGroup.Children.Count > 0)
+            using (DeferVisualUpdates())
             {
-                IsGeometryRendered = true;
+                if (!IsLocked) CompleteCreation();
+                CancelInteraction();
             }
-
-            SelectedDragHandle = null;
-            IsBeingDraggedOrPanMoving = false;
-            _canMoveWithHand = false;
         }
 
         public virtual void OnMouseMove(Point point, MouseButtonState buttonState)
         {
+            if (IsLocked || (buttonState == MouseButtonState.Pressed && !HasPointerInteraction)) return;
             if (buttonState == MouseButtonState.Released)
             {
                 HandleMouseMoveReleased(point);
@@ -501,15 +658,13 @@ namespace Lan.Shapes
                 HandleMouseMovePressed(point);
             }
 
-            OldPointForTranslate = point;
+            if (buttonState == MouseButtonState.Pressed) OldPointForTranslate = point;
         }
 
         private void HandleMouseMoveReleased(Point point)
         {
-            if (State != ShapeVisualState.MouseOver)
-            {
-                State = ShapeVisualState.MouseOver;
-            }
+            CancelInteraction();
+            SetHoverAppearance(true);
 
             var handle = FindDragHandleMouseOver(point);
             if (handle != null)
@@ -564,8 +719,13 @@ namespace Lan.Shapes
 
         public virtual void OnMouseRightButtonUp(Point mousePosition)
         {
-            IsGeometryRendered = true;
-            State = ShapeVisualState.Normal;
+            if (IsLocked) return;
+            using (DeferVisualUpdates())
+            {
+                CompleteCreation();
+                CancelInteraction();
+                State = ShapeVisualState.Normal;
+            }
         }
 
         public virtual void OnMouseLeftButtonDoubleClick(Point mouseDoubleClickPoint)
@@ -613,6 +773,11 @@ namespace Lan.Shapes
 
         public void UpdateMouseCursorForPoint(Point point)
         {
+            if (IsLocked)
+            {
+                Mouse.SetCursor(Cursors.Arrow);
+                return;
+            }
             if (!AreDragHandlesActive)
             {
                 Mouse.SetCursor(PanSensitiveArea.FillContains(point) ? Cursors.Hand : Cursors.Arrow);
@@ -684,6 +849,10 @@ namespace Lan.Shapes
             }
         }
 
+        /// <summary>
+        /// Replaces retained visual content. Override DrawShape to customize the body while retaining
+        /// the common handle and annotation stages. This entry point remains virtual for compatibility.
+        /// </summary>
         public virtual void UpdateVisual()
         {
             if (ShapeStyler == null)
@@ -691,11 +860,23 @@ namespace Lan.Shapes
                 return;
             }
 
-            var renderContext = RenderOpen();
-            renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometry);
+            using var renderContext = RenderOpen();
+            var clip = DrawingClip;
+            if (clip != null) renderContext.PushClip(clip);
+            DrawShape(renderContext);
             DrawDragHandles(renderContext);
             DrawText(renderContext);
-            renderContext.Close();
+            if (clip != null) renderContext.Pop();
+        }
+
+        /// <summary>Local-space clip shared by the drawing pipeline and model selection.</summary>
+        protected virtual Geometry? DrawingClip => null;
+
+        /// <summary>Draws the model body and shape-specific labels. The base draws handles and added text.</summary>
+        protected virtual void DrawShape(DrawingContext renderContext)
+        {
+            var styler = ShapeStyler;
+            if (styler != null) renderContext.DrawGeometry(styler.FillColor, styler.SketchPen, RenderGeometry);
         }
 
         protected static double EnsureNumberWithinRange(double value, double min, double max)

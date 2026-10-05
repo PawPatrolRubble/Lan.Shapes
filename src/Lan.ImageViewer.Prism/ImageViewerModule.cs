@@ -26,7 +26,9 @@ namespace Lan.ImageViewer.Prism
                 // Load and save through the user's data folder: the shipped file lives in the
                 // build output, where the next build would restore it over saved layer edits.
                 var fullPath = LayerConfigurationStore.ResolveRuntimeFile(
-                    ResolveLatestJsonFile(baseDirectory, lanShapesConfigPath));
+                    ResolveLatestJsonFile(baseDirectory, lanShapesConfigPath),
+                    runtimeDirectory: configuration["lanShapesRuntimeDirectory"],
+                    applicationId: configuration["lanShapesApplicationId"]);
                 shapeLayerManager.ReadConfiguration(fullPath);
             }
 

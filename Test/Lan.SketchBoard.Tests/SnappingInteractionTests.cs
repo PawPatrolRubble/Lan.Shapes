@@ -937,9 +937,11 @@ public class SnappingInteractionTests
             Assert.False(board.MarkerBounds.IsEmpty);
             var manager = new SketchBoardDataManager();
             manager.SetShapeLayer(TestShapeLayer.Create());
+            var oldVisuals = oldManager.VisualCollection;
             board.SketchBoardDataManager = manager;
             Assert.True(board.MarkerBounds.IsEmpty);
-            Assert.Empty(oldManager.VisualCollection);
+            Assert.Empty(oldVisuals);
+            Assert.Null(oldManager.SketchBoard);
             LoadLine(manager, new Point(30, 30), new Point(100, 100));
             manager.SetGeometryType(typeof(Line));
             board.Move(new Point(32, 31), MouseButtonState.Released);
@@ -949,9 +951,11 @@ public class SnappingInteractionTests
 
             board.Press(new Point(32, 31));
             Assert.Equal(new Point(30, 30), Assert.IsType<Line>(manager.CurrentGeometryInEdit).Start);
+            var visuals = manager.VisualCollection;
             board.SketchBoardDataManager = null;
             Assert.True(board.MarkerBounds.IsEmpty);
-            Assert.Empty(manager.VisualCollection);
+            Assert.Empty(visuals);
+            Assert.Null(manager.SketchBoard);
             Assert.Equal(2, VisualTreeHelper.GetChildrenCount(board)); // Selection overlay and snap marker only.
         });
     }

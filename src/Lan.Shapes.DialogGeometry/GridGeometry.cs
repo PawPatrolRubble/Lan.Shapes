@@ -73,6 +73,21 @@ namespace Lan.Shapes.DialogGeometry
 
         public override Rect BoundsRect => _boundGeometry.Bounds;
 
+        public override bool CanTranslate => true;
+
+        protected override void TranslateCore(Vector delta)
+        {
+            SetField(ref _topLeft, TopLeft + delta, nameof(TopLeft));
+            SetField(ref _bottomRight, BottomRight + delta, nameof(BottomRight));
+            _boundGeometry.Rect = new Rect(TopLeft, BottomRight);
+            if (_lines == null) return;
+            foreach (var line in _lines)
+            {
+                line.StartPoint += delta;
+                line.EndPoint += delta;
+            }
+        }
+
         #endregion
 
         #region interface implementations
@@ -128,6 +143,7 @@ namespace Lan.Shapes.DialogGeometry
 
         public override void OnDeselected()
         {
+            base.OnDeselected();
         }
 
         public override void OnSelected()
@@ -136,6 +152,7 @@ namespace Lan.Shapes.DialogGeometry
 
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
+            if (IsLocked) return;
             base.OnMouseLeftButtonDown(mousePoint);
             if (!IsGeometryRendered)
             {
@@ -145,6 +162,7 @@ namespace Lan.Shapes.DialogGeometry
 
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
+            if (IsLocked || !HasPointerInteraction) return;
             if (!IsGeometryRendered)
             {
                 BottomRight = point;
@@ -153,6 +171,7 @@ namespace Lan.Shapes.DialogGeometry
 
         public override void OnMouseLeftButtonUp(Point newPoint)
         {
+            if (IsLocked) return;
             if (!IsGeometryRendered)
             {
                 var dialog = new DialogService();
@@ -172,6 +191,7 @@ namespace Lan.Shapes.DialogGeometry
             }
 
             RequestVisualUpdate();
+            CancelInteraction();
         }
 
         private void RebuildGapsFromBounds()

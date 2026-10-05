@@ -23,16 +23,18 @@ using Microsoft.Win32;
 
 using Prism.Ioc;
 using Prism.Mvvm;
+using Prism.Navigation;
 
 #endregion
 
 namespace Lan.Shapes.SimpleApp.ViewModels
 {
-    public class MainPageViewModel : BindableBase
+    public class MainPageViewModel : BindableBase, IDisposable, IDestructible
     {
         #region fields
 
         private readonly IShapeLayerManager _shapeLayerManager;
+        private bool _disposed;
 
         private Point _mouseDblPosition;
 
@@ -75,13 +77,23 @@ namespace Lan.Shapes.SimpleApp.ViewModels
             //ImageViewerViewModels.Add(Camera2);
             SelectedImageViewModel = ImageViewerViewModels[0];
 
-            Camera1.SketchBoardDataManager.SketchBoardManagerInitialized += (s, e) =>
-            {
-
-            };
-
             Camera1.SketchBoardDataManager.ShapeCreated += OnShapeAdded;
 
+        }
+
+        public void Destroy() => Dispose();
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            Camera1.SketchBoardDataManager.ShapeCreated -= OnShapeAdded;
+            if (CurrentRoi != null) CurrentRoi.PropertyChanged -= OnRoiUpdateHandler;
+            foreach (var viewer in ImageViewerViewModels.Append(Camera1).Distinct()) viewer.Dispose();
+            ImageViewerViewModels.Clear();
+            CurrentRoi = null;
+            SelectedImageViewModel = null;
+            GC.SuppressFinalize(this);
         }
 
         private void OnShapeAdded(object? sender, ShapeVisualBase e)
@@ -90,7 +102,7 @@ namespace Lan.Shapes.SimpleApp.ViewModels
             if (sender is ISketchBoardDataManager sketchBoardDataManager &&
     sketchBoardDataManager.Shapes.Where(x => x.GetType() == typeof(Rectangle))?.Count() > 1)
             {
-                sketchBoardDataManager.Shapes.RemoveAt(0);
+                sketchBoardDataManager.RemoveAt(0);
             }
 
             if (e is Rectangle rectangle)

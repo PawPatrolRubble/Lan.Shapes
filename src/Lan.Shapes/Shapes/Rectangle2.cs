@@ -182,6 +182,8 @@ namespace Lan.Shapes.Shapes
 
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
+            if (IsLocked) return;
+
             MouseDownPoint = mousePoint;
             OldPointForTranslate = mousePoint;
 
@@ -204,7 +206,7 @@ namespace Lan.Shapes.Shapes
 
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
-            if (buttonState != MouseButtonState.Pressed)
+            if (IsLocked || buttonState != MouseButtonState.Pressed || !HasPointerInteraction)
             {
                 return;
             }
@@ -236,12 +238,10 @@ namespace Lan.Shapes.Shapes
             RequestVisualUpdate();
         }
 
-        public override void OnMouseLeftButtonUp(Point newPoint)
+        public override void CancelInteraction()
         {
-            base.OnMouseLeftButtonUp(newPoint);
             _creationStart = null;
-            OldPointForTranslate = null;
-            MouseDownPoint = null;
+            base.CancelInteraction();
         }
 
         protected override void HandleResizing(Point point)
@@ -330,22 +330,21 @@ namespace Lan.Shapes.Shapes
                 return;
             }
 
-            ApplyParameters(
-                Center + (newPoint - OldPointForTranslate.Value),
-                Phi,
-                Length1,
-                Length2,
-                redraw: false);
+            Translate(newPoint - OldPointForTranslate.Value);
         }
 
-        public override void UpdateVisual()
+        public override bool CanTranslate => true;
+
+        protected override void TranslateCore(Vector delta)
+            => ApplyParameters(Center + delta, Phi, Length1, Length2, redraw: false);
+
+        protected override void DrawShape(DrawingContext renderContext)
         {
             if (ShapeStyler == null)
             {
                 return;
             }
 
-            var renderContext = RenderOpen();
             var renderPen = GetRenderPen();
             renderContext.DrawGeometry(ShapeStyler.FillColor, renderPen, RenderGeometryGroup);
             AddTagText(renderContext, GetTagPosition());
@@ -356,9 +355,6 @@ namespace Lan.Shapes.Shapes
                     _topMiddleHandle.GeometryCenter,
                     _rotationHandle.GeometryCenter);
             }
-            DrawDragHandles(renderContext);
-            DrawText(renderContext);
-            renderContext.Close();
         }
 
         private Pen GetRenderPen()

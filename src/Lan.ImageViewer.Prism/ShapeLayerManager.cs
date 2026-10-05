@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -26,7 +27,11 @@ namespace Lan.ImageViewer.Prism
         private bool _hasUnsavedChanges;
         public bool HasUnsavedChanges => _hasUnsavedChanges;
         public event EventHandler<ShapeLayer> LayerDefinitionChanged;
+        public event EventHandler ConfigurationChanged;
         private readonly IShapeStylerFactory _stylerFactory;
+        private readonly ManagedLayerCollection _layers;
+        private readonly HashSet<ShapeLayer> _observedLayers = new();
+        private bool _restoringDefinition;
 
         #endregion
 
@@ -68,15 +73,15 @@ namespace Lan.ImageViewer.Prism
 
         public ShapeLayer CreateLayer(ShapeLayerParameter definition)
         {
+            _layers.VerifyMutationAllowed();
             var candidate = PrepareDefinition(definition, existingId: null);
             var parameter = candidate.ToShapeLayerParameter();
             parameter.LayerId = checked(Layers.Select(x => x.LayerId).DefaultIfEmpty(0).Max() + 1);
             candidate = new ShapeLayer(parameter, Configuration.Measurement, _stylerFactory);
             var configuration = BuildConfiguration(Layers.Concat(new[] { candidate }));
             PersistCandidate(configuration);
-            Layers.Add(candidate);
-            Configuration = configuration;
-            SetUnsavedChanges(string.IsNullOrWhiteSpace(_path));
+            PublishCatalogue(configuration, Layers.Concat(new[] { candidate }).ToList(),
+                () => _layers.InsertCommitted(Layers.Count, candidate), string.IsNullOrWhiteSpace(_path));
             LayerDefinitionChanged?.Invoke(this, candidate);
             return candidate;
         }
@@ -87,42 +92,26 @@ namespace Lan.ImageViewer.Prism
             var existing = Layers.FirstOrDefault(x => x.LayerId == definition.LayerId)
                 ?? throw new ArgumentException("The layer is not configured.", nameof(definition));
             var candidate = PrepareDefinition(definition, existing.LayerId);
+            var commit = existing.PrepareConfiguration(candidate.ToShapeLayerParameter());
             var configuration = BuildConfiguration(Layers.Select(x => ReferenceEquals(x, existing) ? candidate : x));
             PersistCandidate(configuration);
-            existing.ApplyConfiguration(candidate.ToShapeLayerParameter());
+            commit();
             Configuration = configuration;
-            SetUnsavedChanges(string.IsNullOrWhiteSpace(_path));
-            LayerDefinitionChanged?.Invoke(this, existing);
+            _hasUnsavedChanges = string.IsNullOrWhiteSpace(_path);
+            existing.NotifyConfigurationChanged(committedToCatalogue: true);
+            OnPropertyChanged(nameof(HasUnsavedChanges));
+            OnPropertyChanged(nameof(Configuration));
         }
 
         private ShapeLayer PrepareDefinition(ShapeLayerParameter definition, int? existingId)
         {
             if (definition == null) throw new ArgumentNullException(nameof(definition));
-            var name = definition.Name?.Trim();
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("请输入图层名称。");
+            definition = definition.CreateValidatedCopy();
+            var name = definition.Name;
             if (Layers.Any(x => x.LayerId != existingId &&
-                string.Equals(x.Name.Trim(), name, StringComparison.OrdinalIgnoreCase)))
+                string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)))
                 throw new ArgumentException("图层名称已存在，请使用其他名称。");
-            if (definition.StyleSchema == null) throw new ArgumentException("图层样式不能为空。");
-            foreach (var entry in definition.StyleSchema)
-            {
-                var style = entry.Value;
-                if (style == null || !double.IsFinite(style.StrokeThickness) || style.StrokeThickness < 0
-                    || !double.IsFinite(style.FillOpacity) || style.FillOpacity < 0 || style.FillOpacity > 1
-                    || !double.IsFinite(style.DragHandleSize) || style.DragHandleSize < 0
-                    || style.StrokeColor == null || style.FillColor == null)
-                    throw new ArgumentException("图层颜色、线宽、句柄大小或透明度无效。");
-                if (!string.IsNullOrEmpty(style.DashStyle) && !new[] { "Solid", "Dash", "Dot", "DashDot", "DashDotDot" }
-                    .Contains(style.DashStyle, StringComparer.OrdinalIgnoreCase))
-                    throw new ArgumentException("图层线型无效。");
-            }
-            var layer = new ShapeLayer(definition, Configuration.Measurement, _stylerFactory);
-            if (definition.StyleSchema[Lan.Shapes.Enums.ShapeVisualState.Normal].StrokeThickness <= 0)
-                throw new ArgumentException("普通状态线宽必须大于 0。");
-            var parameter = layer.ToShapeLayerParameter();
-            parameter.Name = name;
-            layer.ApplyConfiguration(parameter);
-            return layer;
+            return new ShapeLayer(definition, Configuration.Measurement, _stylerFactory);
         }
 
         private LanShapesConfiguration BuildConfiguration(IEnumerable<ShapeLayer> layers)
@@ -177,6 +166,7 @@ namespace Lan.ImageViewer.Prism
                 return;
             }
 
+            _layers.VerifyMutationAllowed();
             var json = File.ReadAllText(configurationFilePath);
             var token = JToken.Parse(json);
             var configuration = token.Type == JTokenType.Array
@@ -191,15 +181,10 @@ namespace Lan.ImageViewer.Prism
                 .Select(x => new ShapeLayer(x, configuration.Measurement, _stylerFactory))
                 .ToList();
 
-            Layers.Clear();
-            CollectionExtension.AddRange(Layers, layers);
-
-            Configuration = configuration;
             _path = Path.GetFullPath(configurationFilePath);
-            SetUnsavedChanges(false);
+            PublishCatalogue(configuration, layers, () => _layers.ReplaceCommitted(layers), dirty: false);
             OnPropertyChanged(nameof(ConfigurationFilePath));
             OnPropertyChanged(nameof(Configuration));
-            foreach (var layer in Layers) LayerDefinitionChanged?.Invoke(this, layer);
         }
 
         [Obsolete("Use SaveConfiguration.")]
@@ -214,7 +199,7 @@ namespace Lan.ImageViewer.Prism
             ReadConfiguration(configurationFilePath);
         }
 
-        public ObservableCollection<ShapeLayer> Layers { get; private set; } = new ObservableCollection<ShapeLayer>();
+        public ObservableCollection<ShapeLayer> Layers => _layers;
 
 
         #endregion
@@ -230,7 +215,141 @@ namespace Lan.ImageViewer.Prism
         public ShapeLayerManager(IShapeStylerFactory stylerFactory)
         {
             _stylerFactory = stylerFactory ?? throw new ArgumentNullException(nameof(stylerFactory));
-            Layers.CollectionChanged += (_, _) => SetUnsavedChanges(true);
+            _layers = new ManagedLayerCollection(this);
+        }
+
+        private void PublishCatalogue(LanShapesConfiguration configuration, IReadOnlyCollection<ShapeLayer> next,
+            Action publish, bool dirty)
+        {
+            _layers.VerifyMutationAllowed();
+            foreach (var removed in _observedLayers.Where(layer => !next.Contains(layer)).ToList())
+            {
+                removed.ConfigurationChanging -= Layer_ConfigurationChanging;
+                removed.DefinitionChanged -= Layer_DefinitionChanged;
+                _observedLayers.Remove(removed);
+            }
+            foreach (var added in next.Where(layer => !_observedLayers.Contains(layer)))
+            {
+                added.ConfigurationChanging += Layer_ConfigurationChanging;
+                added.DefinitionChanged += Layer_DefinitionChanged;
+                _observedLayers.Add(added);
+            }
+            Configuration = configuration;
+            if (_selectedLayer != null && !next.Contains(_selectedLayer)) _selectedLayer = next.FirstOrDefault();
+            _hasUnsavedChanges = dirty;
+            // Publish only after the complete state is installed. External callbacks are
+            // ordinary edits and must retain validation, snapshots and dirty notifications.
+            publish();
+            OnPropertyChanged(nameof(HasUnsavedChanges));
+            OnPropertyChanged(nameof(Configuration));
+            OnPropertyChanged(nameof(SelectedLayer));
+            ConfigurationChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void ChangeCatalogue(List<ShapeLayer> next, Action publish)
+        {
+            if (next.Count == 0) throw new InvalidOperationException("The layer catalogue must contain at least one layer.");
+            var ids = new HashSet<int>();
+            var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var layer in next)
+            {
+                if (layer == null) throw new ArgumentNullException(nameof(next));
+                var parameter = layer.ToShapeLayerParameter().CreateValidatedCopy();
+                if (!ids.Add(layer.LayerId) || !names.Add(parameter.Name))
+                    throw new ArgumentException("Layer IDs and names must be unique.", nameof(next));
+            }
+            var measurement = Layers.Count == 0 ? next[0].Measurement : Configuration.Measurement;
+            var configuration = BuildConfiguration(next);
+            configuration.Measurement = measurement;
+            configuration.Validate();
+            foreach (var layer in next.Where(layer => !_observedLayers.Contains(layer)))
+                if (!ReferenceEquals(layer.Measurement, measurement))
+                    layer.ApplyDefinition(new ShapeLayer(layer.ToShapeLayerParameter(), measurement, _stylerFactory));
+            PublishCatalogue(configuration, next, publish, dirty: true);
+        }
+
+        private void Layer_ConfigurationChanging(object sender, ShapeLayerParameter parameter)
+        {
+            if (Layers.Any(layer => !ReferenceEquals(layer, sender)
+                && string.Equals(layer.Name, parameter.Name, StringComparison.OrdinalIgnoreCase)))
+                throw new ArgumentException("A layer with that name already exists.", nameof(parameter));
+        }
+
+        private void Layer_DefinitionChanged(object sender, EventArgs e)
+        {
+            if (_restoringDefinition || sender is not ShapeLayer layer) return;
+            if (ReferenceEquals(e, ShapeLayer.CatalogueCommitNotification))
+            {
+                // The command already installed the saved snapshot. Nested external edits
+                // have ordinary event arguments and still update snapshots and dirty state.
+                LayerDefinitionChanged?.Invoke(this, layer);
+                return;
+            }
+            LanShapesConfiguration candidate;
+            try { candidate = BuildConfiguration(Layers); }
+            catch
+            {
+                var previous = Configuration.ShapeLayers.First(parameter => parameter.LayerId == layer.LayerId);
+                _restoringDefinition = true;
+                try { layer.ApplyConfiguration(previous); }
+                finally { _restoringDefinition = false; }
+                throw;
+            }
+            Configuration = candidate;
+            SetUnsavedChanges(true);
+            OnPropertyChanged(nameof(Configuration));
+            LayerDefinitionChanged?.Invoke(this, layer);
+        }
+
+        private sealed class ManagedLayerCollection : ObservableCollection<ShapeLayer>
+        {
+            private readonly ShapeLayerManager _owner;
+            public ManagedLayerCollection(ShapeLayerManager owner) => _owner = owner;
+            public void VerifyMutationAllowed() => CheckReentrancy();
+            protected override void InsertItem(int index, ShapeLayer item)
+            {
+                CheckReentrancy();
+                var next = this.ToList();
+                next.Insert(index, item);
+                _owner.ChangeCatalogue(next, () => base.InsertItem(index, item));
+            }
+            protected override void RemoveItem(int index)
+            {
+                CheckReentrancy();
+                var next = this.ToList();
+                next.RemoveAt(index);
+                _owner.ChangeCatalogue(next, () => base.RemoveItem(index));
+            }
+            protected override void SetItem(int index, ShapeLayer item)
+            {
+                CheckReentrancy();
+                var next = this.ToList();
+                next[index] = item;
+                _owner.ChangeCatalogue(next, () => base.SetItem(index, item));
+            }
+            protected override void MoveItem(int oldIndex, int newIndex)
+            {
+                CheckReentrancy();
+                var next = this.ToList();
+                var item = next[oldIndex];
+                next.RemoveAt(oldIndex);
+                next.Insert(newIndex, item);
+                _owner.ChangeCatalogue(next, () => base.MoveItem(oldIndex, newIndex));
+            }
+            protected override void ClearItems()
+            {
+                if (Count != 0) throw new InvalidOperationException("Read a complete configuration to replace the layer catalogue.");
+            }
+            public void InsertCommitted(int index, ShapeLayer item) => base.InsertItem(index, item);
+            public void ReplaceCommitted(IEnumerable<ShapeLayer> layers)
+            {
+                CheckReentrancy();
+                Items.Clear();
+                foreach (var layer in layers) Items.Add(layer);
+                OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
+                OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
+                OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+            }
         }
 
         #endregion

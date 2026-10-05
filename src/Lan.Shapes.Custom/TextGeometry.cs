@@ -29,6 +29,7 @@ namespace Lan.Shapes.Custom
             {
                 StrokeThickness = data.StrokeThickness
             };
+            _geometry = BuildGeometry(_textGeometryData);
             IsGeometryRendered = true;
             RequestVisualUpdate();
         }
@@ -48,12 +49,23 @@ namespace Lan.Shapes.Custom
                 _textGeometryData.Content,
                 _textGeometryData.FontSize)
             {
-                StrokeThickness = ShapeStyler?.SketchPen.Thickness
-                    ?? _textGeometryData.StrokeThickness
+                StrokeThickness = _textGeometryData.StrokeThickness > 0
+                    ? _textGeometryData.StrokeThickness
+                    : ShapeStyler?.SketchPen.Thickness ?? 1
             };
         }
 
-        public override Rect BoundsRect => _geometry?.Bounds ?? Rect.Empty;
+        public override Geometry RenderGeometry => _geometry ?? Geometry.Empty;
+
+        public override Rect BoundsRect => RenderGeometry.Bounds;
+
+        public override bool CanTranslate => true;
+
+        protected override void TranslateCore(Vector delta)
+        {
+            _textGeometryData!.Location += delta;
+            _geometry = BuildGeometry(_textGeometryData);
+        }
 
         protected override void CreateHandles()
         {
@@ -73,6 +85,7 @@ namespace Lan.Shapes.Custom
 
         public override void OnDeselected()
         {
+            base.OnDeselected();
         }
 
         public override void OnMouseLeftButtonDown(Point mousePoint)
@@ -83,7 +96,17 @@ namespace Lan.Shapes.Custom
         {
         }
 
-        public override void UpdateVisual()
+        protected override Pen? GetSelectionPen()
+        {
+            var pen = base.GetSelectionPen()?.CloneCurrentValue();
+            if (pen != null && _textGeometryData?.StrokeThickness > 0)
+            {
+                pen.Thickness = _textGeometryData.StrokeThickness;
+            }
+            return pen;
+        }
+
+        protected override void DrawShape(DrawingContext render)
         {
             if (ShapeStyler == null)
             {
@@ -95,46 +118,37 @@ namespace Lan.Shapes.Custom
                 return;
             }
 
-            var render = RenderOpen();
-            try
+            var fill = ShapeStyler.FillColor;
+            var pen = ShapeStyler.SketchPen.CloneCurrentValue();
+            if (_textGeometryData.StrokeThickness > 0)
             {
-                _geometry = GetTextGeometry(_textGeometryData);
-
-                _geometry.Transform = new TransformGroup();
-                var scaleTransform = new ScaleTransform(
-                    -1,
-                    1,
-                    _geometry.Bounds.TopLeft.X,
-                    _geometry.Bounds.TopLeft.Y);
-
-                ((TransformGroup)_geometry.Transform).Children.Add(scaleTransform);
-                ((TransformGroup)_geometry.Transform).Children.Add(new TranslateTransform(700, 0));
-
-                if (_textGeometryData.StrokeThickness > 0)
-                {
-                    ShapeStyler.SetStrokeThickness(_textGeometryData.StrokeThickness);
-                }
-
-                var fill = ShapeStyler.FillColor;
-                var pen = ShapeStyler.SketchPen;
-                if (IsLocked)
-                {
-                    pen = pen.CloneCurrentValue();
-                    pen.Brush = GetTextForeground(pen.Brush);
-                    if (fill != null)
-                    {
-                        var grayFill = GetTextForeground(fill).CloneCurrentValue();
-                        // Preserve transparency when text is drawn as an outline.
-                        grayFill.Opacity = fill.Opacity * (fill is SolidColorBrush solid ? solid.Color.A / 255.0 : 1);
-                        fill = grayFill;
-                    }
-                }
-                render.DrawGeometry(fill, pen, _geometry);
+                pen.Thickness = _textGeometryData.StrokeThickness;
             }
-            finally
+
+            if (IsLocked)
             {
-                render.Close();
+                pen.Brush = GetTextForeground(pen.Brush);
+                if (fill != null)
+                {
+                    var grayFill = GetTextForeground(fill).CloneCurrentValue();
+                    // Preserve transparency when text is drawn as an outline.
+                    grayFill.Opacity = fill.Opacity * (fill is SolidColorBrush solid ? solid.Color.A / 255.0 : 1);
+                    fill = grayFill;
+                }
             }
+            render.DrawGeometry(fill, pen, RenderGeometry);
+        }
+
+        private Geometry BuildGeometry(TextGeometryData data)
+        {
+            if (string.IsNullOrWhiteSpace(data.Content)) return Geometry.Empty;
+
+            var geometry = GetTextGeometry(data);
+            var transforms = new TransformGroup();
+            transforms.Children.Add(new ScaleTransform(-1, 1, geometry.Bounds.Left, geometry.Bounds.Top));
+            transforms.Children.Add(new TranslateTransform(700, 0));
+            geometry.Transform = transforms;
+            return geometry;
         }
 
         public static string Convert(Geometry geometry)

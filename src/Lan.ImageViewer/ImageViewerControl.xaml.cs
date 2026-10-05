@@ -98,8 +98,9 @@ namespace Lan.ImageViewer
             {
                 if (e.OldValue is INotifyPropertyChanged oldNpc)
                 {
-                    oldNpc.PropertyChanged -= OnViewModelPropertyChanged;
+                    PropertyChangedEventManager.RemoveHandler(oldNpc, OnViewModelPropertyChanged, string.Empty);
                 }
+                _selectionAnchor = null;
                 if (e.NewValue is IImageViewerViewModel vm)
                 {
                     var isShowCrossLineSet = ReadLocalValue(ShowCrossLineProperty) != DependencyProperty.UnsetValue;
@@ -124,7 +125,7 @@ namespace Lan.ImageViewer
                     }
                     if (e.NewValue is INotifyPropertyChanged newNpc)
                     {
-                        newNpc.PropertyChanged += OnViewModelPropertyChanged;
+                        PropertyChangedEventManager.AddHandler(newNpc, OnViewModelPropertyChanged, string.Empty);
                     }
                 }
             };
@@ -174,7 +175,7 @@ namespace Lan.ImageViewer
         private void LayerTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             if (!_handlingTreeSelection && e.NewValue is ShapeVisualBase shape && DataContext is IImageViewerViewModel vm)
-                vm.SelectedShape = shape;
+                SelectTreeShape(shape, Keyboard.Modifiers);
         }
 
         private void LayerTree_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -195,6 +196,7 @@ namespace Lan.ImageViewer
         {
             if (DataContext is not IImageViewerViewModel vm) return;
             PrepareSelection(vm);
+            if (!vm.Shapes.Contains(shape)) return;
             if ((modifiers & ModifierKeys.Shift) != 0)
             {
                 var visible = VisibleTreeShapes(vm).Where(x => Eligible(vm, x)).ToList();
@@ -210,7 +212,10 @@ namespace Lan.ImageViewer
             {
                 if (!Eligible(vm, shape)) return;
                 var selection = vm.SelectedShapes.Where(x => Eligible(vm, x)).ToList();
-                if (!selection.Remove(shape)) selection.Add(shape);
+                var group = vm.ShapeRepository.GetGroup(shape);
+                var toggled = group != null ? group.Members.ToList() : new List<ShapeVisualBase> { shape };
+                if (toggled.Any(selection.Contains)) selection.RemoveAll(toggled.Contains);
+                else selection.AddRange(toggled);
                 vm.ShapeRepository.SetSelection(selection);
                 _selectionAnchor = shape;
             }
@@ -229,14 +234,18 @@ namespace Lan.ImageViewer
         }
 
         private static bool Eligible(IImageViewerViewModel vm, ShapeVisualBase shape)
+        {
+            if (!EligibleMember(vm, shape)) return false;
+            var group = vm.ShapeRepository.GetGroup(shape);
+            return group == null || group.Members.All(member => EligibleMember(vm, member));
+        }
+
+        private static bool EligibleMember(IImageViewerViewModel vm, ShapeVisualBase shape)
             => shape.IsGeometryRendered && !shape.IsLocked && vm.ShapeRepository.IsLayerVisible(shape.ShapeLayer.LayerId);
 
         private static void PrepareSelection(IImageViewerViewModel vm)
         {
-            if (vm.ShapeRepository.CurrentGeometryInEdit is { IsGeometryRendered: false } unfinished)
-                vm.ShapeRepository.RemoveShape(unfinished);
-            vm.ShapeRepository.CurrentGeometryInEdit = null;
-            vm.ShapeRepository.UnselectGeometryType();
+            vm.ShapeRepository.CancelCurrentSketch();
         }
 
         private static T FindAncestor<T>(DependencyObject source) where T : DependencyObject
@@ -272,29 +281,41 @@ namespace Lan.ImageViewer
 
         private void LayerTree_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (DataContext is not IImageViewerViewModel vm) return;
-            if (e.Key == Key.Delete && vm.DeleteShapeCommand.CanExecute(null))
+            if (HandleTreeSelectionKey(e.Key, Keyboard.Modifiers)) e.Handled = true;
+        }
+
+        protected bool HandleTreeSelectionKey(Key key, ModifierKeys modifiers)
+        {
+            if (DataContext is not IImageViewerViewModel vm) return false;
+            if (key == Key.G && (modifiers & ModifierKeys.Control) != 0 && (modifiers & ModifierKeys.Alt) == 0)
+            {
+                var command = (modifiers & ModifierKeys.Shift) != 0 ? vm.UngroupShapesCommand : vm.GroupShapesCommand;
+                if (command.CanExecute(null)) command.Execute(null);
+                return true;
+            }
+            if (key == Key.Delete && vm.DeleteShapeCommand.CanExecute(null))
             {
                 vm.DeleteShapeCommand.Execute(null);
-                e.Handled = true;
+                return true;
             }
-            else if (e.Key == Key.A && (Keyboard.Modifiers & ModifierKeys.Control) != 0)
+            if (key == Key.A && (modifiers & ModifierKeys.Control) != 0)
             {
                 PrepareSelection(vm);
                 vm.ShapeRepository.SetSelection(vm.Shapes.Where(x => Eligible(vm, x)));
-                e.Handled = true;
+                return true;
             }
-            else if (e.Key == Key.Escape)
+            if (key == Key.Escape)
             {
                 vm.ShapeRepository.SetSelection(Array.Empty<ShapeVisualBase>());
-                e.Handled = true;
+                return true;
             }
+            return false;
         }
 
         private void EditLayer_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not Button { DataContext: ShapeLayerTreeNode node } ||
-                DataContext is not IImageViewerViewModel vm) return;
+                DataContext is not IImageViewerViewModel vm || !node.CanEdit) return;
 
             var editor = new LayerEditorWindow(node.Layer, false, vm.UpdateLayerConfiguration)
             {

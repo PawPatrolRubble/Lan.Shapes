@@ -32,6 +32,9 @@ namespace Lan.SketchBoard
         /// </summary>
         void InitializeVisualCollection(Visual visual);
 
+        /// <summary>Detaches visuals and releases the host while retaining board data.</summary>
+        void DetachVisualHost();
+
         /// <summary>
         /// Notifies the host that the image viewer's zoom scale has changed so that
         /// stroke thickness and drag handle sizes can be recalculated.

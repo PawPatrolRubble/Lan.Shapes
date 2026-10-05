@@ -65,6 +65,19 @@ namespace Lan.Shapes.App
 
             ServiceProvider = _serviceCollection.BuildServiceProvider();
         }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            try
+            {
+                (ServiceProvider as IDisposable)?.Dispose();
+                Log.CloseAndFlush();
+            }
+            finally
+            {
+                base.OnExit(e);
+            }
+        }
     }
 
     //public class Program

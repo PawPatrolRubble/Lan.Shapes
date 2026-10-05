@@ -109,6 +109,7 @@ namespace Lan.Shapes.Custom
 
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
+            if (IsLocked) return;
             if (!IsGeometryRendered)
             {
                 Center = mousePoint;
@@ -124,6 +125,7 @@ namespace Lan.Shapes.Custom
 
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
+            if (IsLocked || !HasPointerInteraction) return;
             if (buttonState == MouseButtonState.Pressed)
             {
                 if (!IsGeometryRendered)
@@ -171,14 +173,13 @@ namespace Lan.Shapes.Custom
 
 
 
-        public override void UpdateVisual()
+        protected override void DrawShape(DrawingContext renderContext)
         {
             if (_resizeHandle == null || DistanceResizeHandle == null)
             {
                 return;
             }
 
-            var renderContext = RenderOpen();
             Pen ??= ShapeStyler?.SketchPen.CloneCurrentValue();
 
             if (ShapeStyler != null && Pen != null)
@@ -189,10 +190,8 @@ namespace Lan.Shapes.Custom
             }
 
 
-            DrawDragHandles(renderContext);
             AddTagText(renderContext, Center);
 
-            renderContext.Close();
         }
 
 
@@ -201,11 +200,18 @@ namespace Lan.Shapes.Custom
             if (OldPointForTranslate.HasValue)
             {
                 SetMouseCursorToHand();
-                Center += newPoint - OldPointForTranslate.Value;
-                _resizeHandle.GeometryCenter += newPoint - OldPointForTranslate.Value;
-                DistanceResizeHandle.GeometryCenter += newPoint - OldPointForTranslate.Value;
+                Translate(newPoint - OldPointForTranslate.Value);
                 OldPointForTranslate = newPoint;
             }
+        }
+
+        public override bool CanTranslate => true;
+
+        protected override void TranslateCore(Vector delta)
+        {
+            Center += delta;
+            _resizeHandle.GeometryCenter += delta;
+            DistanceResizeHandle.GeometryCenter += delta;
         }
 
         public void FromData(EllipseData data)

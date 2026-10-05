@@ -79,7 +79,7 @@ namespace Lan.Shapes.DialogGeometry
         protected override bool AreDragHandlesActive => !IsLocked && ShowSelectionHandles;
 
         private bool AreSelectionHandlesVisible =>
-            ShowSelectionHandles && (!IsGeometryRendered || State == ShapeVisualState.Selected);
+            !IsLocked && ShowSelectionHandles && (!IsGeometryRendered || IsSelected);
 
         protected override void OnDragHandleSizeChanges(double dragHandleSize)
         {
@@ -283,46 +283,26 @@ namespace Lan.Shapes.DialogGeometry
             if (OldPointForTranslate.HasValue && IsGeometryRendered)
             {
                 SetMouseCursorToHand();
-                var delta = newPoint - OldPointForTranslate.Value;
-
-                // 1. Translate the main DXF wrapper geometry
-                if (_dxfGeometryWrapper != null)
-                {
-                    if (_dxfGeometryWrapper.Transform is TranslateTransform tt)
-                    {
-                        tt.X += delta.X;
-                        tt.Y += delta.Y;
-                    }
-                    else if (_dxfGeometryWrapper.Transform == null ||
-                             _dxfGeometryWrapper.Transform == Transform.Identity)
-                    {
-                        _dxfGeometryWrapper.Transform = new TranslateTransform(delta.X, delta.Y);
-                    }
-                    else if (_dxfGeometryWrapper.Transform is TransformGroup tg)
-                    {
-                        tg.Children.Add(new TranslateTransform(delta.X, delta.Y));
-                    }
-                    else
-                    {
-                        var group = new TransformGroup();
-                        group.Children.Add(_dxfGeometryWrapper.Transform);
-                        group.Children.Add(new TranslateTransform(delta.X, delta.Y));
-                        _dxfGeometryWrapper.Transform = group;
-                    }
-                }
-
-                // 2. Translate any handles attached
-                foreach (var h in Handles)
-                {
-                    h.GeometryCenter += delta;
-                }
-
+                Translate(newPoint - OldPointForTranslate.Value);
                 OldPointForTranslate = newPoint;
             }
         }
 
+        public override bool CanTranslate => true;
+
+        protected override void TranslateCore(System.Windows.Vector delta)
+        {
+            // Keep the DXF's model transform compact while dragging. Export and mouse-up
+            // bake it into geometry and the accumulated DXF export transform as before.
+            var transform = _dxfGeometryWrapper!.Transform?.Value ?? Matrix.Identity;
+            transform.Translate(delta.X, delta.Y);
+            _dxfGeometryWrapper.Transform = new MatrixTransform(transform);
+            UpdateHandleLocation();
+        }
+
         public override void OnDeselected()
         {
+            base.OnDeselected();
         }
 
         public override void OnSelected()
@@ -376,14 +356,13 @@ namespace Lan.Shapes.DialogGeometry
         }
 
 
-        public override void UpdateVisual()
+        protected override void DrawShape(DrawingContext renderContext)
         {
             if (ShapeStyler == null)
             {
                 return;
             }
 
-            var renderContext = RenderOpen();
             var bounds = BoundsRect;
 
             renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometry);
@@ -396,12 +375,9 @@ namespace Lan.Shapes.DialogGeometry
                 renderContext.DrawLine(ShapeStyler.SketchPen, topCenter, handleCenter);
             }
 
-            DrawVisibleHandles(renderContext);
-
-            renderContext.Close();
         }
 
-        private void DrawVisibleHandles(DrawingContext renderContext)
+        protected override void DrawDragHandles(DrawingContext renderContext)
         {
             if (!AreDragHandlesActive)
             {
@@ -422,6 +398,7 @@ namespace Lan.Shapes.DialogGeometry
 
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
+            if (IsLocked || (buttonState == MouseButtonState.Pressed && !HasPointerInteraction)) return;
             if (IsGeometryRendered && buttonState == MouseButtonState.Pressed)
             {
                 if (SelectedDragHandle?.Id == TranslateHandleId)
@@ -455,6 +432,7 @@ namespace Lan.Shapes.DialogGeometry
 
         public override void OnMouseLeftButtonUp(Point newPoint)
         {
+            if (IsLocked) return;
             base.OnMouseLeftButtonUp(newPoint);
 
             BakeTransform();
@@ -547,6 +525,7 @@ namespace Lan.Shapes.DialogGeometry
 
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
+            if (IsLocked) return;
             base.OnMouseLeftButtonDown(mousePoint);
             if (!IsGeometryRendered)
             {

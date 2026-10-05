@@ -62,6 +62,10 @@ namespace Lan.SketchBoard
         private (ShapeVisualBase Shape, Point Start, Vector PointerOffset, bool HasMoved)? _moveSnapDrag;
         private Point? _lastRawDragPoint;
         private ModifierKeys _dragModifiers;
+        private (ShapeGroup Group, Point Previous)? _groupDrag;
+        private readonly List<ShapeVisualBase> _hoveredMembers = new();
+        private readonly HashSet<ShapeVisualBase> _observedSelection = new();
+        private bool _movingGroup;
 
 
         #endregion
@@ -130,6 +134,8 @@ namespace Lan.SketchBoard
             if (manager == null) return false;
             if (key == Key.Escape)
             {
+                CancelGroupDrag();
+                _leftDragCancelled = true;
                 EndMarquee();
                 if (manager.CurrentGeometryInEdit is { IsGeometryRendered: false } unfinished)
                     manager.RemoveShape(unfinished);
@@ -138,6 +144,15 @@ namespace Lan.SketchBoard
                 return true;
             }
             if (IsDrawing) return false;
+            if (key == Key.G && (modifiers & ModifierKeys.Control) != 0)
+            {
+                CancelGroupDrag();
+                if ((modifiers & ModifierKeys.Shift) != 0)
+                    manager.UngroupShapes(manager.SelectedGeometries.ToList());
+                else if (manager.CanGroupShapes(manager.SelectedGeometries))
+                    manager.GroupShapes(manager.SelectedGeometries.ToList());
+                return true;
+            }
             if (key == Key.A && (modifiers & ModifierKeys.Control) != 0)
             {
                 manager.SetSelection(manager.Shapes.Where(IsSelectable));
@@ -153,8 +168,15 @@ namespace Lan.SketchBoard
             return false;
         }
 
-        private bool IsSelectable(ShapeVisualBase shape) => shape.IsGeometryRendered && !shape.IsLocked
-            && SketchBoardDataManager?.IsLayerVisible(shape.ShapeLayer.LayerId) == true;
+        private bool IsSelectable(ShapeVisualBase shape)
+            => SelectionUnitMembers(shape).All(member => member.IsGeometryRendered && !member.IsLocked
+                && SketchBoardDataManager?.IsLayerVisible(member.ShapeLayer.LayerId) == true);
+
+        private IEnumerable<ShapeVisualBase> SelectionUnitMembers(ShapeVisualBase shape)
+            => SketchBoardDataManager?.GetGroup(shape)?.Members ?? new[] { shape };
+
+        private ShapeVisualBase SelectionRepresentative(ShapeVisualBase shape)
+            => SketchBoardDataManager?.GetGroup(shape)?.Members[0] ?? shape;
 
         protected override void OnKeyUp(KeyEventArgs e)
         {
@@ -185,6 +207,7 @@ namespace Lan.SketchBoard
             sketchBoard._lastDragPoint = null;
             sketchBoard._resizeStartPoint = null;
             sketchBoard._moveSnapDrag = null;
+            sketchBoard.CancelGroupDrag(cancelPointer: true);
             sketchBoard._lastRawDragPoint = null;
             sketchBoard.EndMarquee();
             if (e.OldValue is ISketchBoardDataManager previous)
@@ -193,10 +216,11 @@ namespace Lan.SketchBoard
                 previous.GeometryTypeUnselected -= sketchBoard.OnDrawingToolChanged;
                 previous.Shapes.CollectionChanged -= sketchBoard.OnShapesChanged;
                 previous.SelectionChanged -= sketchBoard.OnSelectionChanged;
+                previous.GroupsChanged -= sketchBoard.OnGroupsChanged;
                 if (previous is INotifyPropertyChanged observable)
                     observable.PropertyChanged -= sketchBoard.OnManagerPropertyChanged;
                 if (ReferenceEquals(previous.SketchBoard, sketchBoard))
-                    previous.VisualCollection.Clear();
+                    previous.DetachVisualHost();
             }
 
             sketchBoard._visualDataManager = e.NewValue as ISketchBoardDataManager;
@@ -207,10 +231,11 @@ namespace Lan.SketchBoard
                 dataManager.GeometryTypeUnselected += sketchBoard.OnDrawingToolChanged;
                 dataManager.Shapes.CollectionChanged += sketchBoard.OnShapesChanged;
                 dataManager.SelectionChanged += sketchBoard.OnSelectionChanged;
+                dataManager.GroupsChanged += sketchBoard.OnGroupsChanged;
                 if (dataManager is INotifyPropertyChanged observable)
                     observable.PropertyChanged += sketchBoard.OnManagerPropertyChanged;
             }
-            sketchBoard.UpdateSelectionVisual();
+            sketchBoard.OnSelectionChanged(sketchBoard, EventArgs.Empty);
         }
 
         private static void OnSnappingSettingsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -258,6 +283,7 @@ namespace Lan.SketchBoard
         protected void HandleRightButtonUp(Point position)
         {
             if (SketchBoardDataManager == null) return;
+            CancelGroupDrag(cancelPointer: true);
 
             var wasDrawing = IsDrawing;
             var shape = wasDrawing
@@ -298,10 +324,12 @@ namespace Lan.SketchBoard
             if (SketchBoardDataManager == null) return;
 
             EndMarquee();
+            _leftDragCancelled = false;
             _suppressLeftDrag = false;
             _lastDragPoint = null;
             _resizeStartPoint = null;
             _moveSnapDrag = null;
+            CancelGroupDrag();
             _lastRawDragPoint = null;
             _dragModifiers = modifiers;
 
@@ -330,10 +358,10 @@ namespace Lan.SketchBoard
 
             if ((modifiers & ModifierKeys.Alt) != 0)
             {
-                var candidates = GetHitTestShapes(position);
-                candidates.RemoveAll(shape => shape.IsLocked);
+                var candidates = GetHitTestShapes(position).Where(IsSelectable)
+                    .Select(SelectionRepresentative).Distinct().ToList();
                 var selectedIndex = SketchBoardDataManager.SelectedGeometry is { } selected
-                    ? candidates.IndexOf(selected)
+                    ? candidates.IndexOf(SelectionRepresentative(selected))
                     : -1;
                 SketchBoardDataManager.SelectedGeometry = candidates.Count == 0
                     ? null
@@ -356,7 +384,9 @@ namespace Lan.SketchBoard
                     if (IsSelectable(hitShape))
                     {
                         var selected = SketchBoardDataManager.SelectedGeometries.Where(IsSelectable).ToList();
-                        if (!selected.Remove(hitShape)) selected.Add(hitShape);
+                        var members = SelectionUnitMembers(hitShape).ToList();
+                        if (members.All(selected.Contains)) selected.RemoveAll(members.Contains);
+                        else selected.AddRange(members);
                         SketchBoardDataManager.SetSelection(selected);
                     }
                     _suppressLeftDrag = true;
@@ -377,6 +407,14 @@ namespace Lan.SketchBoard
             if (clickCount == 2 && hitShape?.IsGeometryRendered == true)
             {
                 _suppressLeftDrag = true;
+                if (SketchBoardDataManager.GetGroup(hitShape) is { } lockedGroup)
+                {
+                    var unlock = lockedGroup.Members.Any(member => member.IsLocked);
+                    foreach (var member in lockedGroup.Members)
+                        if (unlock) member.UnLock(); else member.Lock();
+                    SketchBoardDataManager.SelectedGeometry = hitShape;
+                    return;
+                }
                 if (hitShape.IsLocked)
                 {
                     hitShape.UnLock();
@@ -391,13 +429,21 @@ namespace Lan.SketchBoard
                 return;
             }
 
-            if (hitShape?.IsLocked == true)
+            if (hitShape == null || !IsSelectable(hitShape))
             {
                 _suppressLeftDrag = true;
                 return;
             }
 
             SketchBoardDataManager.SelectedGeometry = hitShape;
+
+            if (SketchBoardDataManager.GetGroup(hitShape) is { } group)
+            {
+                if (CanMoveGroup(group)) _groupDrag = (group, position);
+                UpdateHoveredShape(null);
+                Mouse.SetCursor(Cursors.SizeAll);
+                return;
+            }
 
             if (clickCount == 2)
             {
@@ -428,6 +474,7 @@ namespace Lan.SketchBoard
 
         private bool _mouseDownHitExistingShape;
         private bool _leftDragMouseCaptured;
+        private bool _leftDragCancelled;
         private bool _suppressLeftDrag;
         private ShapeVisualBase? _hoveredShape;
 
@@ -458,6 +505,7 @@ namespace Lan.SketchBoard
             foreach (var candidate in candidates)
             {
                 if (GetShapePoint(candidate, mousePosition) is Point localPoint
+                    && SketchBoardDataManager.GetGroup(candidate) == null
                     && candidate.HasDragHandleAt(localPoint))
                 {
                     shape = candidate;
@@ -505,6 +553,7 @@ namespace Lan.SketchBoard
             {
                 var shape = SketchBoardDataManager.Shapes[i];
                 if (SketchBoardDataManager.IsLayerVisible(shape.ShapeLayer.LayerId)
+                    && SketchBoardDataManager.GetGroup(shape) == null
                     && !candidates.Contains(shape) && GetShapePoint(shape, mousePosition) is Point localPoint
                     && shape.HasDragHandleAt(localPoint))
                     candidates.Add(shape);
@@ -553,13 +602,19 @@ namespace Lan.SketchBoard
 
         protected void HandleMouseMove(Point position, MouseButtonState buttonState, ModifierKeys modifiers)
         {
+            if (_groupDrag != null)
+            {
+                if (buttonState == MouseButtonState.Pressed) MoveGroup(position);
+                else CancelGroupDrag();
+                return;
+            }
             if (_selectionStart.HasValue)
             {
                 if (buttonState == MouseButtonState.Pressed) UpdateMarquee(position);
                 else EndMarquee();
                 return;
             }
-            if (buttonState == MouseButtonState.Pressed && _suppressLeftDrag) return;
+            if (buttonState == MouseButtonState.Pressed && (_suppressLeftDrag || _leftDragCancelled)) return;
 
             if (buttonState == MouseButtonState.Pressed)
             {
@@ -618,7 +673,9 @@ namespace Lan.SketchBoard
 
                 var shape = GetHitTestShape(position);
                 UpdateHoveredShape(shape);
-                shape?.UpdateMouseCursorForPoint(position);
+                if (shape != null && SketchBoardDataManager?.GetGroup(shape) != null)
+                    Mouse.SetCursor(IsSelectable(shape) ? Cursors.SizeAll : Cursors.Arrow);
+                else shape?.UpdateMouseCursorForPoint(position);
                 if (shape == null)
                 {
                     Mouse.SetCursor(Cursors.Arrow);
@@ -628,32 +685,12 @@ namespace Lan.SketchBoard
 
         private void UpdateHoveredShape(ShapeVisualBase? shape)
         {
-            if (ReferenceEquals(_hoveredShape, shape))
-            {
-                if (shape != null &&
-                    !shape.IsLocked &&
-                    shape.State == ShapeVisualState.Normal)
-                {
-                    shape.State = ShapeVisualState.MouseOver;
-                }
-
-                return;
-            }
-
-            if (_hoveredShape != null &&
-                !_hoveredShape.IsLocked &&
-                _hoveredShape.State == ShapeVisualState.MouseOver)
-            {
-                _hoveredShape.State = ShapeVisualState.Normal;
-            }
-
+            var members = shape == null ? new List<ShapeVisualBase>() : SelectionUnitMembers(shape).ToList();
+            foreach (var member in _hoveredMembers.Except(members)) member.SetHoverAppearance(false);
             _hoveredShape = shape;
-            if (_hoveredShape != null &&
-                !_hoveredShape.IsLocked &&
-                _hoveredShape.State == ShapeVisualState.Normal)
-            {
-                _hoveredShape.State = ShapeVisualState.MouseOver;
-            }
+            _hoveredMembers.Clear();
+            _hoveredMembers.AddRange(members);
+            foreach (var member in members) member.SetHoverAppearance(shape != null && IsSelectable(shape));
         }
 
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
@@ -677,18 +714,27 @@ namespace Lan.SketchBoard
 
         protected void HandleLeftButtonUp(Point position, ModifierKeys modifiers)
         {
+            if (_leftDragCancelled) return;
             if (_selectionStart is Point start)
             {
                 UpdateMarquee(position);
                 if (_marqueeActive && SketchBoardDataManager is { } manager)
                 {
                     var rectangle = new Rect(start, position);
+                    var crossing = position.X < start.X;
                     var candidates = manager.Shapes.Where(IsSelectable)
-                        .Where(x => x.MatchesSelectionRectangle(rectangle, position.X < start.X));
+                        .Where(x => crossing ? x.MatchesSelectionRectangle(rectangle, true)
+                            : SelectionUnitMembers(x).All(member => member.MatchesSelectionRectangle(rectangle, false)));
                     manager.SetSelection(_selectionAdditive
                         ? manager.SelectedGeometries.Where(IsSelectable).Concat(candidates) : candidates);
                 }
                 EndMarquee();
+                return;
+            }
+            if (_groupDrag != null)
+            {
+                MoveGroup(position);
+                CancelGroupDrag();
                 return;
             }
             _lastRawDragPoint = null;
@@ -751,10 +797,18 @@ namespace Lan.SketchBoard
             base.OnLostMouseCapture(e);
             if (ReferenceEquals(e.OriginalSource, this))
             {
+                SketchBoardDataManager?.CurrentGeometryInEdit?.CancelInteraction();
+                SketchBoardDataManager?.SelectedGeometry?.CancelInteraction();
                 _leftDragMouseCaptured = false;
+                _leftDragCancelled = true;
                 EndMarquee();
                 _suppressLeftDrag = false;
                 _moveSnapDrag = null;
+                CancelGroupDrag();
+                _resizeStartPoint = null;
+                _lastDragPoint = null;
+                _lastRawDragPoint = null;
+                ClearSnapMarker();
             }
         }
 
@@ -782,12 +836,96 @@ namespace Lan.SketchBoard
             UpdateSelectionVisual();
         }
 
-        private void OnSelectionChanged(object? sender, EventArgs e) => UpdateSelectionVisual();
+        private void OnSelectionChanged(object? sender, EventArgs e)
+        {
+            var selected = SketchBoardDataManager?.SelectedGeometries.ToHashSet() ?? new HashSet<ShapeVisualBase>();
+            foreach (var shape in _observedSelection.Except(selected).ToList())
+            {
+                shape.PropertyChanged -= OnSelectedShapeChanged;
+                _observedSelection.Remove(shape);
+            }
+            foreach (var shape in selected.Except(_observedSelection))
+            {
+                shape.PropertyChanged += OnSelectedShapeChanged;
+                _observedSelection.Add(shape);
+            }
+            StopInvalidGroupDrag();
+            UpdateSelectionVisual();
+        }
+
+        private void OnSelectedShapeChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is null or nameof(ShapeVisualBase.IsLocked) or nameof(ShapeVisualBase.CanTranslate)
+                or nameof(ShapeVisualBase.IsGeometryRendered) or nameof(ShapeVisualBase.ShapeLayer))
+                StopInvalidGroupDrag();
+            if (!_movingGroup) UpdateSelectionVisual();
+        }
+
+        private void StopInvalidGroupDrag()
+        {
+            if (_groupDrag is not { } drag || CanMoveGroup(drag.Group)) return;
+            CancelGroupDrag();
+            _leftDragCancelled = true;
+        }
+
+        private void OnGroupsChanged(object? sender, EventArgs e)
+        {
+            StopInvalidGroupDrag();
+            UpdateHoveredShape(null);
+            UpdateSelectionVisual();
+        }
+
+        private bool CanMoveGroup(ShapeGroup group)
+        {
+            var manager = SketchBoardDataManager;
+            return manager != null && group.Members.All(member => ReferenceEquals(manager.GetGroup(member), group)
+                && _observedSelection.Contains(member) && member.IsGeometryRendered
+                && !member.IsLocked && member.CanTranslate && manager.IsLayerVisible(member.ShapeLayer.LayerId)
+                && (member.Transform == null || member.Transform.Value.HasInverse));
+        }
+
+        private void MoveGroup(Point position)
+        {
+            if (_groupDrag is not { } drag) return;
+            if (!CanMoveGroup(drag.Group))
+            {
+                CancelGroupDrag();
+                _leftDragCancelled = true;
+                return;
+            }
+            var delta = position - drag.Previous;
+            if (delta.X == 0 && delta.Y == 0) return;
+            _movingGroup = true;
+            try
+            {
+                SketchBoardDataManager!.TranslateShapes(drag.Group.Members, delta);
+                if (_groupDrag != null) _groupDrag = (drag.Group, position);
+            }
+            catch (ArgumentException)
+            {
+                // A member's transform or movement capability may have changed since mouse-down.
+                // Repository validation rejects the whole sample before changing any geometry.
+                CancelGroupDrag(cancelPointer: true);
+            }
+            finally
+            {
+                _movingGroup = false;
+                UpdateSelectionVisual();
+            }
+            Mouse.SetCursor(Cursors.SizeAll);
+        }
+
+        private void CancelGroupDrag(bool cancelPointer = false)
+        {
+            if (cancelPointer && _groupDrag != null) _leftDragCancelled = true;
+            _groupDrag = null;
+        }
 
         private void UpdateSelectionVisual()
         {
             var manager = SketchBoardDataManager;
             _selectionVisual.Update(manager?.SelectedGeometries ?? Enumerable.Empty<ShapeVisualBase>(),
+                manager?.Groups ?? Enumerable.Empty<ShapeGroup>(),
                 _marqueeActive && _selectionStart is Point start && _selectionEnd is Point end
                     ? new Rect(start, end) : null,
                 _selectionEnd?.X < _selectionStart?.X, manager?.ViewportScale ?? 1);
@@ -912,6 +1050,7 @@ namespace Lan.SketchBoard
 
         private void OnDrawingToolChanged(object? sender, Type type)
         {
+            CancelGroupDrag(cancelPointer: true);
             EndMarquee();
             ClearSnapMarker();
             if (IsDrawing) UpdateHoveredShape(null);
@@ -966,13 +1105,26 @@ namespace Lan.SketchBoard
 
         private sealed class SelectionVisual : DrawingVisual
         {
-            public void Update(IEnumerable<ShapeVisualBase> shapes, Rect? marquee, bool crossing, double scale)
+            public void Update(IEnumerable<ShapeVisualBase> shapes, IEnumerable<ShapeGroup> groups,
+                Rect? marquee, bool crossing, double scale)
             {
                 using var drawing = RenderOpen();
                 var selected = shapes.ToList();
+                var selectedSet = selected.ToHashSet();
                 var pen = new Pen(Brushes.DeepSkyBlue, 1.5 / scale);
+                var groupedMembers = new HashSet<ShapeVisualBase>();
+                foreach (var group in groups.Where(group => group.Members.All(selectedSet.Contains)))
+                {
+                    var bounds = Rect.Empty;
+                    foreach (var member in group.Members)
+                    {
+                        groupedMembers.Add(member);
+                        bounds.Union(member.SelectionBounds);
+                    }
+                    if (!bounds.IsEmpty) drawing.DrawRectangle(null, pen, bounds);
+                }
                 if (selected.Count > 1)
-                    foreach (var shape in selected)
+                    foreach (var shape in selected.Where(shape => !groupedMembers.Contains(shape)))
                         if (!shape.BoundsRect.IsEmpty) drawing.DrawRectangle(null, pen, shape.SelectionBounds);
                 if (marquee is Rect rectangle)
                 {

@@ -41,7 +41,7 @@ namespace Lan.Shapes.Custom
 
         public override Geometry RenderGeometry
         {
-            get => _combinedGeometry;
+            get => _combinedGeometry ?? Geometry.Empty;
         }
 
         private Point CenterPoint
@@ -380,17 +380,23 @@ namespace Lan.Shapes.Custom
         {
             if (OldPointForTranslate.HasValue)
             {
-                var offset = newPoint - OldPointForTranslate.Value;
-                VerticalTopLeft += offset;
-                VerticalBottomRight += offset;
-
-                HorizontalBottomRight += offset;
-                HorizontalTopLeft += offset;
-
-                UpdateHandleLocation();
-                RequestVisualUpdate();
+                Translate(newPoint - OldPointForTranslate.Value);
                 OldPointForTranslate = newPoint;
             }
+        }
+
+        public override bool CanTranslate => true;
+
+        protected override void TranslateCore(Vector delta)
+        {
+            SetField(ref _verticalTopLeft, VerticalTopLeft + delta, nameof(VerticalTopLeft));
+            SetField(ref _verticalBottomRight, VerticalBottomRight + delta, nameof(VerticalBottomRight));
+            SetField(ref _horizontalTopLeft, HorizontalTopLeft + delta, nameof(HorizontalTopLeft));
+            SetField(ref _horizontalBottomRight, HorizontalBottomRight + delta, nameof(HorizontalBottomRight));
+            _centerPoint += delta;
+            _vRectangleGeometry.Rect = new Rect(VerticalTopLeft, VerticalBottomRight);
+            _hRectangleGeometry.Rect = new Rect(HorizontalTopLeft, HorizontalBottomRight);
+            UpdateHandleLocation();
         }
 
 
@@ -400,6 +406,7 @@ namespace Lan.Shapes.Custom
         /// <param name="mousePoint"></param>
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
+            if (IsLocked) return;
             if (!IsGeometryRendered)
             {
                 VerticalTopLeft = mousePoint;
@@ -418,6 +425,7 @@ namespace Lan.Shapes.Custom
         /// </summary>
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
+            if (IsLocked || !HasPointerInteraction) return;
             if (buttonState == MouseButtonState.Pressed)
             {
                 if (!IsGeometryRendered)
@@ -516,7 +524,7 @@ namespace Lan.Shapes.Custom
 
 
 
-        public override void UpdateVisual()
+        protected override void DrawShape(DrawingContext renderContext)
         {
             if (DistanceResizeHandle == null)
             {
@@ -524,7 +532,6 @@ namespace Lan.Shapes.Custom
             }
 
 
-            var renderContext = RenderOpen();
 
             Pen ??= ShapeStyler?.SketchPen.CloneCurrentValue();
 
@@ -536,8 +543,6 @@ namespace Lan.Shapes.Custom
             }
 
             AddTagText(renderContext, VerticalTopLeft - new Vector(0, AnnotationFontSize + StrokeThickness));
-            DrawDragHandles(renderContext);
-            renderContext.Close();
         }
 
         private enum DragLocations

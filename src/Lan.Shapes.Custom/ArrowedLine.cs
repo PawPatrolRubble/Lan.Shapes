@@ -34,14 +34,14 @@ namespace Lan.Shapes.Custom
             //do nothing
         }
 
-        public override void UpdateVisual()
+        protected override void DrawShape(DrawingContext renderContext)
         {
             if (CanRenderGeometry())
             {
                 UpdateTriangle();
             }
 
-            base.UpdateVisual();
+            base.DrawShape(renderContext);
         }
 
         //

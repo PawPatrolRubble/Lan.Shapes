@@ -199,13 +199,18 @@ namespace Lan.Shapes.Shapes
                 return;
             }
 
-            var matrix = new Matrix();
-            matrix.Translate(newPoint.X - OldPointForTranslate.Value.X, newPoint.Y - OldPointForTranslate.Value.Y);
-            var transformedPoint = matrix.Transform(Center);
-            SetField(ref _x, transformedPoint.X, nameof(X));
-            SetField(ref _y, transformedPoint.Y, nameof(Y));
-            Center = transformedPoint;
+            Translate(newPoint - OldPointForTranslate.Value);
             OldPointForTranslate = newPoint;
+        }
+
+        public override bool CanTranslate => true;
+
+        protected override void TranslateCore(Vector delta)
+        {
+            var center = Center + delta;
+            SetField(ref _x, center.X, nameof(X));
+            SetField(ref _y, center.Y, nameof(Y));
+            Center = center;
         }
 
         /// <summary>
@@ -214,6 +219,8 @@ namespace Lan.Shapes.Shapes
         /// <param name="mousePoint"></param>
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
+            if (IsLocked) return;
+
             if (!IsGeometryRendered)
             {
                 Center = mousePoint;
@@ -238,6 +245,8 @@ namespace Lan.Shapes.Shapes
         /// </summary>
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
+            if (IsLocked) return;
+
             if (buttonState == MouseButtonState.Pressed)
             {
                 if (!IsGeometryRendered && OldPointForTranslate.HasValue)
@@ -265,17 +274,6 @@ namespace Lan.Shapes.Shapes
                     }
                 }
             }
-        }
-
-        /// \u003csummary\u003e
-        /// Handle mouse left button up - clean up state
-        /// \u003c/summary\u003e
-        public override void OnMouseLeftButtonUp(Point newPoint)
-        {
-            base.OnMouseLeftButtonUp(newPoint);
-            // Clear mouse tracking points to prevent stale state
-            OldPointForTranslate = null;
-            MouseDownPoint = null;
         }
 
         /// <summary>
@@ -312,21 +310,17 @@ namespace Lan.Shapes.Shapes
 
         }
 
-        public override void UpdateVisual()
+        protected override void DrawShape(DrawingContext renderContext)
         {
-            var renderContext = RenderOpen();
             if (ShapeStyler != null)
             {
                 renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometry);
                 renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, _verticalLine);
                 renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, _horizontalLine);
-                DrawDragHandles(renderContext);
 
                 AddTagText(renderContext, Center);
                 AddRadiusText(renderContext);
             }
-
-            renderContext.Close();
         }
 
         #endregion

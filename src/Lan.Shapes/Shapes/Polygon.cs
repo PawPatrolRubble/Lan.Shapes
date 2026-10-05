@@ -81,8 +81,10 @@ namespace Lan.Shapes.Shapes
         private void ClosePolygon()
         {
             _pathFigure.IsClosed = true;
-            IsGeometryRendered = true;
+            CompleteCreation();
         }
+
+        protected override bool CanCompleteCreation => _pathFigure.IsClosed;
 
         protected override void CreateHandles()
         {
@@ -149,23 +151,21 @@ namespace Lan.Shapes.Shapes
         {
             if (OldPointForTranslate.HasValue)
             {
-                var deltaX = newPoint.X - OldPointForTranslate.Value.X;
-                var deltaY = newPoint.Y - OldPointForTranslate.Value.Y;
-
-                var matrix = new Matrix();
-                matrix.Translate(deltaX, deltaY);
-
-                var tans = new TranslateTransform(deltaX, deltaY);
-
-                foreach (var segment in _pathFigure.Segments)
-                    if (segment is LineSegment lineSegment)
-                        lineSegment.Point = matrix.Transform(lineSegment.Point);
-
-                _pathFigure.StartPoint = matrix.Transform(_pathFigure.StartPoint);
-                Handles.ForEach(x => x.GeometryCenter = tans.Transform(x.GeometryCenter));
+                Translate(newPoint - OldPointForTranslate.Value);
             }
 
             OldPointForTranslate = newPoint;
+        }
+
+        public override bool CanTranslate => true;
+
+        protected override void TranslateCore(Vector delta)
+        {
+            foreach (var segment in _pathFigure.Segments)
+                if (segment is LineSegment lineSegment) lineSegment.Point += delta;
+            _pathFigure.StartPoint += delta;
+            foreach (var key in new List<int>(_points.Keys)) _points[key] += delta;
+            foreach (var handle in Handles) handle.GeometryCenter += delta;
         }
 
 
@@ -180,7 +180,10 @@ namespace Lan.Shapes.Shapes
         /// <param name="mousePoint"></param>
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
+            if (IsLocked) return;
+
             OldPointForTranslate = mousePoint;
+            MouseDownPoint = mousePoint;
             if (!IsGeometryRendered)
                 //_points.Add(_points.Count, mousePoint);
                 CreateNewGeometryAndRenderIt(mousePoint);
@@ -194,10 +197,8 @@ namespace Lan.Shapes.Shapes
         /// <param name="newPoint"></param>
         public override void OnMouseLeftButtonUp(Point newPoint)
         {
-            if (_pathFigure.IsClosed) IsGeometryRendered = true;
-
-            SelectedDragHandle = null;
-            IsBeingDraggedOrPanMoving = false;
+            if (!IsLocked && _pathFigure.IsClosed) CompleteCreation();
+            CancelInteraction();
         }
 
 
@@ -206,11 +207,13 @@ namespace Lan.Shapes.Shapes
         /// </summary>
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
+            if (IsLocked) return;
+
             if (IsGeometryRendered)
             {
                 //handle pan of geometry
-                State = ShapeVisualState.MouseOver;
-                if (buttonState == MouseButtonState.Pressed)
+                SetHoverAppearance(true);
+                if (buttonState == MouseButtonState.Pressed && MouseDownPoint.HasValue)
                 {
                     IsBeingDraggedOrPanMoving = true;
                     if (SelectedDragHandle != null)
@@ -228,7 +231,10 @@ namespace Lan.Shapes.Shapes
 
         public override void OnMouseRightButtonUp(Point mousePosition)
         {
+            if (IsLocked) return;
+
             ClosePolygon();
+            CancelInteraction();
         }
 
         /// <summary>

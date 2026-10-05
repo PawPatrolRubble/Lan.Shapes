@@ -139,7 +139,8 @@ public class ViewportScalingTests
     {
         var layer = TestShapeLayer.CreateWithThickness(stroke: 1, handle: 16);
         layer.Stylers[ShapeVisualState.Selected].DragHandleSize = 20;
-        layer.Stylers[ShapeVisualState.Locked] = new ShapeStyler(new ShapeStylerParameter
+        var parameter = layer.ToShapeLayerParameter();
+        parameter.StyleSchema[ShapeVisualState.Locked] = new ShapeStylerParameter
         {
             FillColor = new SolidColorBrush(Colors.Transparent),
             StrokeColor = new SolidColorBrush(Colors.Gray),
@@ -147,7 +148,8 @@ public class ViewportScalingTests
             DashStyle = "Solid",
             DragHandleSize = 0,
             FillOpacity = 0
-        });
+        };
+        layer.ApplyConfiguration(parameter);
 
         var manager = new SketchBoardDataManager(
             new ViewportScalingOptions(baseStrokeThickness: 1.0, baseDragHandleSize: 8.0));

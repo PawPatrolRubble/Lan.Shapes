@@ -115,16 +115,24 @@ namespace Lan.Shapes.Shapes
         {
             if (OldPointForTranslate.HasValue)
             {
-                var delta = newPoint - OldPointForTranslate.Value;
-                SetField(ref _start, Start + delta, nameof(Start));
-                SetField(ref _end, End + delta, nameof(End));
-                UpdateGeometry();
+                Translate(newPoint - OldPointForTranslate.Value);
                 OldPointForTranslate = newPoint;
             }
         }
 
+        public override bool CanTranslate => true;
+
+        protected override void TranslateCore(Vector delta)
+        {
+            SetField(ref _start, Start + delta, nameof(Start));
+            SetField(ref _end, End + delta, nameof(End));
+            UpdateGeometry();
+        }
+
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
+            if (IsLocked) return;
+
             base.OnMouseLeftButtonDown(mousePoint);
             if (!IsGeometryRendered)
             {
@@ -146,6 +154,8 @@ namespace Lan.Shapes.Shapes
 
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
+            if (IsLocked || (buttonState == MouseButtonState.Pressed && !MouseDownPoint.HasValue)) return;
+
             var oldPointForTranslate = OldPointForTranslate;
 
             base.OnMouseMove(point, buttonState);
@@ -179,12 +189,6 @@ namespace Lan.Shapes.Shapes
             }
         }
 
-        public override void OnMouseLeftButtonUp(Point newPoint)
-        {
-            base.OnMouseLeftButtonUp(newPoint);
-            SelectedDragHandle = null;
-        }
-
         #endregion
 
         private void DrawMeasurementText(DrawingContext renderContext)
@@ -214,19 +218,15 @@ namespace Lan.Shapes.Shapes
             RequestVisualUpdate();
         }
 
-        public override void UpdateVisual()
+        protected override void DrawShape(DrawingContext renderContext)
         {
             if (ShapeStyler == null)
             {
                 return;
             }
 
-            var renderContext = RenderOpen();
             renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometryGroup);
-            DrawDragHandles(renderContext);
             DrawMeasurementText(renderContext);
-
-            renderContext.Close();
         }
 
         #endregion

@@ -10,6 +10,8 @@ namespace Lan.Shapes.Interfaces
         ShapeLayer CreateLayer(ShapeLayerParameter definition);
         void UpdateLayer(ShapeLayerParameter definition);
         event System.EventHandler<ShapeLayer> LayerDefinitionChanged;
+        /// <summary>Published after a complete configuration or catalogue replacement is ready.</summary>
+        event System.EventHandler ConfigurationChanged;
         /// <summary>
         /// Global Lan.Shapes configuration currently used by the layer collection.
         /// </summary>

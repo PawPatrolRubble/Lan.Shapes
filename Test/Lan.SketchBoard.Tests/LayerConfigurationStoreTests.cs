@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Lan.ImageViewer.Prism;
 using Lan.Shapes;
 using Lan.Shapes.Enums;
@@ -46,6 +47,45 @@ public class LayerConfigurationStoreTests
     }
 
     [Fact]
+    public void ResolveRuntimeFile_IsolatesHostsWithTheSameConfigurationFileName()
+    {
+        using var workspace = new TempWorkspace();
+        var firstShipped = workspace.WriteShipped("{\"host\":\"first\"}");
+        var secondOutput = Path.Combine(workspace.ShippedDirectory, "second");
+        Directory.CreateDirectory(secondOutput);
+        var secondShipped = Path.Combine(secondOutput, "LanShapesConfig.json");
+        File.WriteAllText(secondShipped, "{\"host\":\"second\"}");
+
+        var first = LayerConfigurationStore.ResolveRuntimeFile(firstShipped,
+            workspace.RuntimeDirectory, applicationId: "FirstHost");
+        var second = LayerConfigurationStore.ResolveRuntimeFile(secondShipped,
+            workspace.RuntimeDirectory, applicationId: "SecondHost");
+        File.WriteAllText(first, "{\"host\":\"edited first\"}");
+
+        Assert.NotEqual(first, second);
+        Assert.Equal("{\"host\":\"second\"}", File.ReadAllText(second));
+        Assert.Equal(first, LayerConfigurationStore.ResolveRuntimeFile(firstShipped,
+            workspace.RuntimeDirectory, applicationId: "FirstHost"));
+        Assert.Equal("{\"host\":\"edited first\"}", File.ReadAllText(first));
+    }
+
+    [Fact]
+    public void ResolveRuntimeFile_LeavesUnscopedLegacyConfigurationUntouched()
+    {
+        using var workspace = new TempWorkspace();
+        var shipped = workspace.WriteShipped("{\"host\":\"shipped\"}");
+        Directory.CreateDirectory(workspace.RuntimeDirectory);
+        var legacy = Path.Combine(workspace.RuntimeDirectory, "LanShapesConfig.json");
+        File.WriteAllText(legacy, "{\"host\":\"unknown legacy owner\"}");
+
+        var scoped = LayerConfigurationStore.ResolveRuntimeFile(shipped,
+            workspace.RuntimeDirectory, applicationId: "FirstHost");
+
+        Assert.Equal("{\"host\":\"shipped\"}", File.ReadAllText(scoped));
+        Assert.Equal("{\"host\":\"unknown legacy owner\"}", File.ReadAllText(legacy));
+    }
+
+    [Fact]
     public void ResolveRuntimeFile_ReturnsTheShippedPathWhenItIsAlreadyWritable()
     {
         using var workspace = new TempWorkspace();
@@ -74,12 +114,24 @@ public class LayerConfigurationStoreTests
     public void ResolveRuntimeFile_RequiresAShippedPath()
         => Assert.Throws<ArgumentException>(() => LayerConfigurationStore.ResolveRuntimeFile(" "));
     [Fact]
+    public void RuntimeDirectory_IsScopedToTheEntryApplication()
+    {
+        var applicationName = Assembly.GetEntryAssembly()!.GetName().Name!;
+
+        Assert.Equal(
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                LayerConfigurationStore.ApplicationFolderName, applicationName),
+            LayerConfigurationStore.RuntimeDirectory);
+    }
+
+    [Fact]
     public void RuntimeDirectory_DefaultsToTheUserLocalApplicationDataFolder()
     {
         var directory = LayerConfigurationStore.RuntimeDirectory;
 
         Assert.True(Path.IsPathRooted(directory));
-        Assert.Equal(LayerConfigurationStore.ApplicationFolderName, Path.GetFileName(directory));
+        Assert.Equal(LayerConfigurationStore.ApplicationFolderName,
+            Path.GetFileName(Path.GetDirectoryName(directory)));
     }
 
     [Fact]

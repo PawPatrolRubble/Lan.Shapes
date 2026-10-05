@@ -251,6 +251,17 @@ namespace Lan.Shapes.Custom
             UpdateGeometry();
         }
 
+        public override bool CanTranslate => _enableTranslation;
+
+        protected override void TranslateCore(Vector delta)
+        {
+            TranslateShape(delta.X, delta.Y);
+            OnPropertyChanged(nameof(RectTopLeft));
+            OnPropertyChanged(nameof(RectTopRight));
+            OnPropertyChanged(nameof(RectBottomLeft));
+            OnPropertyChanged(nameof(RectBottomRight));
+        }
+
         public void FromData(FiberData data)
         {
             if (data == null)
@@ -258,7 +269,7 @@ namespace Lan.Shapes.Custom
                 throw new ArgumentNullException(nameof(data));
             }
 
-            _enableTranslation = data.EnableTranslation;
+            SetField(ref _enableTranslation, data.EnableTranslation, nameof(CanTranslate));
             _fiberAngle = data.FiberAngleInDeg;
             _filletRadius = data.FilletRadius;
 
@@ -373,6 +384,7 @@ namespace Lan.Shapes.Custom
 
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
+            if (IsLocked) return;
             if (IsGeometryRendered)
             {
                 FindSelectedHandle(mousePoint);
@@ -390,6 +402,7 @@ namespace Lan.Shapes.Custom
 
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
+            if (IsLocked || !HasPointerInteraction) return;
             if (buttonState != MouseButtonState.Pressed)
                 return;
 
@@ -525,15 +538,7 @@ namespace Lan.Shapes.Custom
             if (!_enableTranslation || !OldPointForTranslate.HasValue)
                 return;
 
-            Point oldPoint = OldPointForTranslate.Value;
-            double dx = point.X - oldPoint.X;
-            double dy = point.Y - oldPoint.Y;
-
-            _rectBottomLeft = new Point(_rectBottomLeft.X + dx, _rectBottomLeft.Y + dy);
-            _rectTopLeft = new Point(_rectTopLeft.X + dx, _rectTopLeft.Y + dy);
-            _rectBottomRight = new Point(_rectBottomRight.X + dx, _rectBottomRight.Y + dy);
-            _rectTopRight = new Point(_rectTopRight.X + dx, _rectTopRight.Y + dy);
-            UpdateGeometry();
+            Translate(point - OldPointForTranslate.Value);
 
             OldPointForTranslate = point;
         }
@@ -604,6 +609,13 @@ namespace Lan.Shapes.Custom
         // other thickened custom shapes.
         protected override Brush? GetDragHandleFill() => null;
 
+        protected override Pen? GetSelectionPen()
+        {
+            var pen = ShapeLayer.GetStyler(ShapeVisualState.Normal).SketchPen.CloneCurrentValue();
+            pen.Thickness *= 0.5;
+            return pen;
+        }
+
         private Point RotatePointAroundCenter(Point point, Point center, double angleInRadians)
         {
             double dx = point.X - center.X;
@@ -622,11 +634,10 @@ namespace Lan.Shapes.Custom
             return dashStyle;
         }
 
-        public override void UpdateVisual()
+        protected override void DrawShape(DrawingContext renderContext)
         {
             if (ShapeStyler == null)
                 return;
-            DrawingContext renderContext = RenderOpen();
             Pen fiberPen = ShapeStyler.SketchPen.Clone();
             fiberPen.Thickness *= 0.5;
             renderContext.DrawGeometry(Brushes.Transparent, null, RenderGeometry);
@@ -640,9 +651,7 @@ namespace Lan.Shapes.Custom
                 renderContext.DrawGeometry(Brushes.Transparent, null, _filletGeometry);
                 renderContext.DrawGeometry(null, filletPen, _filletGeometry);
             }
-            DrawDragHandles(renderContext);
             DrawAnnotationText(renderContext);
-            renderContext.Close();
         }
 
         private void DrawAnnotationText(DrawingContext renderContext)
