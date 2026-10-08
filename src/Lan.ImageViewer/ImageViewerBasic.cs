@@ -371,51 +371,70 @@ namespace Lan.ImageViewer
             // Create Save File Dialog
             SaveFileDialog saveFileDialog = new SaveFileDialog();
             saveFileDialog.Filter = "BMP Files (*.bmp)|*.bmp|JPG Files (*.jpg)|*.jpg|PNG Files (*.png)|*.png";
-            if (saveFileDialog.ShowDialog() == true)
+            if (saveFileDialog.ShowDialog() != true)
             {
-                string filePath = saveFileDialog.FileName;
-                BitmapEncoder? encoder = null;
+                return;
+            }
 
-                // Determine the encoder to use based on the file extension
-                switch (System.IO.Path.GetExtension(filePath).ToLower())
-                {
-                    case ".bmp":
-                        encoder = new BmpBitmapEncoder();
-                        break;
-                    case ".jpg":
-                    case ".jpeg":
-                        encoder = new JpegBitmapEncoder();
-                        break;
-                    case ".png":
-                        encoder = new PngBitmapEncoder();
-                        break;
-                    default:
-                        MessageBox.Show("Unsupported file format.");
-                        return;
-                }
+            string filePath = saveFileDialog.FileName;
 
-                // Convert ImageSource to BitmapSource if necessary
-                BitmapSource? bitmapSource = imageSource as BitmapSource;
-                if (bitmapSource == null)
-                {
-                    bitmapSource = new RenderTargetBitmap(
-                        (int)imageSource.Width,
-                        (int)imageSource.Height,
-                        96, 96, PixelFormats.Pbgra32);
-                    DrawingVisual drawingVisual = new DrawingVisual();
-                    using (DrawingContext drawingContext = drawingVisual.RenderOpen())
-                    {
-                        drawingContext.DrawImage(imageSource, new Rect(0, 0, bitmapSource.PixelWidth, bitmapSource.PixelHeight));
-                    }
-                    ((RenderTargetBitmap)bitmapSource).Render(drawingVisual);
-                }
+            // Determine the encoder to use based on the file extension
+            if (CreateEncoder(filePath) == null)
+            {
+                MessageBox.Show("Unsupported file format.");
+                return;
+            }
 
-                // Encode the BitmapSource to the chosen image format and save it to a file
-                encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
-                using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
+            // Convert ImageSource to BitmapSource if necessary
+            BitmapSource? bitmapSource = imageSource as BitmapSource;
+            if (bitmapSource == null)
+            {
+                bitmapSource = new RenderTargetBitmap(
+                    (int)imageSource.Width,
+                    (int)imageSource.Height,
+                    96, 96, PixelFormats.Pbgra32);
+                DrawingVisual drawingVisual = new DrawingVisual();
+                using (DrawingContext drawingContext = drawingVisual.RenderOpen())
                 {
-                    encoder.Save(fileStream);
+                    drawingContext.DrawImage(imageSource, new Rect(0, 0, bitmapSource.PixelWidth, bitmapSource.PixelHeight));
                 }
+                ((RenderTargetBitmap)bitmapSource).Render(drawingVisual);
+            }
+
+            SaveImage(bitmapSource, filePath);
+        }
+
+        /// <summary>
+        /// Writes <paramref name="bitmap"/> to <paramref name="filePath"/>, choosing the
+        /// encoder from the file extension (<c>.bmp</c>, <c>.jpg</c>/<c>.jpeg</c>, <c>.png</c>).
+        /// </summary>
+        /// <exception cref="NotSupportedException">The file extension has no supported encoder.</exception>
+        public static void SaveImage(BitmapSource bitmap, string filePath)
+        {
+            var encoder = CreateEncoder(filePath)
+                ?? throw new NotSupportedException($"Unsupported image format: {System.IO.Path.GetExtension(filePath)}");
+
+            // Encode the BitmapSource to the chosen image format and save it to a file
+            encoder.Frames.Add(BitmapFrame.Create(bitmap));
+            using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                encoder.Save(fileStream);
+            }
+        }
+
+        private static BitmapEncoder? CreateEncoder(string filePath)
+        {
+            switch (System.IO.Path.GetExtension(filePath).ToLower())
+            {
+                case ".bmp":
+                    return new BmpBitmapEncoder();
+                case ".jpg":
+                case ".jpeg":
+                    return new JpegBitmapEncoder();
+                case ".png":
+                    return new PngBitmapEncoder();
+                default:
+                    return null;
             }
         }
 

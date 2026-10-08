@@ -586,6 +586,234 @@ public class SnappingInteractionTests
         });
     }
 
+    [Theory]
+    [InlineData(typeof(Circle), false)]
+    [InlineData(typeof(Circle), true)]
+    [InlineData(typeof(ThickenedCircle), false)]
+    [InlineData(typeof(ThickenedCircle), true)]
+    public void MovingCircle_SnapsCenterAndReleaseWithoutChangingRadius(Type type, bool lockedTarget)
+    {
+        RunOnSta(() =>
+        {
+            var board = CreateBoard(out var manager);
+            var target = LoadRectangle(manager);
+            if (lockedTarget) target.Lock();
+            var circle = LoadCircle(manager, type, new Point(160, 120), 40);
+            var dataExport = (IDataExport<EllipseData>)circle;
+            var original = dataExport.GetMetaData();
+            var offset = new Vector(12, 8);
+            var selections = 0;
+            manager.ShapeSelected += (_, shape) => { if (ReferenceEquals(shape, target)) selections++; };
+            board.Press(original.Center + offset);
+            board.Move(new Point(23, 22) + offset, MouseButtonState.Pressed);
+
+            Assert.Equal(new Point(20, 20), dataExport.GetMetaData().Center);
+            Assert.Equal(new Point(20, 20), board.MarkerBounds.Location + new Vector(
+                board.MarkerBounds.Width / 2, board.MarkerBounds.Height / 2));
+
+            // Leaving the target resumes the raw drag without retaining the snap correction.
+            board.Move(new Point(40, 40) + offset, MouseButtonState.Pressed);
+            Assert.Equal(new Point(40, 40), dataExport.GetMetaData().Center);
+            Assert.True(board.MarkerBounds.IsEmpty);
+            // The release must snap even without an intervening move at this corner.
+            board.Release(new Point(103, 77) + offset);
+
+            var data = dataExport.GetMetaData();
+            Assert.Equal(new Point(100, 80), data.Center);
+            Assert.Equal(original.RadiusX, data.RadiusX);
+            Assert.Equal(original.StrokeThickness, data.StrokeThickness);
+            Assert.Same(circle, manager.SelectedGeometry);
+            Assert.Equal(0, selections);
+            Assert.Equal(lockedTarget, target.IsLocked);
+            Assert.Equal(new Point(20, 20), target.TopLeft);
+            Assert.Equal(new Point(100, 80), target.BottomRight);
+            Assert.True(board.MarkerBounds.IsEmpty);
+        });
+    }
+
+    [Theory]
+    [InlineData(typeof(Circle), 0.5)]
+    [InlineData(typeof(Circle), 1)]
+    [InlineData(typeof(Circle), 2)]
+    [InlineData(typeof(Circle), 4)]
+    [InlineData(typeof(ThickenedCircle), 0.5)]
+    [InlineData(typeof(ThickenedCircle), 1)]
+    [InlineData(typeof(ThickenedCircle), 2)]
+    [InlineData(typeof(ThickenedCircle), 4)]
+    public void MovingCircle_UsesScreenToleranceAndTransformedTargets(Type type, double scale)
+    {
+        RunOnSta(() =>
+        {
+            var board = CreateBoard(out var manager);
+            var target = LoadLine(manager, new Point(20, 20), new Point(100, 20));
+            target.Transform = new TranslateTransform(30, 20);
+            target.Lock();
+            var circle = LoadCircle(manager, type, new Point(160, 120), 40);
+            var dataExport = (IDataExport<EllipseData>)circle;
+            var offset = new Vector(-12, 8);
+            var anchor = new Point(90, 40); // Transformed line midpoint.
+            manager.OnImageViewerPropertyChanged(scale);
+            board.Press(new Point(160, 120) + offset);
+            var outside = anchor + new Vector(8.1 / scale, 0);
+            board.Move(outside + offset, MouseButtonState.Pressed);
+            Assert.Equal(outside, dataExport.GetMetaData().Center);
+            Assert.True(board.MarkerBounds.IsEmpty);
+
+            var inside = anchor + new Vector(7.9 / scale, 0);
+            board.Move(inside + offset, MouseButtonState.Pressed);
+            Assert.Equal(anchor, dataExport.GetMetaData().Center);
+            Assert.Equal(13.5, board.MarkerBounds.Width * scale, precision: 8);
+            board.Release(inside + offset);
+            Assert.Equal(anchor, dataExport.GetMetaData().Center);
+            Assert.True(board.MarkerBounds.IsEmpty);
+        });
+    }
+
+    [Theory]
+    [InlineData(typeof(Circle))]
+    [InlineData(typeof(ThickenedCircle))]
+    public void MovingTransformedCircle_SnapsItsVisualCenterAndKeepsClickPosition(Type type)
+    {
+        RunOnSta(() =>
+        {
+            var board = CreateBoard(out var manager);
+            LoadRectangle(manager);
+            var circle = LoadCircle(manager, type, new Point(100, 80), 30);
+            var transform = new MatrixTransform(new Matrix(1.25, 0, 0, 1.25, 30, 20));
+            circle.Transform = transform;
+            var dataExport = (IDataExport<EllipseData>)circle;
+            var press = transform.Transform(new Point(88, 88));
+            var offset = press - transform.Transform(dataExport.GetMetaData().Center);
+            board.Press(press);
+            board.Move(press, MouseButtonState.Pressed);
+            board.Release(press);
+            Assert.Equal(new Point(100, 80), dataExport.GetMetaData().Center);
+            Assert.True(board.MarkerBounds.IsEmpty);
+
+            board.Press(press);
+            board.Move(new Point(23, 22) + offset, MouseButtonState.Pressed);
+            var visualCenter = transform.Transform(dataExport.GetMetaData().Center);
+            Assert.Equal(20, visualCenter.X, precision: 8);
+            Assert.Equal(20, visualCenter.Y, precision: 8);
+            Assert.False(board.MarkerBounds.IsEmpty);
+            board.Release(new Point(103, 77) + offset);
+            visualCenter = transform.Transform(dataExport.GetMetaData().Center);
+            Assert.Equal(100, visualCenter.X, precision: 8);
+            Assert.Equal(80, visualCenter.Y, precision: 8);
+            Assert.Equal(30, dataExport.GetMetaData().RadiusX);
+            Assert.True(board.MarkerBounds.IsEmpty);
+        });
+    }
+
+    [Theory]
+    [InlineData(typeof(Circle))]
+    [InlineData(typeof(ThickenedCircle))]
+    public void MovingCircle_SnapsToAnotherCircleCenterOnRelease(Type type)
+    {
+        RunOnSta(() =>
+        {
+            var board = CreateBoard(out var manager);
+            LoadCircle(manager, typeof(Circle), new Point(60, 60), 30);
+            var circle = LoadCircle(manager, type, new Point(160, 120), 40);
+            var offset = new Vector(12, 8);
+            board.Press(new Point(160, 120) + offset);
+            board.Release(new Point(63, 62) + offset);
+
+            Assert.Equal(new Point(60, 60), ((IDataExport<EllipseData>)circle).GetMetaData().Center);
+            Assert.True(board.MarkerBounds.IsEmpty);
+        });
+    }
+
+    [Theory]
+    [InlineData(typeof(Circle))]
+    [InlineData(typeof(ThickenedCircle))]
+    public void MovingCircle_DoesNotSnapToItsOwnAnchors(Type type)
+    {
+        RunOnSta(() =>
+        {
+            var board = CreateBoard(out var manager);
+            var circle = LoadCircle(manager, type, new Point(160, 120), 40);
+            var offset = new Vector(12, 8);
+            board.Press(new Point(160, 120) + offset);
+            board.Move(new Point(163, 122) + offset, MouseButtonState.Pressed);
+            Assert.Equal(new Point(163, 122), ((IDataExport<EllipseData>)circle).GetMetaData().Center);
+            Assert.True(board.MarkerBounds.IsEmpty);
+            board.Release(new Point(164, 123) + offset);
+            Assert.Equal(new Point(164, 123), ((IDataExport<EllipseData>)circle).GetMetaData().Center);
+        });
+    }
+
+    [Theory]
+    [InlineData(typeof(Circle))]
+    [InlineData(typeof(ThickenedCircle))]
+    public void ClickingCircleNearAnchor_DoesNotMoveUntilPointerMoves(Type type)
+    {
+        RunOnSta(() =>
+        {
+            var board = CreateBoard(out var manager);
+            LoadRectangle(manager);
+            var center = new Point(103, 82);
+            var circle = LoadCircle(manager, type, center, 40);
+            var pointer = center + new Vector(12, 8);
+            board.Press(pointer);
+            board.Move(pointer, MouseButtonState.Pressed);
+            board.Release(pointer);
+
+            Assert.Equal(center, ((IDataExport<EllipseData>)circle).GetMetaData().Center);
+            Assert.True(board.MarkerBounds.IsEmpty);
+        });
+    }
+
+    [Theory]
+    [InlineData(typeof(Circle))]
+    [InlineData(typeof(ThickenedCircle))]
+    public void MovingCircle_RespectsDisabledSnappingAndCustomTolerance(Type type)
+    {
+        RunOnSta(() =>
+        {
+            var board = CreateBoard(out var manager);
+            LoadRectangle(manager);
+            var circle = LoadCircle(manager, type, new Point(160, 120), 40);
+            var dataExport = (IDataExport<EllipseData>)circle;
+            var offset = new Vector(12, 8);
+            board.Press(new Point(160, 120) + offset);
+            board.SnapTolerance = 2;
+            board.Move(new Point(23, 20) + offset, MouseButtonState.Pressed);
+            Assert.Equal(new Point(23, 20), dataExport.GetMetaData().Center);
+            Assert.True(board.MarkerBounds.IsEmpty);
+            board.SnapTolerance = 4;
+            board.Move(new Point(23, 20) + offset, MouseButtonState.Pressed);
+            Assert.Equal(new Point(20, 20), dataExport.GetMetaData().Center);
+            Assert.False(board.MarkerBounds.IsEmpty);
+            board.IsSnappingEnabled = false;
+            Assert.True(board.MarkerBounds.IsEmpty);
+            board.Release(new Point(23, 20) + offset);
+            Assert.Equal(new Point(23, 20), dataExport.GetMetaData().Center);
+        });
+    }
+
+    [Theory]
+    [InlineData(typeof(Circle))]
+    [InlineData(typeof(ThickenedCircle))]
+    [InlineData(typeof(FixedCenterCircle))]
+    public void FixedOrLockedCircle_DoesNotSnapItsCenterWhileDragging(Type type)
+    {
+        RunOnSta(() =>
+        {
+            var board = CreateBoard(out var manager);
+            LoadRectangle(manager);
+            var center = new Point(160, 120);
+            var circle = LoadCircle(manager, type, center, 40);
+            if (type != typeof(FixedCenterCircle)) circle.Lock();
+            board.Press(center);
+            board.Move(new Point(23, 22), MouseButtonState.Pressed);
+            board.Release(new Point(23, 22));
+
+            Assert.Equal(center, ((IDataExport<EllipseData>)circle).GetMetaData().Center);
+            Assert.True(board.MarkerBounds.IsEmpty);
+        });
+    }
+
     [Fact]
     public void MovingRulerOrigin_DoesNotSnapItsMoveHandle()
     {
@@ -709,9 +937,11 @@ public class SnappingInteractionTests
             Assert.False(board.MarkerBounds.IsEmpty);
             var manager = new SketchBoardDataManager();
             manager.SetShapeLayer(TestShapeLayer.Create());
+            var oldVisuals = oldManager.VisualCollection;
             board.SketchBoardDataManager = manager;
             Assert.True(board.MarkerBounds.IsEmpty);
-            Assert.Empty(oldManager.VisualCollection);
+            Assert.Empty(oldVisuals);
+            Assert.Null(oldManager.SketchBoard);
             LoadLine(manager, new Point(30, 30), new Point(100, 100));
             manager.SetGeometryType(typeof(Line));
             board.Move(new Point(32, 31), MouseButtonState.Released);
@@ -721,9 +951,11 @@ public class SnappingInteractionTests
 
             board.Press(new Point(32, 31));
             Assert.Equal(new Point(30, 30), Assert.IsType<Line>(manager.CurrentGeometryInEdit).Start);
+            var visuals = manager.VisualCollection;
             board.SketchBoardDataManager = null;
             Assert.True(board.MarkerBounds.IsEmpty);
-            Assert.Empty(manager.VisualCollection);
+            Assert.Empty(visuals);
+            Assert.Null(manager.SketchBoard);
             Assert.Equal(2, VisualTreeHelper.GetChildrenCount(board)); // Selection overlay and snap marker only.
         });
     }

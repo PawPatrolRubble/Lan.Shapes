@@ -193,30 +193,25 @@ namespace Lan.Shapes.Shapes
             return (fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10) * magnitude;
         }
 
-        public override void UpdateVisual()
-        {
-            using (var context = RenderOpen())
-            {
-                var styler = ShapeStyler;
-                if (styler == null || Width <= 0 || Height <= 0)
-                {
-                    return;
-                }
+        protected override Geometry? DrawingClip => new RectangleGeometry(BoundsRect);
 
-                context.PushClip(new RectangleGeometry(BoundsRect));
-                // Transparent stroke gives the thin ruler lines a useful mouse target.
-                context.DrawGeometry(null, new Pen(Brushes.Transparent, 12 / ViewportScale), RenderGeometry);
-                context.DrawGeometry(null, styler.SketchPen, RenderGeometry);
-                foreach (var label in _labels)
-                {
-                    DrawLabel(context, label.Value.ToString("G6", CultureInfo.InvariantCulture),
-                        label.Location, label.Horizontal);
-                }
-                DrawLabel(context, "0 " + ShapeLayer.Measurement.UnitName, Center, horizontal: false, origin: true);
-                DrawDragHandles(context);
-                DrawText(context);
-                context.Pop();
+        protected override void DrawShape(DrawingContext context)
+        {
+            var styler = ShapeStyler;
+            if (styler == null || Width <= 0 || Height <= 0)
+            {
+                return;
             }
+
+            // Transparent stroke gives the thin ruler lines a useful mouse target.
+            context.DrawGeometry(null, new Pen(Brushes.Transparent, 12 / ViewportScale), RenderGeometry);
+            context.DrawGeometry(null, styler.SketchPen, RenderGeometry);
+            foreach (var label in _labels)
+            {
+                DrawLabel(context, label.Value.ToString("G6", CultureInfo.InvariantCulture),
+                    label.Location, label.Horizontal);
+            }
+            DrawLabel(context, "0 " + ShapeLayer.Measurement.UnitName, Center, horizontal: false, origin: true);
         }
 
         private void DrawLabel(DrawingContext context, string value, Point point, bool horizontal, bool origin = false)

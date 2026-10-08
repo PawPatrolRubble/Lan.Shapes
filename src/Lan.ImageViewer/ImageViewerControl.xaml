@@ -4,8 +4,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:Lan.ImageViewer"
-    xmlns:shapeEnums="clr-namespace:Lan.Shapes.Enums;assembly=Lan.Shapes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:shapeEnums="clr-namespace:Lan.Shapes.Enums;assembly=Lan.Shapes"
     xmlns:shapes="clr-namespace:Lan.Shapes.Shapes;assembly=Lan.Shapes"
     xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
     x:Name="Root"
@@ -44,15 +44,22 @@
             <SolidColorBrush x:Key="Expander.Disabled.Arrow.Stroke" Color="#FF707070" />
 
             <DataTemplate x:Key="DarkComboBoxTextTemplate">
-                <TextBlock Text="{Binding}" Foreground="{StaticResource DarkPanel.ValueForeground}" />
+                <TextBlock Foreground="{StaticResource DarkPanel.ValueForeground}" Text="{Binding}" />
             </DataTemplate>
-            <Style TargetType="ComboBoxItem" BasedOn="{StaticResource DarkComboBoxItemStyle}">
+            <Style BasedOn="{StaticResource DarkComboBoxItemStyle}" TargetType="ComboBoxItem">
                 <Setter Property="ContentTemplate" Value="{StaticResource DarkComboBoxTextTemplate}" />
             </Style>
-            <Style x:Key="ShapeSelectionCheckBoxStyle" TargetType="CheckBox" BasedOn="{StaticResource DarkPropertyCheckBoxStyle}">
+            <Style
+                x:Key="ShapeSelectionCheckBoxStyle"
+                BasedOn="{StaticResource DarkPropertyCheckBoxStyle}"
+                TargetType="CheckBox">
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding IsLocked}" Value="True"><Setter Property="IsEnabled" Value="False" /></DataTrigger>
-                    <DataTrigger Binding="{Binding IsGeometryRendered}" Value="False"><Setter Property="IsEnabled" Value="False" /></DataTrigger>
+                    <DataTrigger Binding="{Binding IsLocked}" Value="True">
+                        <Setter Property="IsEnabled" Value="False" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding IsGeometryRendered}" Value="False">
+                        <Setter Property="IsEnabled" Value="False" />
+                    </DataTrigger>
                 </Style.Triggers>
             </Style>
 
@@ -83,30 +90,42 @@
 
 
 
-        <!-- Top-Right Floating Controls (Toolbar + Property Panel) -->
-        <Grid HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,8">
+        <!--  Top-Right Floating Controls (Toolbar + Property Panel)  -->
+        <Grid
+            Margin="0,8,8,8"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Floating Top Toolbar -->
+            <!--  Floating Top Toolbar  -->
             <Border
                 Grid.Row="0"
+                Padding="4,2"
                 HorizontalAlignment="Right"
                 Background="#E61E1E22"
                 BorderBrush="{StaticResource DarkPanel.Border}"
                 BorderThickness="1"
                 CornerRadius="5"
-                Padding="4,2"
                 SnapsToDevicePixels="True">
                 <Border.Effect>
-                    <DropShadowEffect BlurRadius="8" Opacity="0.35" ShadowDepth="2" Direction="270" Color="Black" />
+                    <DropShadowEffect
+                        BlurRadius="8"
+                        Direction="270"
+                        Opacity="0.35"
+                        ShadowDepth="2"
+                        Color="Black" />
                 </Border.Effect>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="选择" Style="{StaticResource DarkButtonStyle}" Margin="2,0,4,0"
-                            Command="{Binding SelectionModeCommand}" ToolTip="选择图形；Ctrl 多选，空白处拖动框选，中键平移" />
-                    <!-- Geometry Drawing Tools -->
+                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                    <Button
+                        Margin="2,0,4,0"
+                        Command="{Binding SelectionModeCommand}"
+                        Content="选择"
+                        Style="{StaticResource DarkButtonStyle}"
+                        ToolTip="选择图形；Ctrl 多选，空白处拖动框选，中键平移" />
+                    <!--  Geometry Drawing Tools  -->
                     <ItemsControl
                         x:Name="Tools"
                         VerticalAlignment="Center"
@@ -121,40 +140,49 @@
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>
 
-                    <StackPanel Orientation="Horizontal" Margin="6,0,4,0">
-                        <TextBlock Text="图层" Margin="0,0,5,0" VerticalAlignment="Center"
-                                   Foreground="{StaticResource DarkPanel.LabelForeground}" />
-                        <ComboBox x:Name="CurrentLayerSelector" Width="140"
-                                  Style="{StaticResource DarkComboBoxStyle}"
-                                  ItemsSource="{Binding Layers}"
-                                  SelectedItem="{Binding SelectedShapeLayer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                  AutomationProperties.Name="当前图层" ToolTip="新绘制的图形将使用此图层">
+                    <StackPanel Margin="6,0,4,0" Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,5,0"
+                            VerticalAlignment="Center"
+                            Foreground="{StaticResource DarkPanel.LabelForeground}"
+                            Text="图层" />
+                        <ComboBox
+                            x:Name="CurrentLayerSelector"
+                            Width="140"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="当前图层"
+                            ItemsSource="{Binding Layers}"
+                            SelectedItem="{Binding SelectedShapeLayer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            Style="{StaticResource DarkComboBoxStyle}"
+                            ToolTip="新绘制的图形将使用此图层">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
-                                               Foreground="{StaticResource DarkPanel.ValueForeground}" />
+                                    <TextBlock
+                                        Foreground="{StaticResource DarkPanel.ValueForeground}"
+                                        Text="{Binding Name}"
+                                        TextTrimming="CharacterEllipsis" />
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
                     </StackPanel>
 
                     <StackPanel
-                        Orientation="Horizontal"
                         Margin="6,0,2,0"
+                        Orientation="Horizontal"
                         Visibility="{Binding ShowShapeTypes, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <TextBlock
-                            Text="Line:"
                             Margin="0,0,5,0"
                             VerticalAlignment="Center"
-                            Foreground="{StaticResource DarkPanel.LabelForeground}" />
+                            Foreground="{StaticResource DarkPanel.LabelForeground}"
+                            Text="Line:" />
                         <ComboBox
                             x:Name="LineDirectionSelector"
-                            Style="{StaticResource DarkComboBoxStyle}"
                             Width="108"
                             VerticalAlignment="Center"
-                            SelectedValuePath="Tag"
-                            SelectedValue="{Binding LineDirectionMode, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                             AutomationProperties.Name="Line direction"
+                            SelectedValue="{Binding LineDirectionMode, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            SelectedValuePath="Tag"
+                            Style="{StaticResource DarkComboBoxStyle}"
                             ToolTip="Line direction. In Free mode, hold Shift while drawing or resizing to choose horizontal or vertical.">
                             <ComboBoxItem Content="Free" Tag="{x:Static shapeEnums:LineDirectionMode.Free}" />
                             <ComboBoxItem Content="Horizontal" Tag="{x:Static shapeEnums:LineDirectionMode.Horizontal}" />
@@ -162,7 +190,7 @@
                         </ComboBox>
                     </StackPanel>
 
-                    <!-- Divider between tools and action buttons -->
+                    <!--  Divider between tools and action buttons  -->
                     <Rectangle
                         Width="1"
                         Height="20"
@@ -170,20 +198,20 @@
                         Fill="{StaticResource DarkPanel.Border}"
                         Visibility="{Binding ShowShapeTypes, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
-                    <!-- Eye Icon ToggleButton (Show / Hide all geometries) -->
+                    <!--  Eye Icon ToggleButton (Show / Hide all geometries)  -->
                     <ToggleButton
                         x:Name="BtnToggleGeometries"
-                        Style="{StaticResource DarkIconButtonToggleStyle}"
                         Margin="2,0"
-                        IsChecked="{Binding ShowGeometries, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=True, TargetNullValue=True}"
                         Click="BtnToggleGeometries_Click"
+                        IsChecked="{Binding ShowGeometries, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=True, TargetNullValue=True}"
+                        Style="{StaticResource DarkIconButtonToggleStyle}"
                         ToolTip="显示/隐藏图形">
                         <Path
                             x:Name="EyeIconPath"
                             Width="16"
                             Height="16"
-                            Stretch="Uniform"
-                            Fill="{Binding RelativeSource={RelativeSource AncestorType=ToggleButton}, Path=Foreground}">
+                            Fill="{Binding RelativeSource={RelativeSource AncestorType=ToggleButton}, Path=Foreground}"
+                            Stretch="Uniform">
                             <Path.Style>
                                 <Style TargetType="Path">
                                     <Setter Property="Data" Value="{StaticResource EyeOff}" />
@@ -198,198 +226,340 @@
                             </Path.Style>
                         </Path>
                     </ToggleButton>
+                    <!--  Crosshair Icon ToggleButton (Show / Hide the crosshair lines)  -->
+                    <ToggleButton
+                        x:Name="BtnToggleCrossLine"
+                        Margin="2,0"
+                        AutomationProperties.Name="显示/隐藏十字线"
+                        IsChecked="{Binding ShowCrossLine, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        Style="{StaticResource DarkIconButtonToggleStyle}"
+                        ToolTip="显示/隐藏十字线">
+                        <Path
+                            Width="16"
+                            Height="16"
+                            Data="{StaticResource Crosshair}"
+                            Fill="{Binding RelativeSource={RelativeSource AncestorType=ToggleButton}, Path=Foreground}"
+                            Stretch="Uniform" />
+                    </ToggleButton>
 
-                    <!-- Gear Icon ToggleButton (Show / Hide Properties Panel) -->
+                    <!--  Gear Icon ToggleButton (Show / Hide Properties Panel)  -->
                     <ToggleButton
                         x:Name="BtnToggleProperties"
-                        Style="{StaticResource DarkIconButtonToggleStyle}"
                         Margin="2,0"
                         IsChecked="{Binding ShowSimpleCanvas, Mode=TwoWay, Converter={StaticResource BooleanInverseConverter}}"
+                        Style="{StaticResource DarkIconButtonToggleStyle}"
                         ToolTip="显示/隐藏属性面板">
                         <Path
                             Width="16"
                             Height="16"
-                            Stretch="Uniform"
                             Data="{StaticResource Gear}"
-                            Fill="{Binding RelativeSource={RelativeSource AncestorType=ToggleButton}, Path=Foreground}" />
+                            Fill="{Binding RelativeSource={RelativeSource AncestorType=ToggleButton}, Path=Foreground}"
+                            Stretch="Uniform" />
                     </ToggleButton>
+
+                    <!--  Save canvas contents (image + geometries)  -->
+                    <Button
+                        x:Name="BtnSaveCanvas"
+                        Width="32"
+                        Height="32"
+                        Margin="2,0"
+                        Padding="0"
+                        AutomationProperties.Name="保存画布内容"
+                        Click="SaveCanvas_Click"
+                        Style="{StaticResource DarkButtonStyle}"
+                        ToolTip="保存画布内容（图像 + 图形）">
+                        <Path
+                            Width="16"
+                            Height="16"
+                            Data="{StaticResource Save}"
+                            Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                            Stretch="Uniform" />
+                    </Button>
                 </StackPanel>
             </Border>
 
-            <!-- Floating Property Panel (Positioned under the toolbar) -->
+            <!--  Floating Property Panel (Positioned under the toolbar)  -->
             <Border
                 x:Name="LayerPanel"
                 Grid.Row="1"
-                Margin="0,6,0,0"
-                HorizontalAlignment="Right"
                 Width="260"
                 MaxHeight="{Binding ActualHeight, ElementName=Root, Converter={StaticResource AvailablePanelHeightConverter}}"
+                Margin="0,6,0,0"
+                Padding="8"
+                HorizontalAlignment="Right"
                 Background="{StaticResource DarkPanel.Background}"
                 BorderBrush="{StaticResource DarkPanel.Border}"
                 BorderThickness="1"
                 CornerRadius="5"
-                Padding="8"
                 SnapsToDevicePixels="True"
                 Visibility="{Binding ShowSimpleCanvas, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
                 <Border.Effect>
-                    <DropShadowEffect BlurRadius="12" Opacity="0.45" ShadowDepth="3" Direction="270" Color="Black" />
+                    <DropShadowEffect
+                        BlurRadius="12"
+                        Direction="270"
+                        Opacity="0.45"
+                        ShadowDepth="3"
+                        Color="Black" />
                 </Border.Effect>
 
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Row="0" Margin="2,2,2,6">
-                    <DockPanel>
-                        <TextBlock
-                            Text="图层与图形"
-                            FontSize="13"
-                            FontWeight="SemiBold"
-                            Foreground="{StaticResource DarkPanel.HeaderForeground}"
-                            VerticalAlignment="Center" />
-                        <Border
-                            HorizontalAlignment="Right"
-                            Background="#333338"
-                            CornerRadius="8"
-                            Padding="6,1"
-                            VerticalAlignment="Center">
+                        <StackPanel Grid.Row="0" Margin="2,2,2,6">
+                            <DockPanel>
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="13"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource DarkPanel.HeaderForeground}"
+                                    Text="图层与图形" />
+                                <Border
+                                    Padding="6,1"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Background="#333338"
+                                    CornerRadius="8">
+                                    <TextBlock
+                                        FontSize="11"
+                                        Foreground="#AAAAAA"
+                                        Text="{Binding Shapes.Count, StringFormat='{}{0}'}" />
+                                </Border>
+                            </DockPanel>
+                            <WrapPanel Margin="0,6,0,0">
+                                <Button
+                                    Margin="0,0,5,0"
+                                    Click="NewLayer_Click"
+                                    Content="新增"
+                                    Style="{StaticResource DarkButtonStyle}" />
+                                <Button
+                                    Margin="0,0,5,0"
+                                    Click="SaveLayers_Click"
+                                    Content="保存"
+                                    Style="{StaticResource DarkButtonStyle}" />
+                                <Button
+                                    Click="SaveLayersAs_Click"
+                                    Content="另存为"
+                                    Style="{StaticResource DarkButtonStyle}" />
+                            </WrapPanel>
                             <TextBlock
-                                Text="{Binding Shapes.Count, StringFormat='{}{0}'}"
+                                Margin="0,4,0,0"
                                 FontSize="11"
-                                Foreground="#AAAAAA" />
-                        </Border>
-                    </DockPanel>
-                        <WrapPanel Margin="0,6,0,0">
-                            <Button Content="新增" Style="{StaticResource DarkButtonStyle}" Click="NewLayer_Click" Margin="0,0,5,0" />
-                            <Button Content="保存" Style="{StaticResource DarkButtonStyle}" Click="SaveLayers_Click" Margin="0,0,5,0" />
-                            <Button Content="另存为" Style="{StaticResource DarkButtonStyle}" Click="SaveLayersAs_Click" />
-                        </WrapPanel>
-                        <TextBlock Text="{Binding LayerConfigurationStatus}" ToolTip="{Binding LayerConfigurationPath}"
-                                   TextTrimming="CharacterEllipsis" Foreground="{StaticResource DarkPanel.LabelForeground}"
-                                   FontSize="11" Margin="0,4,0,0" />
-                    </StackPanel>
+                                Foreground="{StaticResource DarkPanel.LabelForeground}"
+                                Text="{Binding LayerConfigurationStatus}"
+                                TextTrimming="CharacterEllipsis"
+                                ToolTip="{Binding LayerConfigurationPath}" />
+                        </StackPanel>
 
-                    <TreeView
-                        x:Name="LayerTree"
-                        Grid.Row="1"
-                        MinHeight="100"
-                        MaxHeight="220"
-                        Margin="0,0,0,6"
-                        Background="#1A1A1C"
-                        Foreground="#EEEEEE"
-                        BorderBrush="#333338"
-                        ItemsSource="{Binding LayerGroups}"
-                        PreviewMouseLeftButtonDown="LayerTree_PreviewMouseLeftButtonDown"
-                        SelectedItemChanged="LayerTree_SelectedItemChanged"
-                        PreviewKeyDown="LayerTree_PreviewKeyDown">
-                        <TreeView.Resources>
-                            <Style TargetType="TreeViewItem" BasedOn="{StaticResource DarkTreeViewItemStyle}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                        <Setter Property="Background" Value="{StaticResource DarkPanel.ItemSelected}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TreeView.Resources>
-                        <TreeView.ItemTemplate>
-                            <HierarchicalDataTemplate ItemsSource="{Binding Shapes}">
-                                <StackPanel Orientation="Horizontal">
-                                    <CheckBox IsChecked="{Binding IsVisible, Mode=TwoWay}"
-                                              Style="{StaticResource DarkPropertyCheckBoxStyle}"
-                                              ToolTip="显示或隐藏此图层的所有图形"
-                                              VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding Name}" Margin="5,0" VerticalAlignment="Center"
-                                               MaxWidth="95" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"
-                                               Foreground="{StaticResource DarkPanel.ValueForeground}" />
-                                    <Button Content="编辑" Padding="4,0" Margin="4,0,0,0"
+                        <TreeView
+                            x:Name="LayerTree"
+                            Grid.Row="1"
+                            MinHeight="100"
+                            MaxHeight="220"
+                            Margin="0,0,0,6"
+                            Background="#1A1A1C"
+                            BorderBrush="#333338"
+                            Foreground="#EEEEEE"
+                            ItemsSource="{Binding LayerGroups}"
+                            PreviewKeyDown="LayerTree_PreviewKeyDown"
+                            PreviewMouseLeftButtonDown="LayerTree_PreviewMouseLeftButtonDown"
+                            SelectedItemChanged="LayerTree_SelectedItemChanged">
+                            <TreeView.Resources>
+                                <Style BasedOn="{StaticResource DarkTreeViewItemStyle}" TargetType="TreeViewItem">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource DarkPanel.ItemSelected}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TreeView.Resources>
+                            <TreeView.ItemTemplate>
+                                <HierarchicalDataTemplate ItemsSource="{Binding Shapes}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <CheckBox
+                                            VerticalAlignment="Center"
+                                            IsChecked="{Binding IsVisible, Mode=TwoWay}"
+                                            Style="{StaticResource DarkPropertyCheckBoxStyle}"
+                                            ToolTip="显示或隐藏此图层的所有图形" />
+                                        <TextBlock
+                                            MaxWidth="95"
+                                            Margin="5,0"
+                                            VerticalAlignment="Center"
+                                            Foreground="{StaticResource DarkPanel.ValueForeground}"
+                                            Text="{Binding Name}"
+                                            TextTrimming="CharacterEllipsis"
+                                            ToolTip="{Binding Name}" />
+                                        <Button
+                                            Margin="4,0,0,0"
+                                            Padding="4,0"
+                                            Click="EditLayer_Click"
+                                            Content="编辑"
+                                            IsEnabled="{Binding CanEdit}"
                                             Style="{StaticResource DarkButtonStyle}"
-                                            Click="EditLayer_Click" ToolTip="编辑图层样式" />
-                                    <Button Content="选择" Padding="4,0" Margin="4,0,0,0"
+                                            ToolTip="编辑图层样式" />
+                                        <Button
+                                            Margin="4,0,0,0"
+                                            Padding="4,0"
+                                            Click="SelectLayerShapes_Click"
+                                            Content="选择"
                                             Style="{StaticResource DarkButtonStyle}"
-                                            Click="SelectLayerShapes_Click" ToolTip="选中此图层中可见、未锁定的图形" />
+                                            ToolTip="选中此图层中可见、未锁定的图形" />
+                                    </StackPanel>
+                                    <HierarchicalDataTemplate.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <CheckBox
+                                                    VerticalAlignment="Center"
+                                                    Click="ShapeSelection_Click"
+                                                    IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                                    Style="{StaticResource ShapeSelectionCheckBoxStyle}"
+                                                    Tag="{Binding}"
+                                                    ToolTip="加入或移出选择" />
+                                                <TextBlock
+                                                    Margin="4,2"
+                                                    Foreground="{StaticResource DarkPanel.ValueForeground}"
+                                                    Text="{Binding GeometryType}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </HierarchicalDataTemplate.ItemTemplate>
+                                </HierarchicalDataTemplate>
+                            </TreeView.ItemTemplate>
+                        </TreeView>
+
+                        <Separator
+                            Grid.Row="2"
+                            Height="1"
+                            Margin="0,2,0,6"
+                            Background="{StaticResource DarkPanel.Border}" />
+
+                        <DockPanel Grid.Row="3">
+                            <Border
+                                Margin="0,0,0,6"
+                                DockPanel.Dock="Top"
+                                Style="{StaticResource DarkPropertyCardStyle}">
+                                <StackPanel>
+                                    <TextBlock Foreground="{StaticResource DarkPanel.HeaderForeground}" Text="{Binding SelectedShapeCount, StringFormat='已选 {0} 个图形'}" />
+                                    <TextBlock
+                                        Margin="0,3,0,5"
+                                        Foreground="{StaticResource DarkPanel.LabelForeground}"
+                                        Text="{Binding SelectedLayerSummary}"
+                                        TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Foreground="{StaticResource DarkPanel.LabelForeground}" Text="所属图层" />
+                                    <ComboBox
+                                        x:Name="AssignedLayerSelector"
+                                        Margin="0,4,0,5"
+                                        AutomationProperties.Name="所选图形所属图层"
+                                        HorizontalAlignment="Stretch"
+                                        ItemsSource="{Binding Layers}"
+                                        SelectedItem="{Binding TargetShapeLayer, Mode=TwoWay}"
+                                        Style="{StaticResource DarkComboBoxStyle}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Foreground="{StaticResource DarkPanel.ValueForeground}" Text="{Binding Name}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <Button
+                                        Click="AssignLayer_Click"
+                                        Content="应用到所选图形"
+                                        IsEnabled="{Binding CanAssignSelectedLayer}"
+                                        Style="{StaticResource DarkButtonStyle}" />
+                                    <TextBlock
+                                        Margin="0,4,0,0"
+                                        FontSize="10"
+                                        Foreground="{StaticResource DarkPanel.LabelForeground}"
+                                        Text="移入隐藏图层后，图形将在画布隐藏"
+                                        TextWrapping="Wrap" />
+                                    <Separator
+                                        Height="1"
+                                        Margin="0,9,0,8"
+                                        Background="{StaticResource DarkPanel.Border}" />
+                                    <TextBlock
+                                        x:Name="SelectedGroupSummaryText"
+                                        Foreground="{StaticResource DarkPanel.HeaderForeground}"
+                                        Text="{Binding SelectedGroupSummary}"
+                                        TextTrimming="CharacterEllipsis"
+                                        ToolTip="{Binding SelectedGroupSummary}" />
+                                    <Grid Margin="0,6,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button
+                                            x:Name="GroupShapesButton"
+                                            Margin="0,0,3,0"
+                                            Command="{Binding GroupShapesCommand}"
+                                            Content="组合"
+                                            Style="{StaticResource DarkButtonStyle}"
+                                            ToolTip="将所选图形组合在一起（Ctrl+G）" />
+                                        <Button
+                                            x:Name="UngroupShapesButton"
+                                            Grid.Column="1"
+                                            Margin="3,0,0,0"
+                                            Command="{Binding UngroupShapesCommand}"
+                                            Content="取消组合"
+                                            Style="{StaticResource DarkButtonStyle}"
+                                            ToolTip="取消所选图形的组合（Ctrl+Shift+G）" />
+                                    </Grid>
+                                    <TextBlock
+                                        Margin="0,5,0,0"
+                                        FontSize="10"
+                                        Foreground="{StaticResource DarkPanel.LabelForeground}"
+                                        Text="{Binding GroupingPrompt}"
+                                        TextWrapping="Wrap" />
                                 </StackPanel>
-                                <HierarchicalDataTemplate.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <CheckBox IsChecked="{Binding IsSelected, Mode=OneWay}" Tag="{Binding}"
-                                                      Click="ShapeSelection_Click" Style="{StaticResource ShapeSelectionCheckBoxStyle}"
-                                                      ToolTip="加入或移出选择" VerticalAlignment="Center" />
-                                            <TextBlock Text="{Binding GeometryType}" Margin="4,2"
-                                                       Foreground="{StaticResource DarkPanel.ValueForeground}" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </HierarchicalDataTemplate.ItemTemplate>
-                            </HierarchicalDataTemplate>
-                        </TreeView.ItemTemplate>
-                    </TreeView>
+                            </Border>
+                            <TextBlock
+                                Margin="2,0,2,6"
+                                DockPanel.Dock="Top"
+                                FontSize="13"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource DarkPanel.HeaderForeground}"
+                                Text="属性" />
 
-                    <Separator Grid.Row="2" Background="{StaticResource DarkPanel.Border}" Margin="0,2,0,6" Height="1" />
+                            <ScrollViewer
+                                MaxHeight="320"
+                                HorizontalScrollBarVisibility="Disabled"
+                                VerticalScrollBarVisibility="Auto">
+                                <ContentControl Content="{Binding PropertyShape}">
+                                    <ContentControl.Style>
+                                        <Style TargetType="ContentControl">
+                                            <Style.Triggers>
+                                                <Trigger Property="Content" Value="{x:Null}">
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate>
+                                                                <Border
+                                                                    Padding="12"
+                                                                    Background="#1A1A1C"
+                                                                    BorderBrush="#2D2D32"
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="4">
+                                                                    <TextBlock
+                                                                        VerticalAlignment="Center"
+                                                                        FontSize="12"
+                                                                        Foreground="#777780"
+                                                                        LineHeight="18"
+                                                                        Text="{Binding SelectionPrompt}"
+                                                                        TextAlignment="Center" />
+                                                                </Border>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ContentControl.Style>
+                                </ContentControl>
+                            </ScrollViewer>
+                        </DockPanel>
 
-                    <DockPanel Grid.Row="3">
-                        <Border DockPanel.Dock="Top" Style="{StaticResource DarkPropertyCardStyle}" Margin="0,0,0,6">
-                            <StackPanel>
-                                <TextBlock Text="{Binding SelectedShapeCount, StringFormat='已选 {0} 个图形'}"
-                                           Foreground="{StaticResource DarkPanel.HeaderForeground}" />
-                                <TextBlock Text="{Binding SelectedLayerSummary}" TextTrimming="CharacterEllipsis"
-                                           Foreground="{StaticResource DarkPanel.LabelForeground}" Margin="0,3,0,5" />
-                                <TextBlock Text="所属图层" Foreground="{StaticResource DarkPanel.LabelForeground}" />
-                                <ComboBox x:Name="AssignedLayerSelector" ItemsSource="{Binding Layers}"
-                                          SelectedItem="{Binding TargetShapeLayer, Mode=TwoWay}"
-                                          Style="{StaticResource DarkComboBoxStyle}" Margin="0,4,0,5"
-                                          AutomationProperties.Name="所选图形所属图层">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate><TextBlock Text="{Binding Name}" Foreground="{StaticResource DarkPanel.ValueForeground}" /></DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
-                                <Button Content="应用到所选图形" Style="{StaticResource DarkButtonStyle}"
-                                        IsEnabled="{Binding CanAssignSelectedLayer}" Click="AssignLayer_Click" />
-                                <TextBlock Text="移入隐藏图层后，图形将在画布隐藏" FontSize="10" TextWrapping="Wrap"
-                                           Foreground="{StaticResource DarkPanel.LabelForeground}" Margin="0,4,0,0" />
-                            </StackPanel>
-                        </Border>
-                        <TextBlock
-                            DockPanel.Dock="Top"
-                            Text="属性"
-                            FontSize="13"
-                            FontWeight="SemiBold"
-                            Foreground="{StaticResource DarkPanel.HeaderForeground}"
-                            Margin="2,0,2,6" />
-
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="320">
-                            <ContentControl Content="{Binding PropertyShape}">
-                                <ContentControl.Style>
-                                    <Style TargetType="ContentControl">
-                                        <Style.Triggers>
-                                            <Trigger Property="Content" Value="{x:Null}">
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate>
-                                                            <Border Background="#1A1A1C" CornerRadius="4" Padding="12" BorderBrush="#2D2D32" BorderThickness="1">
-                                                                <TextBlock
-                                                                    Text="{Binding SelectionPrompt}"
-                                                                    TextAlignment="Center"
-                                                                    Foreground="#777780"
-                                                                    FontSize="12"
-                                                                    LineHeight="18"
-                                                                    VerticalAlignment="Center" />
-                                                            </Border>
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ContentControl.Style>
-                            </ContentControl>
-                        </ScrollViewer>
-                    </DockPanel>
-
-                </Grid>
+                    </Grid>
                 </ScrollViewer>
             </Border>
         </Grid>

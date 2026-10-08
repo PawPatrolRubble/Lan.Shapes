@@ -36,6 +36,7 @@ namespace Lan.Shapes
             }
 
             var ids = new HashSet<int>();
+            var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var parameter in ShapeLayers)
             {
                 if (parameter == null)
@@ -46,11 +47,9 @@ namespace Lan.Shapes
 
                 if (!ids.Add(parameter.LayerId))
                     throw new InvalidOperationException($"Duplicate layer ID: {parameter.LayerId}.");
-
-                ShapeLayer.EnsureRequiredStylerStates(
-                    parameter.StyleSchema,
-                    parameter.Name,
-                    parameter.LayerId);
+                var validated = parameter.CreateValidatedCopy();
+                if (!names.Add(validated.Name))
+                    throw new ArgumentException($"Duplicate layer name: {validated.Name}.");
             }
         }
     }

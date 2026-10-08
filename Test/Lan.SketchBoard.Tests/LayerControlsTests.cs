@@ -96,8 +96,11 @@ public class LayerControlsTests
             Assert.All(lineTypes.Items.Cast<ComboBoxItem>(), item => AssertReadable(item.Foreground));
             var lineTypeOptions = LayoutDropDown(lineTypes);
             Assert.All(Descendants<TextBlock>(lineTypeOptions), text => AssertReadable(text.Foreground));
+            Snapshot(lineTypeOptions, "layer-line-type-options");
             var states = Assert.IsType<ComboBox>(editor.FindName("StyleStateBox"));
-            Assert.All(Descendants<TextBlock>(LayoutDropDown(states)), text => AssertReadable(text.Foreground));
+            var stateOptions = LayoutDropDown(states);
+            Assert.All(Descendants<TextBlock>(stateOptions), text => AssertReadable(text.Foreground));
+            Snapshot(stateOptions, "layer-style-state-options");
             var picker = Assert.IsType<Xceed.Wpf.Toolkit.ColorPicker>(editor.FindName("StrokeColorPicker"));
             AssertReadable(picker.Foreground);
             var popup = Descendants<Popup>(picker).Single();

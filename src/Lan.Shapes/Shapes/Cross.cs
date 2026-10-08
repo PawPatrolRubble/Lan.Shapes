@@ -157,12 +157,18 @@ namespace Lan.Shapes.Shapes
         {
             if (OldPointForTranslate.HasValue)
             {
-                Center += newPoint - OldPointForTranslate.Value;
+                Translate(newPoint - OldPointForTranslate.Value);
             }
         }
 
+        public override bool CanTranslate => true;
+
+        protected override void TranslateCore(Vector delta) => Center += delta;
+
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
+            if (IsLocked) return;
+
             base.OnMouseLeftButtonDown(mousePoint);
             if (!IsGeometryRendered)
             {
@@ -208,23 +214,12 @@ namespace Lan.Shapes.Shapes
             };
         }
 
-        public override void AddText(string content, Point? location = null)
+        protected override void DrawShape(DrawingContext renderContext)
         {
-
-        }
-
-
-        public override void UpdateVisual()
-        {
-            var renderContext = RenderOpen();
             if (ShapeStyler != null)
             {
                 renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometry);
-                DrawDragHandles(renderContext);
-                DrawText(renderContext);
             }
-
-            renderContext.Close();
         }
     }
 }

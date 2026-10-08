@@ -63,6 +63,21 @@ namespace Lan.Shapes.SimpleApp
             Container.Resolve<IRegionManager>().RequestNavigate("MainContent", nameof(MainPage));
         }
 
+        protected override void OnExit(ExitEventArgs e)
+        {
+            try
+            {
+                foreach (var owner in Container.Resolve<IRegionManager>().Regions
+                    .SelectMany(region => region.Views).OfType<FrameworkElement>()
+                    .Select(view => view.DataContext).OfType<IDisposable>().Distinct())
+                    owner.Dispose();
+            }
+            finally
+            {
+                base.OnExit(e);
+            }
+        }
+
 
         private ILogger CreateSerilogLogger(IConfiguration configuration)
         {

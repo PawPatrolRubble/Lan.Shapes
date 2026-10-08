@@ -115,6 +115,16 @@ namespace Lan.Shapes.Custom
             return new PointsData(StrokeThickness, new List<Point>() { TopLeft, BottomRight });
         }
 
+        public override bool CanTranslate => true;
+
+        protected override void TranslateCore(Vector delta)
+        {
+            SetField(ref _topLeft, TopLeft + delta, nameof(TopLeft));
+            SetField(ref _bottomRight, BottomRight + delta, nameof(BottomRight));
+            _middleRectangleGeometry.Rect = new Rect(TopLeft, BottomRight);
+            ResizeByCornerPoint(DragLocation.BottomRight, BottomRight);
+        }
+
         #endregion
 
         #region others
@@ -156,6 +166,7 @@ namespace Lan.Shapes.Custom
         /// <param name="mousePoint"></param>
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
+            if (IsLocked) return;
             if (!IsGeometryRendered)
             {
                 TopLeft = mousePoint;
@@ -175,6 +186,7 @@ namespace Lan.Shapes.Custom
         /// </summary>
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
+            if (IsLocked || !HasPointerInteraction) return;
             if (!IsGeometryRendered)
             {
                 if (buttonState == MouseButtonState.Pressed) BottomRight = point;
@@ -262,7 +274,7 @@ namespace Lan.Shapes.Custom
                     throw new ArgumentOutOfRangeException(nameof(location), location, null);
             }
 
-            if (Handles.Count == 0) CreateHandles();
+            CreateHandles();
 
             //update location of handle
             DistanceResizeHandle.GeometryCenter = _middleRectangleGeometry.Rect.Location +
@@ -278,13 +290,12 @@ namespace Lan.Shapes.Custom
 
         #region local field
 
-        public override void UpdateVisual()
+        protected override void DrawShape(DrawingContext renderContext)
         {
             if (DistanceResizeHandle == null)
             {
                 return;
             }
-            var renderContext = RenderOpen();
             Pen ??= ShapeStyler?.SketchPen.CloneCurrentValue();
 
             if (ShapeStyler != null && Pen != null)
@@ -294,10 +305,8 @@ namespace Lan.Shapes.Custom
                 renderContext.DrawGeometry(ShapeStyler.FillColor, Pen, RenderGeometry);
             }
 
-            DrawDragHandles(renderContext);
 
             AddTagText(renderContext, TopLeft - new Vector(0, AnnotationFontSize + StrokeThickness));
-            renderContext.Close();
         }
 
         #endregion

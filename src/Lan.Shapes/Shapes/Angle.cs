@@ -120,11 +120,17 @@ namespace Lan.Shapes.Shapes
         protected override void HandleTranslate(Point point)
         {
             if (OldPointForTranslate is not Point previous) return;
-            var delta = point - previous;
+            Translate(point - previous);
+            OldPointForTranslate = point;
+        }
+
+        public override bool CanTranslate => true;
+
+        protected override void TranslateCore(Vector delta)
+        {
             _firstPoint += delta;
             _vertex += delta;
             _secondPoint += delta;
-            OldPointForTranslate = point;
             OnPropertyChanged(nameof(FirstPoint));
             OnPropertyChanged(nameof(Vertex));
             OnPropertyChanged(nameof(SecondPoint));
@@ -133,6 +139,8 @@ namespace Lan.Shapes.Shapes
 
         public override void OnMouseLeftButtonDown(Point point)
         {
+            if (IsLocked) return;
+
             if (IsGeometryRendered)
             {
                 base.OnMouseLeftButtonDown(point);
@@ -155,7 +163,7 @@ namespace Lan.Shapes.Shapes
 
         public void PreviewPointer(Point point)
         {
-            if (IsGeometryRendered || _clicks == 0 || _clicks > 2) return;
+            if (IsLocked || IsGeometryRendered || _clicks == 0 || _clicks > 2) return;
             _previewPoint = point;
             if (_clicks == 1) _vertex = point;
             else _secondPoint = point;
@@ -164,7 +172,7 @@ namespace Lan.Shapes.Shapes
 
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
-            if (!IsGeometryRendered || buttonState != MouseButtonState.Pressed || IsLocked) return;
+            if (!IsGeometryRendered || buttonState != MouseButtonState.Pressed || IsLocked || !MouseDownPoint.HasValue) return;
             IsBeingDraggedOrPanMoving = true;
             if (SelectedDragHandle != null) HandleResizing(point);
             else HandleTranslate(point);
@@ -173,9 +181,15 @@ namespace Lan.Shapes.Shapes
 
         public override void OnMouseLeftButtonUp(Point point)
         {
+            if (IsLocked)
+            {
+                CancelInteraction();
+                return;
+            }
+
             if (!IsGeometryRendered && _clicks == 3)
             {
-                IsGeometryRendered = true;
+                CompleteCreation();
                 _previewPoint = null;
                 UpdateGeometry();
             }
@@ -184,26 +198,25 @@ namespace Lan.Shapes.Shapes
                 OnMouseMove(point, MouseButtonState.Pressed);
             }
 
-            // The base implementation completes every sketch on its first mouse-up.
-            if (IsGeometryRendered) base.OnMouseLeftButtonUp(point);
-            SelectedDragHandle = null;
-            IsBeingDraggedOrPanMoving = false;
-            OldPointForTranslate = null;
+            base.OnMouseLeftButtonUp(point);
         }
+
+        protected override bool CanCompleteCreation => _clicks >= 3;
 
         public override void OnMouseRightButtonUp(Point point)
         {
+            if (IsLocked) return;
+
             if (!IsGeometryRendered) OnShapeCreationCancelled();
             else base.OnMouseRightButtonUp(point);
         }
 
         protected override void OnViewportScaleChanged(double viewportScale) => UpdateGeometry();
 
-        public override void UpdateVisual()
+        protected override void DrawShape(DrawingContext context)
         {
             var styler = ShapeStyler;
             if (styler == null) return;
-            using var context = RenderOpen();
             if (_clicks >= 1 || IsGeometryRendered)
             {
                 if (_clicks >= 2 || IsGeometryRendered || _previewPoint.HasValue)
@@ -219,16 +232,19 @@ namespace Lan.Shapes.Shapes
                     DrawAngleLabel(context);
                 }
             }
+        }
+
+        protected override void DrawDragHandles(DrawingContext context)
+        {
             if (AreDragHandlesActive)
             {
-                var visibleCount = IsGeometryRendered ? 3 : _clicks;
+                var visibleCount = Math.Min(Handles.Count, IsGeometryRendered ? 3 : _clicks);
                 for (var i = 0; i < visibleCount; i++)
                 {
                     var handle = Handles[i];
-                    context.DrawGeometry(styler.FillColor, styler.SketchPen, handle.HandleGeometry);
+                    context.DrawGeometry(GetDragHandleFill(), GetDragHandlePen(), handle.HandleGeometry);
                 }
             }
-            DrawText(context);
         }
 
         private void DrawAngleLabel(DrawingContext context)

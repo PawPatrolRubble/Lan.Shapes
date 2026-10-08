@@ -284,3 +284,9 @@ public ImageViewerControlViewModel(
 4. **同一 AppDomain 内两种容器不互通**：DryIoc 和 MSDI 注册的服务互不影响，需各自独立配置。
 5. **选择语义**：列表 / 删除使用 `SelectedShape`（`SelectedGeometry`）。`CurrentGeometryInEdit` 仅表示正在绘制、尚未提交的几何。
 6. **新服务优先依赖 `IShapeRepository`**：除非需要 `VisualCollection` / `InitializeVisualCollection` / `OnImageViewerPropertyChanged`。
+7. **查看器释放**：永久移除查看器时，由宿主调用 `IImageViewerViewModel.Dispose()` 解除 singleton 图层管理器等事件订阅。控件不会释放外部拥有的 VM。Prism 示例通过页面所有者释放；MSDI 示例在退出时释放 `ServiceProvider`，动态查看器建议放入独立 service scope。
+8. **图层所有权**：管理器拥有目录，画板拥有独立运行时副本。VM 的 `Layers` 兼容 setter 只接受该管理器的原集合；完整替换使用 `ReadConfiguration`。`Shapes` / `Layers` 仍为 `ObservableCollection`，直接集合写入也经过统一校验和生命周期。
+9. **配置路径**：默认用户文件为 `%LOCALAPPDATA%\Lan.Shapes\{入口程序集名}\LanShapesConfig.json`。Prism 可配置 `lanShapesApplicationId` 和 `lanShapesRuntimeDirectory`。旧共享文件保留，需明确读入后另存到目标应用路径。
+10. **定义编辑**：`ShapeLayer.Stylers` 的字典结构只读。通过 `ShapeLayerParameter` 草稿编辑状态并应用；直接支持的字段和样式编辑会更新快照、标记未保存，需显式保存。管理器编辑命令仍支持自动保存。
+
+所有权、配置重载、孤立图层和兼容性说明见 [图层管理契约](../docs/layer-management-fixes.md)。

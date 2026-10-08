@@ -7,6 +7,7 @@ A high-performance WPF image viewer and geometry sketching control. Built on `Dr
 - **Performance**: Built on `DrawingVisual` for optimized rendering
 - **Shape Support**: Rectangle, ellipse, line, polygon, circle, cross, and ruler cross shapes
 - **Custom Shapes**: Extensible architecture for custom geometry types
+- **Shape Groups**: Group shapes on one layer for persistent selection and movement; ungroup to edit members separately
 - **Zoom & Pan**: Mouse wheel zoom, middle-button drag panning, and CTRL+left-drag panning
 - **Pixel Info**: Display RGB values at cursor position
 - **Scale Display**: Real-time zoom ratio display
@@ -60,6 +61,12 @@ measurement calibration, and per-layer styling all live in that dedicated
 file. A missing `AvailableGeometryTypes` value registers the full catalog; `[]` registers none.
 Unknown names fail at startup. Crosshair overlay display is controlled via the `ImageViewerControl.ShowCrossLine` DependencyProperty.
 
+The shipped file seeds `%LOCALAPPDATA%\Lan.Shapes\{entry assembly name}\LanShapesConfig.json`.
+Subsequent loads and saves use that application's runtime copy. Set `lanShapesApplicationId`
+for a stable application scope, or `lanShapesRuntimeDirectory` for a custom location.
+An old shared runtime file is preserved; migrate known edits by reading it explicitly and
+saving to the application's new path.
+
 ```json
 {
   "AvailableGeometryTypes": [ "Line", "Angle", "Rectangle", "Rectangle2", "Circle", "Cross", "RulerCross", "DxfGeometry" ],
@@ -101,6 +108,29 @@ pans the image. The **Assigned layer** selector applies to one or several select
 shapes, preserving their geometry and identity. Hidden target layers hide the
 transferred shapes and remove them from selection.
 
+Select at least two completed, unlocked, movable shapes on the same layer, then
+choose **组合** (Group) in the selection card or press **Ctrl+G**. Clicking any
+member selects the whole group; dragging a member moves all of its members while
+preserving their relative positions, dimensions, styles, identities, and visual
+order. A single outline encloses the group and member resize handles are hidden.
+Choose **取消组合** (Ungroup) or press **Ctrl+Shift+G** to restore independent
+editing without changing geometry. The same shortcuts work in the shape tree.
+
+Ctrl-click toggles the entire group. A left-to-right selection rectangle must
+contain all group members; a right-to-left rectangle can cross any member.
+Double-click locks or unlocks all group members together. A locked member blocks
+movement of the whole group. Assigned-layer changes apply to every member.
+Hiding the layer preserves the group; deleting a selected group removes its
+members. Directly removing/replacing a member or moving one member to another
+layer through code dissolves its group.
+
+Groups are board-local runtime relationships in this first version. Layer
+configuration saves do not save drawing geometry or group relationships.
+Nested groups, group rotation/scaling, movement snapping, and undo/redo are not
+part of this version. Fixed-center circles and image-spanning ruler crosses
+cannot join movable groups. Fiber respects its `EnableTranslation` setting.
+Details and extension contracts: [`docs/shape-groups.md`](docs/shape-groups.md).
+
 The layer pane provides **New**, **Save**, and **Save as**. New layers copy the
 current definition's full state styles and receive a unique ID; edited names must
 be nonempty and unique. With an existing configuration path, confirming new or
@@ -110,10 +140,33 @@ a complete temporary file, and failed saves preserve the previous file and path.
 Layer configuration files contain layer definitions and global settings; drawing
 geometry and shape-to-layer assignments are not included in this configuration.
 
+The manager owns the layer catalogue, and each board owns independent runtime copies.
+Direct supported definition/style edits mark the configuration unsaved and require Save;
+manager edit commands retain the automatic save behavior described above. A complete
+configuration reload updates existing shapes' calibration as well as their styles.
+Removed definitions leave existing shapes visible and selectable in an orphan group,
+which cannot edit the catalogue. Assign those shapes to a configured layer as needed.
+Hiding a layer cancels its unfinished sketch and prevents new drawing on that hidden layer.
+
+Viewer owners must dispose `IImageViewerViewModel` when permanently discarding it to
+release shared manager subscriptions. The control does not dispose an externally owned
+view-model. `MainPageViewModel` demonstrates owner disposal in Prism; MSDI hosts should
+dispose their service scope or provider. Details: [`docs/layer-management-fixes.md`](docs/layer-management-fixes.md).
+
 Custom implementations of `IShapeRepository`, `IShapeLayerManager`, and
-`IImageViewerViewModel` must implement the new selection and layer-management
+`IImageViewerViewModel` must implement the new selection, layer-management, and group
 members. Shapes with custom handle visibility should honor `ShowSelectionHandles`
 when multiple shapes are selected.
+
+Custom shapes opt into group movement with `CanTranslate` and `TranslateCore(Vector)`.
+The base `Translate(Vector)` validates the request, coalesces redraws, and moves
+attached text. Shapes must update their model coordinates and geometry in
+`TranslateCore`; unadapted shapes keep `CanTranslate == false`.
+
+`Shapes` and manager `Layers` retain their `ObservableCollection` API, with mutations
+routed through repository lifecycle and catalogue validation. The compatibility viewer
+`Layers` setter accepts its manager's collection only. `ShapeLayer.Stylers` exposes a
+read-only dictionary; change state definitions through a `ShapeLayerParameter` draft.
 
 Pointer updates coalesce geometry render requests so coordinate changes within a
 single drag sample produce one redraw. Custom shape setters should call
@@ -148,7 +201,7 @@ Resolve `IImageViewerViewModel` from `IServiceProvider` the same way as any othe
 - **Lock / unlock**: Double-click a completed geometry to lock it; its text turns gray. Double-click it again to unlock it and restore the usual text color.
 - **Drawing**: With a drawing tool active, clicks create or continue the new geometry, including over existing shapes. Selection and double-click locking resume when drawing finishes; right-click ends the active sketch.
 - **Line direction**: Choose Free, Horizontal, or Vertical in the toolbar's Line selector. In Free mode, hold SHIFT while drawing or resizing a line endpoint to use the nearest horizontal or vertical axis; release SHIFT to return to free drawing. Fixed Horizontal and Vertical modes persist across sketches. This also works for thickened and arrowed lines. The opposite endpoint stays fixed when resizing, and snapping only accepts anchors on the constrained axis.
-- **Snapping**: While drawing or dragging a resize handle, points snap to nearby rectangle corners (including rotated rectangles), line endpoints and midpoints, and circle centers and quadrant points (top, right, bottom, and left), including locked shapes. A blue marker shows the target; the default distance is 8 screen pixels at every zoom level. Thickened rectangles, thickened lines, arrowed lines, fixed-center circles, and thickened circles also provide anchors. Thickened circle anchors follow the circle's centerline. The geometry being edited is excluded from snap targets.
+- **Snapping**: While drawing or dragging a resize handle, points snap to nearby rectangle corners (including rotated rectangles), line endpoints and midpoints, and circle centers and quadrant points (top, right, bottom, and left), including locked shapes. When moving a circle or thickened circle, its center snaps to these anchors while preserving the pointer's grab offset and the circle's radius. A blue marker shows the target; the default distance is 8 screen pixels at every zoom level. Thickened rectangles, thickened lines, arrowed lines, fixed-center circles, and thickened circles also provide anchors. Thickened circle anchors follow the circle's centerline. The geometry being edited is excluded from snap targets.
 
 Set `SketchBoard.IsSnappingEnabled` to disable snapping, or adjust `SketchBoard.SnapTolerance`
 (in screen device-independent pixels). Custom shapes can override `ShapeVisualBase.GetSnapPoints()`

@@ -24,8 +24,10 @@ namespace Lan.Shapes.App
         {
             ConfigServices();
             var shapeLayerManager = ServiceProvider.GetRequiredService<IShapeLayerManager>();
-            shapeLayerManager.ReadConfiguration(
-                System.IO.Path.Combine(AppContext.BaseDirectory, "LanShapesConfig.json"));
+            // Read and write the user's copy: the shipped file lives in the build output, where
+            // the next build would restore it over saved layer edits.
+            shapeLayerManager.ReadConfiguration(LayerConfigurationStore.ResolveRuntimeFile(
+                System.IO.Path.Combine(AppContext.BaseDirectory, "LanShapesConfig.json")));
             GeometryTypeRegistration.RegisterGeometryTypes(
                 ServiceProvider.GetRequiredService<IGeometryTypeManager>(),
                 shapeLayerManager.Configuration.AvailableGeometryTypes);
@@ -62,6 +64,19 @@ namespace Lan.Shapes.App
                 sp => sp.GetRequiredService<ISketchBoardDataManager>());
 
             ServiceProvider = _serviceCollection.BuildServiceProvider();
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            try
+            {
+                (ServiceProvider as IDisposable)?.Dispose();
+                Log.CloseAndFlush();
+            }
+            finally
+            {
+                base.OnExit(e);
+            }
         }
     }
 

@@ -93,11 +93,19 @@ namespace Lan.Shapes.Custom
         {
             if (OldPointForTranslate.HasValue)
             {
-                Start += newPoint - OldPointForTranslate.Value;
-                End += newPoint - OldPointForTranslate.Value;
-                RequestVisualUpdate();
+                Translate(newPoint - OldPointForTranslate.Value);
                 OldPointForTranslate = newPoint;
             }
+        }
+
+        public override bool CanTranslate => true;
+
+        protected override void TranslateCore(Vector delta)
+        {
+            SetField(ref _start, Start + delta, nameof(Start));
+            SetField(ref _end, End + delta, nameof(End));
+            OnStartPointChanges();
+            OnEndPointsChanges();
         }
 
         private void OnEndPointsChanges()
@@ -114,6 +122,7 @@ namespace Lan.Shapes.Custom
         /// <param name="newPoint"></param>
         public override void OnMouseLeftButtonDown(Point newPoint)
         {
+            if (IsLocked) return;
             if (!IsGeometryRendered && Start == default)
             {
                 Start = newPoint;
@@ -132,6 +141,7 @@ namespace Lan.Shapes.Custom
         /// <param name="newPoint"></param>
         public override void OnMouseLeftButtonUp(Point newPoint)
         {
+            if (IsLocked) return;
             if (End != default) base.OnMouseLeftButtonUp(newPoint);
 
         }
@@ -141,6 +151,7 @@ namespace Lan.Shapes.Custom
         /// </summary>
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
+            if (IsLocked || !HasPointerInteraction) return;
             if (!IsGeometryRendered)
             {
                 End = point;
@@ -230,7 +241,17 @@ namespace Lan.Shapes.Custom
             return true;
         }
 
-        public override void UpdateVisual()
+        protected override Pen? GetSelectionPen()
+        {
+            var styler = ShapeLayer.GetStyler(ShapeVisualState.Normal);
+            var pen = styler.SketchPen.CloneCurrentValue();
+            pen.Thickness = StrokeThickness;
+            pen.Brush = styler.FillColor.CloneCurrentValue();
+            pen.Brush.Opacity = 0.3;
+            return pen;
+        }
+
+        protected override void DrawShape(DrawingContext render)
         {
             if (!CanRenderGeometry())
             {
@@ -241,22 +262,17 @@ namespace Lan.Shapes.Custom
             Pen.Thickness = StrokeThickness;
 
 
-            var render = RenderOpen();
-
-
+            // The layer owns its brushes. Per-shape opacity must not mutate the layer.
+            Pen.Brush = ShapeStyler.FillColor.CloneCurrentValue();
             switch (State)
             {
                 case ShapeVisualState.Normal:
-                    Pen.Brush = ShapeStyler.FillColor;
                     Pen.Brush.Opacity = 0.3;
 
                     break;
                 case ShapeVisualState.Locked:
-                    Pen.Brush = ShapeStyler.FillColor;
-
                     break;
                 case ShapeVisualState.Selected:
-                    Pen.Brush = ShapeStyler.FillColor;
                     Pen.Brush.Opacity = 0.8;
                     break;
                 case ShapeVisualState.MouseOver:
@@ -266,12 +282,10 @@ namespace Lan.Shapes.Custom
             }
 
             render.DrawGeometry(ShapeStyler.FillColor, Pen, RenderGeometry);
-            DrawDragHandles(render);
 
             var angle = GetAngleBetweenPoints(Start, End);
 
             AddTagText(render, Start - new Vector(0, AnnotationFontSize + StrokeThickness), angle);
-            render.Close();
         }
 
         public static int GetAngleBetweenPoints(Point pt1, Point pt2)

@@ -36,7 +36,30 @@ namespace Lan.Shapes.Interfaces
 
         ReadOnlyObservableCollection<ShapeVisualBase> SelectedGeometries { get; }
 
-        /// <summary>Replaces selection with completed, visible shapes owned by this board.</summary>
+        /// <summary>Logical groups whose members remain in <see cref="Shapes"/>.</summary>
+        ReadOnlyObservableCollection<ShapeGroup> Groups { get; }
+
+        /// <summary>Returns the group containing the shape, or null for an independent shape.</summary>
+        ShapeGroup? GetGroup(ShapeVisualBase shape);
+
+        /// <summary>Checks whether two or more independent, movable shapes with finite, invertible transforms on one visible layer can be grouped.</summary>
+        bool CanGroupShapes(IEnumerable<ShapeVisualBase> shapes);
+
+        /// <summary>Groups completed, unlocked, movable shapes from one visible layer without changing their visual order.</summary>
+        ShapeGroup GroupShapes(IEnumerable<ShapeVisualBase> shapes, string? name = null);
+
+        /// <summary>Removes the groups containing the supplied shapes, preserving geometry, selection and lock state.</summary>
+        int UngroupShapes(IEnumerable<ShapeVisualBase> shapes);
+
+        /// <summary>
+        /// Moves completed, visible, unlocked shapes by a board-coordinate displacement.
+        /// Group members are expanded and all movement constraints are checked before any shape is moved.
+        /// </summary>
+        int TranslateShapes(IEnumerable<ShapeVisualBase> shapes, Vector delta);
+
+        event EventHandler GroupsChanged;
+
+        /// <summary>Replaces selection with completed, visible shapes owned by this board, expanding group members.</summary>
         void SetSelection(IEnumerable<ShapeVisualBase> shapes);
 
         /// <summary>Moves completed, unlocked shapes to an independent board copy of the target layer.</summary>
@@ -50,6 +73,9 @@ namespace Lan.Shapes.Interfaces
 
         /// <summary>Clears the active geometry type selection.</summary>
         void UnselectGeometryType();
+
+        /// <summary>Cancels the unfinished sketch and exits drawing mode, preserving completed selection.</summary>
+        void CancelCurrentSketch();
 
         // ── Layer & type management ──────────────────────────────────────────────
 
@@ -69,6 +95,12 @@ namespace Lan.Shapes.Interfaces
 
         /// <summary>Updates all board-owned copies of an edited layer and redraws its shapes.</summary>
         void UpdateLayerConfiguration(ShapeLayerParameter parameter);
+
+        /// <summary>
+        /// Replaces the board's configured layer definitions, including measurement calibration.
+        /// Shapes whose definition was removed retain their independent, visible board-local layer.
+        /// </summary>
+        void ApplyLayerDefinitions(IEnumerable<ShapeLayer> definitions);
 
         /// <summary>Sets the active geometry type by <see cref="Type"/> directly.</summary>
         void SetGeometryType(Type type);

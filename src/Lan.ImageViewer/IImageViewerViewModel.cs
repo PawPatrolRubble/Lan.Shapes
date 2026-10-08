@@ -18,7 +18,7 @@ namespace Lan.ImageViewer
     /// <see cref="SketchBoardDataManager"/> is retained only so the WPF control can
     /// attach the visual host (<c>VisualCollection</c>, scale feedback).
     /// </summary>
-    public interface IImageViewerViewModel
+    public interface IImageViewerViewModel : IDisposable
     {
         /// <summary>
         /// Fat board manager for the control dependency property / visual host only.
@@ -47,6 +47,11 @@ namespace Lan.ImageViewer
         int SelectedShapeCount { get; }
         string SelectedLayerSummary { get; }
         string SelectionPrompt { get; }
+        ShapeGroup? SelectedGroup { get; }
+        string SelectedGroupSummary { get; }
+        string GroupingPrompt { get; }
+        bool CanGroupSelectedShapes { get; }
+        bool CanUngroupSelectedShapes { get; }
         ShapeLayer? TargetShapeLayer { get; set; }
         bool CanAssignSelectedLayer { get; }
         int AssignSelectedShapesToLayer();
@@ -62,6 +67,10 @@ namespace Lan.ImageViewer
 
         double Scale { get; set; }
 
+        /// <summary>
+        /// The layer manager's directory. The setter accepts that same collection
+        /// for compatibility; replacing the directory is a manager operation.
+        /// </summary>
         ObservableCollection<ShapeLayer> Layers { get; set; }
 
         /// <summary>Layers and their board shapes for the tree panel.</summary>
@@ -87,6 +96,8 @@ namespace Lan.ImageViewer
         ICommand ScaleToOriginalSizeCommand { get; }
         ICommand ScaleToFitCommand { get; }
         ICommand DeleteShapeCommand { get; }
+        ICommand GroupShapesCommand { get; }
+        ICommand UngroupShapesCommand { get; }
 
         /// <summary>When true, show only the canvas; when false, show the layer and property pane.</summary>
         bool ShowSimpleCanvas { get; set; }

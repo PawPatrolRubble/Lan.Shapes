@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using Lan.Shapes.Custom;
@@ -30,8 +31,8 @@ public class FiberDataPipelineTests
             {
                 [ShapeVisualState.Normal] = new ShapeStylerParameter
                 {
-                    FillColor = "#00BFFF",
-                    StrokeColor = "#007ACC",
+                    FillColor = Brushes.DeepSkyBlue,
+                    StrokeColor = new SolidColorBrush(Color.FromRgb(0, 122, 204)),
                     StrokeThickness = 2.0,
                     DashStyle = "Solid",
                     DragHandleSize = 8,
@@ -39,8 +40,8 @@ public class FiberDataPipelineTests
                 },
                 [ShapeVisualState.Selected] = new ShapeStylerParameter
                 {
-                    FillColor = "#00BFFF",
-                    StrokeColor = "#0000FF",
+                    FillColor = Brushes.DeepSkyBlue,
+                    StrokeColor = Brushes.Blue,
                     StrokeThickness = 2.0,
                     DashStyle = "Solid",
                     DragHandleSize = 8,

@@ -21,7 +21,6 @@ namespace Lan.Shapes.Custom
 
         private readonly EllipseGeometry _baseEllipseGeometry;
 
-        private readonly Rect _boundsRect;
         private readonly DragHandle _rightDragHandle; //= new RectDragHandle(10, default, 1);
         private readonly DragHandle _topDragHandle; // = new RectDragHandle(10, default, 2);
 
@@ -39,7 +38,7 @@ namespace Lan.Shapes.Custom
         /// </summary>
         public override Rect BoundsRect
         {
-            get => _boundsRect;
+            get => RenderGeometry.Bounds;
         }
 
         public override IEnumerable<Point> GetSnapPoints() => new[]
@@ -160,6 +159,7 @@ namespace Lan.Shapes.Custom
         /// </summary>
         public override void OnDeselected()
         {
+            base.OnDeselected();
             State = ShapeVisualState.Normal;
         }
 
@@ -169,6 +169,7 @@ namespace Lan.Shapes.Custom
         /// <param name="mousePoint"></param>
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
+            if (IsLocked) return;
             if (!IsGeometryRendered)
             {
                 Radius = 100;
@@ -189,6 +190,7 @@ namespace Lan.Shapes.Custom
         /// </summary>
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
+            if (IsLocked || !HasPointerInteraction) return;
             if (buttonState == MouseButtonState.Pressed && SelectedDragHandle != null)
             {
                 IsBeingDraggedOrPanMoving = true;
@@ -202,6 +204,7 @@ namespace Lan.Shapes.Custom
             _baseEllipseGeometry.RadiusX = radius;
             _baseEllipseGeometry.RadiusY = radius;
             UpdateHandlePosition(Center, Radius);
+            RequestVisualUpdate();
         }
 
         /// <summary>
@@ -225,18 +228,15 @@ namespace Lan.Shapes.Custom
         }
 
 
-        public override void UpdateVisual()
+        protected override void DrawShape(DrawingContext renderContext)
         {
-            var renderContext = RenderOpen();
             if (ShapeStyler != null && _rightDragHandle != null && _topDragHandle != null)
             {
                 renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometry);
 
                 AddTagText(renderContext, Center);
-                DrawDragHandles(renderContext);
             }
 
-            renderContext.Close();
         }
 
         #endregion

@@ -15,11 +15,18 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Border" Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
-                            Padding="{TemplateBinding Padding}" CornerRadius="3">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
-                                          RecognizesAccessKey="True" TextElement.Foreground="{TemplateBinding Foreground}" />
+                    <Border
+                        x:Name="Border"
+                        Padding="{TemplateBinding Padding}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="3">
+                        <ContentPresenter
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            RecognizesAccessKey="True"
+                            TextElement.Foreground="{TemplateBinding Foreground}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -42,14 +49,24 @@
     </Style>
 
     <Style x:Key="DarkComboBoxItemStyle" TargetType="ComboBoxItem">
-        <Setter Property="Foreground" Value="{StaticResource DarkPanel.ValueForeground}" />
-        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Background" Value="{StaticResource DarkPanel.Background}" />
         <Setter Property="Padding" Value="8,5" />
+        <Setter Property="BorderBrush" Value="{StaticResource DarkPanel.InputBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBoxItem">
-                    <Border x:Name="Border" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                    <Border
+                        x:Name="Border"
+                        Margin="1"
+                        Padding="{TemplateBinding Padding}"
+                        Background="{TemplateBinding Background}"
+                        CornerRadius="3"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        SnapsToDevicePixels="True">
                         <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}" />
                     </Border>
                     <ControlTemplate.Triggers>
@@ -75,45 +92,131 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Padding" Value="8,4" />
         <Setter Property="MinHeight" Value="28" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="ItemContainerStyle" Value="{StaticResource DarkComboBoxItemStyle}" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBox">
-                    <Grid>
-                        <ToggleButton x:Name="Toggle" Focusable="False" ClickMode="Press"
-                                      Background="{TemplateBinding Background}" Foreground="{TemplateBinding Foreground}"
-                                      BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
-                                      IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                    <Grid SnapsToDevicePixels="True">
+                        <ToggleButton
+                            x:Name="Toggle"
+                            HorizontalAlignment="Right"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            ClickMode="Press"
+                            Focusable="False"
+                            Foreground="{TemplateBinding Foreground}"
+                            IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
                             <ToggleButton.Template>
                                 <ControlTemplate TargetType="ToggleButton">
-                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="3">
-                                        <Path Data="M 0,0 L 4,4 L 8,0" Stroke="{TemplateBinding Foreground}" StrokeThickness="1.5"
-                                              HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                    <Border
+                                        x:Name="templateRoot"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="2"
+                                        SnapsToDevicePixels="True">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="26" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border
+                                                x:Name="ButtonBorder"
+                                                Grid.Column="1"
+                                                Background="Transparent"
+                                                BorderBrush="#3E3E48"
+                                                CornerRadius="0,3,3,0">
+                                                <Path
+                                                    x:Name="Arrow"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Data="M 0,0 L 4,4 L 8,0"
+                                                    RenderTransformOrigin="0.5,0.5"
+                                                    Stroke="{TemplateBinding Foreground}"
+                                                    StrokeEndLineCap="Round"
+                                                    StrokeLineJoin="Round"
+                                                    StrokeStartLineCap="Round"
+                                                    StrokeThickness="1.5">
+                                                    <Path.RenderTransform>
+                                                        <RotateTransform Angle="0" />
+                                                    </Path.RenderTransform>
+                                                </Path>
+                                            </Border>
+                                        </Grid>
                                     </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="templateRoot" Property="Background" Value="{StaticResource DarkPanel.ItemHover}" />
+                                            <Setter TargetName="ButtonBorder" Property="Background" Value="#383842" />
+                                            <Setter TargetName="Arrow" Property="Stroke" Value="#FFFFFF" />
+                                        </Trigger>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="Arrow" Property="RenderTransform">
+                                                <Setter.Value>
+                                                    <RotateTransform Angle="180" />
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Setter TargetName="Arrow" Property="Stroke" Value="{StaticResource DarkPanel.Accent}" />
+                                            <Setter TargetName="ButtonBorder" Property="Background" Value="#323640" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
                                 </ControlTemplate>
                             </ToggleButton.Template>
                         </ToggleButton>
-                        <ContentPresenter Margin="8,4,28,4" VerticalAlignment="Center" IsHitTestVisible="False"
-                                          Content="{TemplateBinding SelectionBoxItem}"
-                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                          ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
-                                          TextElement.Foreground="{TemplateBinding Foreground}" />
-                        <Popup x:Name="PART_Popup" Placement="Bottom" AllowsTransparency="True" Focusable="False"
-                               IsOpen="{TemplateBinding IsDropDownOpen}" PopupAnimation="Fade">
-                            <Border Background="{StaticResource DarkPanel.CardBackground}"
-                                    BorderBrush="{StaticResource DarkPanel.InputBorder}" BorderThickness="1" Padding="2"
-                                    MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
-                                    MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                        <Border
+                            BorderBrush="{StaticResource DarkPanel.InputBorder}"
+                            BorderThickness="1"
+                            CornerRadius="3">
+
+                            <ContentPresenter
+                                Margin="8,4,30,4"
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalAlignment="Center"
+                                Content="{TemplateBinding SelectionBoxItem}"
+                                ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                IsHitTestVisible="False"
+                                TextElement.Foreground="{TemplateBinding Foreground}" />
+                        </Border>
+                        <Popup
+                            x:Name="PART_Popup"
+                            AllowsTransparency="True"
+                            Focusable="False"
+                            IsOpen="{TemplateBinding IsDropDownOpen}"
+                            Placement="Bottom"
+                            PopupAnimation="Fade">
+                            <Border
+                                MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                                MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                Padding="2"
+                                Background="{StaticResource DarkPanel.CardBackground}"
+                                BorderBrush="#52525C"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                SnapsToDevicePixels="True">
+                                <Border.Effect>
+                                    <DropShadowEffect
+                                        BlurRadius="8"
+                                        Direction="270"
+                                        Opacity="0.4"
+                                        ShadowDepth="2"
+                                        Color="Black" />
+                                </Border.Effect>
                                 <ScrollViewer CanContentScroll="True" HorizontalScrollBarVisibility="Disabled">
-                                    <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
+                                    <ItemsPresenter
+                                        KeyboardNavigation.DirectionalNavigation="Contained" />
                                 </ScrollViewer>
                             </Border>
                         </Popup>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Toggle" Property="BorderBrush" Value="#787888" />
+                        </Trigger>
+                        <Trigger Property="IsDropDownOpen" Value="True">
                             <Setter TargetName="Toggle" Property="BorderBrush" Value="{StaticResource DarkPanel.Accent}" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
@@ -128,6 +231,21 @@
         </Setter>
     </Style>
 
+    <!--<Style
+        x:Key="DarkComboBoxStyle"
+        BasedOn="{StaticResource {x:Type ComboBox}}"
+        TargetType="ComboBox">
+        <Setter Property="Foreground" Value="{StaticResource DarkPanel.ValueForeground}" />
+        <Setter Property="Background" Value="{StaticResource DarkPanel.InputBackground}" />
+        <Setter Property="BorderBrush" Value="{StaticResource DarkPanel.InputBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="MinHeight" Value="28" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="ItemContainerStyle" Value="{StaticResource DarkComboBoxItemStyle}" />
+    </Style>-->
+
+
     <Style x:Key="DarkTreeExpanderStyle" TargetType="ToggleButton">
         <Setter Property="Focusable" Value="False" />
         <Setter Property="Width" Value="18" />
@@ -135,14 +253,21 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
                     <Border Background="Transparent">
-                        <Path x:Name="Arrow" Data="M 0,0 L 4,4 L 0,8" Stroke="{StaticResource DarkPanel.ValueForeground}"
-                              StrokeThickness="1.5" HorizontalAlignment="Center" VerticalAlignment="Center"
-                              RenderTransformOrigin="0.5,0.5" />
+                        <Path
+                            x:Name="Arrow"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Data="M 0,0 L 4,4 L 0,8"
+                            RenderTransformOrigin="0.5,0.5"
+                            Stroke="{StaticResource DarkPanel.ValueForeground}"
+                            StrokeThickness="1.5" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Arrow" Property="RenderTransform">
-                                <Setter.Value><RotateTransform Angle="90" /></Setter.Value>
+                                <Setter.Value>
+                                    <RotateTransform Angle="90" />
+                                </Setter.Value>
                             </Setter>
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -160,23 +285,48 @@
             <Setter.Value>
                 <ControlTemplate TargetType="TreeViewItem">
                     <Grid>
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="18" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-                        <ToggleButton x:Name="Expander" Style="{StaticResource DarkTreeExpanderStyle}"
-                                      IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" />
-                        <Border x:Name="Header" Grid.Column="1" Background="{TemplateBinding Background}"
-                                Padding="{TemplateBinding Padding}" CornerRadius="3">
-                            <ContentPresenter x:Name="PART_Header" ContentSource="Header"
-                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                              TextElement.Foreground="{TemplateBinding Foreground}" />
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ToggleButton
+                            x:Name="Expander"
+                            IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                            Style="{StaticResource DarkTreeExpanderStyle}" />
+                        <Border
+                            x:Name="Header"
+                            Grid.Column="1"
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="3">
+                            <ContentPresenter
+                                x:Name="PART_Header"
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                ContentSource="Header"
+                                TextElement.Foreground="{TemplateBinding Foreground}" />
                         </Border>
-                        <ItemsPresenter x:Name="ItemsHost" Grid.Row="1" Grid.Column="1" />
+                        <ItemsPresenter
+                            x:Name="ItemsHost"
+                            Grid.Row="1"
+                            Grid.Column="1" />
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="HasItems" Value="False"><Setter TargetName="Expander" Property="Visibility" Value="Hidden" /></Trigger>
-                        <Trigger Property="IsExpanded" Value="False"><Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed" /></Trigger>
-                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Header" Property="Background" Value="{StaticResource DarkPanel.ItemHover}" /></Trigger>
-                        <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5" /></Trigger>
+                        <Trigger Property="HasItems" Value="False">
+                            <Setter TargetName="Expander" Property="Visibility" Value="Hidden" />
+                        </Trigger>
+                        <Trigger Property="IsExpanded" Value="False">
+                            <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Header" Property="Background" Value="{StaticResource DarkPanel.ItemHover}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>

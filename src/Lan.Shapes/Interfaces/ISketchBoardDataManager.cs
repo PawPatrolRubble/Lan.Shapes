@@ -46,6 +46,9 @@ namespace Lan.Shapes.Interfaces
         /// </summary>
         void InitializeVisualCollection(Visual visual);
 
+        /// <summary>Detaches visuals and releases the host while retaining board data.</summary>
+        void DetachVisualHost();
+
         /// <summary>
         /// Notifies the manager that the image viewer's zoom scale changed so that
         /// stroke thickness and drag-handle sizes can be recalculated.

@@ -198,14 +198,19 @@ namespace Lan.Shapes.Shapes
         {
             if (OldPointForTranslate.HasValue)
             {
-                var delta = newPoint - OldPointForTranslate.Value;
-                SetField(ref _topLeft, TopLeft + delta, nameof(TopLeft));
-                SetField(ref _bottomRight, BottomRight + delta, nameof(BottomRight));
-                if (_rectangleGeometry != null) _rectangleGeometry.Rect = new Rect(TopLeft, BottomRight);
-                UpdateHandleLocation();
-                RequestVisualUpdate();
+                Translate(newPoint - OldPointForTranslate.Value);
                 OldPointForTranslate = newPoint;
             }
+        }
+
+        public override bool CanTranslate => true;
+
+        protected override void TranslateCore(Vector delta)
+        {
+            SetField(ref _topLeft, TopLeft + delta, nameof(TopLeft));
+            SetField(ref _bottomRight, BottomRight + delta, nameof(BottomRight));
+            if (_rectangleGeometry != null) _rectangleGeometry.Rect = new Rect(TopLeft, BottomRight);
+            UpdateHandleLocation();
         }
 
         /// <summary>
@@ -214,6 +219,8 @@ namespace Lan.Shapes.Shapes
         /// <param name="mousePoint"></param>
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
+            if (IsLocked) return;
+
             if (!IsGeometryRendered)
             {
                 TopLeft = mousePoint;
@@ -234,6 +241,8 @@ namespace Lan.Shapes.Shapes
         /// </summary>
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
+            if (IsLocked || (buttonState == MouseButtonState.Pressed && !MouseDownPoint.HasValue)) return;
+
             if (buttonState == MouseButtonState.Pressed)
             {
                 if (!IsGeometryRendered)
@@ -257,16 +266,6 @@ namespace Lan.Shapes.Shapes
             }
         }
 
-        /// <summary>
-        /// Handle mouse left button up - clean up state
-        /// </summary>
-        public override void OnMouseLeftButtonUp(Point newPoint)
-        {
-            base.OnMouseLeftButtonUp(newPoint);
-            // Clear mouse tracking points to prevent stale state
-            OldPointForTranslate = null;
-        }
-
         private void UpdateHandleLocation()
         {
             for (var i = 0; i < Handles.Count + 1; i++)
@@ -287,24 +286,19 @@ namespace Lan.Shapes.Shapes
                 }
         }
 
-        public override void UpdateVisual()
+        protected override void DrawShape(DrawingContext renderContext)
         {
             if (_rectangleGeometry == null)
             {
                 return;
             }
 
-            var renderContext = RenderOpen();
-
             if (ShapeStyler != null)
             {
                 AddTagText(renderContext, GetTagPosition());
 
                 renderContext.DrawGeometry(ShapeStyler.FillColor, ShapeStyler.SketchPen, RenderGeometryGroup);
-                DrawDragHandles(renderContext);
             }
-
-            renderContext.Close();
         }
 
         private Point GetTagPosition()

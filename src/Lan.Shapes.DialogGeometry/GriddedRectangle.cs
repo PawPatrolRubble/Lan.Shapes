@@ -88,6 +88,12 @@ namespace Lan.Shapes.DialogGeometry
         {
         }
 
+        protected override void TranslateCore(Vector delta)
+        {
+            base.TranslateCore(delta);
+            if (_lines != null) UpdateOrAddLineGeometries();
+        }
+
         #endregion
 
         #region local methods
@@ -98,6 +104,7 @@ namespace Lan.Shapes.DialogGeometry
         /// <param name="newPoint"></param>
         public override void OnMouseLeftButtonUp(Point newPoint)
         {
+            if (IsLocked) return;
             if (IsGeometryRendered == false)
             {
                 _dialogService.ShowDialog<GridDialog, GridDialogDialogViewModel>(
@@ -159,13 +166,13 @@ namespace Lan.Shapes.DialogGeometry
             }
         }
 
-        public override void UpdateVisual()
+        protected override void DrawShape(DrawingContext renderContext)
         {
             if (IsGeometryRendered)
             {
                 UpdateOrAddLineGeometries();
             }
-            base.UpdateVisual();
+            base.DrawShape(renderContext);
         }
 
 
