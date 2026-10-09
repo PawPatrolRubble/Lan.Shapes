@@ -71,7 +71,7 @@ public class GeometryTypeTemplateTests
 
         Assert.NotNull(fillGeometry);
         Assert.NotNull(fill);
-        Assert.Equal(Colors.Black, ((SolidColorBrush)fill!).Color);
+        Assert.Equal(Colors.White, ((SolidColorBrush)fill!).Color);
     }
 
     [Fact]

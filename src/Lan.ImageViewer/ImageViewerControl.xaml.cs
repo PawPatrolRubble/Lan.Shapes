@@ -6,9 +6,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Microsoft.Win32;
 using Lan.Shapes;
 using Lan.Shapes.Enums;
@@ -24,6 +26,7 @@ namespace Lan.ImageViewer
     {
         private ShapeVisualBase _selectionAnchor;
         private bool _handlingTreeSelection;
+        private int _propertyPanelAnimationVersion;
         public static readonly DependencyProperty LineDirectionModeProperty = DependencyProperty.Register(
             nameof(LineDirectionMode), typeof(LineDirectionMode), typeof(ImageViewerControl),
             new FrameworkPropertyMetadata(LineDirectionMode.Free, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault),
@@ -93,6 +96,9 @@ namespace Lan.ImageViewer
         public ImageViewerControl()
         {
             InitializeComponent();
+            UpdatePropertyPanelVisibility(animate: false);
+            Loaded += (_, _) => UpdatePropertyPanelVisibility(animate: false);
+            Unloaded += (_, _) => UpdatePropertyPanelVisibility(animate: false);
 
             this.DataContextChanged += (s, e) =>
             {
@@ -127,6 +133,7 @@ namespace Lan.ImageViewer
                     {
                         PropertyChangedEventManager.AddHandler(newNpc, OnViewModelPropertyChanged, string.Empty);
                     }
+                    ScheduleSelectedLayersExpansion(vm);
                 }
             };
         }
@@ -135,6 +142,9 @@ namespace Lan.ImageViewer
         {
             if (sender is IImageViewerViewModel vm)
             {
+                if (e.PropertyName is null or nameof(IImageViewerViewModel.SelectedShapeCount))
+                    ScheduleSelectedLayersExpansion(vm);
+
                 if (e.PropertyName == nameof(IImageViewerViewModel.ShowGeometries) &&
                     this.ShowGeometries != vm.ShowGeometries)
                 {
@@ -157,6 +167,19 @@ namespace Lan.ImageViewer
             }
         }
 
+        private void ScheduleSelectedLayersExpansion(IImageViewerViewModel vm)
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (!ReferenceEquals(DataContext, vm) || LayerTree == null) return;
+
+                var selectedLayerIds = new HashSet<int>(vm.SelectedShapes.Select(shape => shape.ShapeLayer.LayerId));
+                foreach (var layer in vm.LayerGroups.Where(layer => selectedLayerIds.Contains(layer.LayerId)))
+                    if (LayerTree.ItemContainerGenerator.ContainerFromItem(layer) is TreeViewItem container)
+                        container.IsExpanded = true;
+            }), DispatcherPriority.Loaded);
+        }
+
         private void BtnToggleGeometries_Click(object sender, RoutedEventArgs e)
         {
             var isVisible = BtnToggleGeometries.IsChecked ?? false;
@@ -170,6 +193,49 @@ namespace Lan.ImageViewer
             {
                 vm.ShowGeometries = isVisible;
             }
+        }
+
+        private void PropertyPanelToggle_Changed(object sender, RoutedEventArgs e)
+            => UpdatePropertyPanelVisibility(animate: IsLoaded);
+
+        private void UpdatePropertyPanelVisibility(bool animate)
+        {
+            if (LayerPanel == null || LayerPanelSlideTransform == null) return;
+
+            var isOpen = BtnToggleProperties.IsChecked == true;
+            // Include the toolbar's right inset and the panel shadow in the slide distance.
+            var hiddenOffset = Math.Max(LayerPanel.ActualWidth, LayerPanel.Width) + 24;
+            var from = LayerPanel.Visibility == Visibility.Visible ? LayerPanelSlideTransform.X : hiddenOffset;
+            var to = isOpen ? 0 : hiddenOffset;
+            var animationVersion = ++_propertyPanelAnimationVersion;
+
+            // Capture the current animated position before replacing its clock, so a toggle can reverse smoothly.
+            LayerPanelSlideTransform.BeginAnimation(TranslateTransform.XProperty, null);
+            LayerPanelSlideTransform.X = from;
+            LayerPanel.IsHitTestVisible = isOpen;
+            if (!isOpen && LayerPanel.IsKeyboardFocusWithin) BtnToggleProperties.Focus();
+
+            if (!animate || !SystemParameters.ClientAreaAnimation || Math.Abs(from - to) < 0.5)
+            {
+                LayerPanelSlideTransform.X = to;
+                LayerPanel.Visibility = isOpen ? Visibility.Visible : Visibility.Collapsed;
+                return;
+            }
+
+            LayerPanel.Visibility = Visibility.Visible;
+            var duration = (isOpen ? 220 : 180) * Math.Min(1, Math.Abs(from - to) / hiddenOffset);
+            var animation = new DoubleAnimation(from, to, TimeSpan.FromMilliseconds(duration))
+            {
+                EasingFunction = new CubicEase { EasingMode = isOpen ? EasingMode.EaseOut : EasingMode.EaseIn }
+            };
+            animation.Completed += (_, _) =>
+            {
+                if (animationVersion != _propertyPanelAnimationVersion) return;
+                LayerPanelSlideTransform.X = to;
+                LayerPanelSlideTransform.BeginAnimation(TranslateTransform.XProperty, null);
+                LayerPanel.Visibility = isOpen ? Visibility.Visible : Visibility.Collapsed;
+            };
+            LayerPanelSlideTransform.BeginAnimation(TranslateTransform.XProperty, animation, HandoffBehavior.SnapshotAndReplace);
         }
 
         private void LayerTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
@@ -261,10 +327,10 @@ namespace Lan.ImageViewer
 
         private void ShapeSelection_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is CheckBox { Tag: ShapeVisualBase shape } checkbox)
+            if (sender is ToggleButton { Tag: ShapeVisualBase shape } marker)
             {
                 SelectTreeShape(shape, ModifierKeys.Control);
-                checkbox.GetBindingExpression(CheckBox.IsCheckedProperty)?.UpdateTarget();
+                marker.GetBindingExpression(ToggleButton.IsCheckedProperty)?.UpdateTarget();
             }
             e.Handled = true;
         }

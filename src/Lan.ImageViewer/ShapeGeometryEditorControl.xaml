@@ -1,0 +1,131 @@
+<UserControl
+    x:Class="Lan.ImageViewer.ShapeGeometryEditorControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Focusable="False">
+    <UserControl.Resources>
+        <Style x:Key="GeometryMessageStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource DarkPanel.LabelForeground}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,3,0,0" />
+            <Style.Triggers>
+                <Trigger Property="Text" Value="">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </Trigger>
+                <Trigger Property="Text" Value="{x:Null}">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="GeometryInputBorderStyle" TargetType="Border">
+            <Setter Property="BorderBrush" Value="Salmon" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasError}" Value="True">
+                    <Setter Property="BorderThickness" Value="1" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid x:Name="EditorRoot" Margin="0,2,0,4">
+        <StackPanel>
+            <TextBlock
+                Margin="0,0,0,5"
+                Style="{DynamicResource DarkPropertyLabelStyle}"
+                Text="图像坐标 · px" />
+            <ItemsControl ItemsSource="{Binding Groups}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border
+                            Margin="0,2,0,4"
+                            IsEnabled="{Binding IsEnabled}"
+                            LostKeyboardFocus="OnGroupLostKeyboardFocus"
+                            PreviewKeyDown="OnGroupPreviewKeyDown">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="65" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Style="{DynamicResource DarkPropertyLabelStyle}" Text="{Binding Label}" />
+                                    <ItemsControl Grid.Column="1" ItemsSource="{Binding Fields}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Rows="1" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,0,4,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock
+                                                        Margin="0,0,4,0"
+                                                        Style="{DynamicResource DarkPropertyLabelStyle}"
+                                                        Text="{Binding Label}" />
+                                                    <Border Grid.Column="1" Style="{StaticResource GeometryInputBorderStyle}">
+                                                        <TextBox
+                                                            MinWidth="32"
+                                                            AutomationProperties.HelpText="{Binding DataContext.ErrorMessage, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            AutomationProperties.Name="{Binding AutomationName}"
+                                                            Style="{DynamicResource DarkPropertyTextBoxStyle}"
+                                                            Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    </Border>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock
+                                        Grid.Column="2"
+                                        Style="{DynamicResource DarkPropertyLabelStyle}"
+                                        Text="px" />
+                                </Grid>
+                                <TextBlock
+                                    Margin="65,3,0,0"
+                                    Style="{StaticResource GeometryMessageStyle}"
+                                    Text="{Binding Hint}" />
+                                <TextBlock
+                                    Foreground="Salmon"
+                                    Style="{StaticResource GeometryMessageStyle}"
+                                    Text="{Binding ErrorMessage}" />
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <ItemsControl ItemsSource="{Binding Readouts}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="65" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Style="{DynamicResource DarkPropertyLabelStyle}" Text="{Binding Label}" />
+                            <TextBlock
+                                Grid.Column="1"
+                                Foreground="{DynamicResource DarkPanel.ValueForeground}"
+                                Style="{DynamicResource DarkPropertyLabelStyle}"
+                                Text="{Binding Value}"
+                                TextWrapping="Wrap" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock
+                Style="{StaticResource GeometryMessageStyle}"
+                Text="{Binding UnavailableReason, FallbackValue='暂不支持编辑此图形。'}" />
+            <TextBlock
+                Foreground="{DynamicResource DarkPanel.Accent}"
+                Style="{StaticResource GeometryMessageStyle}"
+                Text="{Binding StatusMessage, FallbackValue=''}" />
+            <TextBlock Style="{StaticResource GeometryMessageStyle}" Text="Enter 提交 · Esc 取消" />
+        </StackPanel>
+    </Grid>
+</UserControl>

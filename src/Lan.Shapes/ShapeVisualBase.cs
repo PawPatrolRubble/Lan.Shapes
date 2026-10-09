@@ -85,17 +85,40 @@ namespace Lan.Shapes
         public virtual bool CanTranslate => false;
 
         /// <summary>
-        /// Moves a completed, unlocked shape by a finite vector in its local model space.
-        /// Model geometry, handles and attached text move together; the visual Transform is preserved.
+        /// Checks whether a local-space displacement can be applied without changing the shape.
+        /// Validates translation support, edit state, model snap points and attached text locations.
+        /// Repositories can validate every member before starting a multi-shape translation;
+        /// custom TranslateCore implementations remain responsible for their own additional constraints.
         /// </summary>
-        public virtual void Translate(Vector delta)
+        public void ValidateTranslation(Vector delta)
         {
+            VerifyAccess();
             if (!double.IsFinite(delta.X) || !double.IsFinite(delta.Y))
                 throw new ArgumentOutOfRangeException(nameof(delta), "Translation must be finite.");
             if (!CanTranslate)
                 throw new NotSupportedException($"{GeometryType} does not support model translation.");
             if (!IsGeometryRendered || IsLocked)
                 throw new InvalidOperationException("Only completed, unlocked shapes can be translated.");
+            if (delta.X == 0 && delta.Y == 0) return;
+
+            foreach (var point in GetSnapPoints()) ValidateTranslatedPoint(point, delta);
+            foreach (var text in _textGeometries) ValidateTranslatedPoint(text.Location, delta);
+        }
+
+        private static void ValidateTranslatedPoint(Point point, Vector delta)
+        {
+            var translatedPoint = point + delta;
+            if (!double.IsFinite(translatedPoint.X) || !double.IsFinite(translatedPoint.Y))
+                throw new ArgumentOutOfRangeException(nameof(delta), "Translated model and text coordinates must remain finite.");
+        }
+
+        /// <summary>
+        /// Moves a completed, unlocked shape by a finite vector in its local model space.
+        /// Model geometry, handles and attached text move together; the visual Transform is preserved.
+        /// </summary>
+        public virtual void Translate(Vector delta)
+        {
+            ValidateTranslation(delta);
             if (delta.X == 0 && delta.Y == 0) return;
 
             using (DeferVisualUpdates())

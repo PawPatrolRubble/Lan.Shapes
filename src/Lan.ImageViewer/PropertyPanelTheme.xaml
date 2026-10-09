@@ -3,6 +3,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:custom="clr-namespace:Lan.Shapes.Custom;assembly=Lan.Shapes.Custom"
     xmlns:lanShapes="clr-namespace:Lan.Shapes;assembly=Lan.Shapes"
+    xmlns:local="clr-namespace:Lan.ImageViewer"
     xmlns:shapes="clr-namespace:Lan.Shapes.Shapes;assembly=Lan.Shapes">
 
     <!--  Dark Theme Brushes for Properties Panel  -->
@@ -39,6 +40,7 @@
 
     <!--  Dark Property TextBox Style  -->
     <Style x:Key="DarkPropertyTextBoxStyle" TargetType="TextBox">
+        <Setter Property="local:TextBoxFocusBehavior.SelectAllOnFocus" Value="True" />
         <Setter Property="Background" Value="{StaticResource DarkPanel.InputBackground}" />
         <Setter Property="Foreground" Value="{StaticResource DarkPanel.ValueForeground}" />
         <Setter Property="BorderBrush" Value="{StaticResource DarkPanel.InputBorder}" />
@@ -238,36 +240,9 @@
                         Text="{Binding State}" />
                 </DockPanel>
 
-                <Grid Margin="0,2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="65" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Radius" />
-                    <TextBox
-                        Grid.Column="1"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
-                        Text="{Binding Radius, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}" />
-                </Grid>
-
-                <Grid Margin="0,2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="65" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Center" />
-                    <TextBox
-                        Grid.Column="1"
-                        Margin="0,0,2,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
-                        Text="{Binding Center.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
-                    <TextBox
-                        Grid.Column="2"
-                        Margin="2,0,0,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
-                        Text="{Binding Center.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
-                </Grid>
+                <local:ShapeGeometryEditorControl
+                    ShapeRepository="{Binding DataContext.ShapeRepository, RelativeSource={RelativeSource AncestorType={x:Type local:ImageViewerControl}}}"
+                    TargetShape="{Binding}" />
 
                 <Grid Margin="0,2">
                     <Grid.ColumnDefinitions>
@@ -308,79 +283,9 @@
                         Text="{Binding State}" />
                 </DockPanel>
 
-                <Grid Margin="0,2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="65" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="TopLeft" />
-                    <TextBox
-                        Grid.Column="1"
-                        Margin="0,0,2,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
-                        Text="{Binding TopLeft.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
-                    <TextBox
-                        Grid.Column="2"
-                        Margin="2,0,0,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
-                        Text="{Binding TopLeft.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
-                </Grid>
-
-                <Grid Margin="0,2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="65" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="BottomRight" />
-                    <TextBox
-                        Grid.Column="1"
-                        Margin="0,0,2,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
-                        Text="{Binding BottomRight.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
-                    <TextBox
-                        Grid.Column="2"
-                        Margin="2,0,0,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
-                        Text="{Binding BottomRight.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
-                </Grid>
-
-                <Grid Margin="0,2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="65" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Size" />
-                    <TextBlock
-                        Grid.Column="1"
-                        Margin="0,0,4,0"
-                        VerticalAlignment="Center"
-                        FontSize="11"
-                        Foreground="#888888"
-                        Text="W" />
-                    <TextBox
-                        Grid.Column="2"
-                        Margin="0,0,4,0"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
-                        Text="{Binding Width, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
-                        ToolTip="Width" />
-                    <TextBlock
-                        Grid.Column="3"
-                        Margin="0,0,4,0"
-                        VerticalAlignment="Center"
-                        FontSize="11"
-                        Foreground="#888888"
-                        Text="H" />
-                    <TextBox
-                        Grid.Column="4"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
-                        Text="{Binding Height, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
-                        ToolTip="Height" />
-                </Grid>
+                <local:ShapeGeometryEditorControl
+                    ShapeRepository="{Binding DataContext.ShapeRepository, RelativeSource={RelativeSource AncestorType={x:Type local:ImageViewerControl}}}"
+                    TargetShape="{Binding}" />
 
                 <Grid Margin="0,2">
                     <Grid.ColumnDefinitions>
@@ -514,43 +419,9 @@
                         Text="{Binding State}" />
                 </DockPanel>
 
-                <Grid Margin="0,2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="65" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Start" />
-                    <TextBox
-                        Grid.Column="1"
-                        Margin="0,0,2,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
-                        Text="{Binding Start.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
-                    <TextBox
-                        Grid.Column="2"
-                        Margin="2,0,0,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
-                        Text="{Binding Start.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
-                </Grid>
-
-                <Grid Margin="0,2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="65" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="End" />
-                    <TextBox
-                        Grid.Column="1"
-                        Margin="0,0,2,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
-                        Text="{Binding End.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
-                    <TextBox
-                        Grid.Column="2"
-                        Margin="2,0,0,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
-                        Text="{Binding End.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
-                </Grid>
+                <local:ShapeGeometryEditorControl
+                    ShapeRepository="{Binding DataContext.ShapeRepository, RelativeSource={RelativeSource AncestorType={x:Type local:ImageViewerControl}}}"
+                    TargetShape="{Binding}" />
 
                 <Grid Margin="0,2">
                     <Grid.ColumnDefinitions>

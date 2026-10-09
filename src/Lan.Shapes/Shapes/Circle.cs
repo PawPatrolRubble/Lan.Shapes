@@ -8,6 +8,7 @@ using System.Windows.Media;
 using Lan.Shapes.Handle;
 using Lan.Shapes.Interfaces;
 using Lan.Shapes.Models;
+using Lan.Shapes.Utilities;
 
 namespace Lan.Shapes.Shapes
 {
@@ -34,8 +35,7 @@ namespace Lan.Shapes.Shapes
 
         public void FromData(EllipseData data)
         {
-            X = data.Center.X;
-            Y = data.Center.Y;
+            Center = data.Center;
             Radius = data.RadiusX;
             IsGeometryRendered = true;
             RequestVisualUpdate();
@@ -84,29 +84,16 @@ namespace Lan.Shapes.Shapes
         public override Point? MoveSnapPoint => IsGeometryRendered && !IsLocked
             && SelectedDragHandle == null ? Center : null;
 
-        private double _x;
-
         public double X
         {
-            get => _x;
-            set
-            {
-                SetField(ref _x, value);
-
-                Center = new Point(_x, Center.Y);
-            }
+            get => Center.X;
+            set => Center = new Point(value, Center.Y);
         }
-
-        private double _y;
 
         public double Y
         {
-            get => _y;
-            set
-            {
-                SetField(ref _y, value);
-                Center = new Point(Center.X, _y);
-            }
+            get => Center.Y;
+            set => Center = new Point(Center.X, value);
         }
 
 
@@ -116,8 +103,10 @@ namespace Lan.Shapes.Shapes
             get { return _center; }
             set
             {
-                SetField(ref _center, value);
+                if (!SetField(ref _center, value)) return;
                 UpdateGeometryGroup();
+                OnPropertyChanged(nameof(X));
+                OnPropertyChanged(nameof(Y));
             }
         }
 
@@ -141,6 +130,43 @@ namespace Lan.Shapes.Shapes
             {
                 SetField(ref _radius, value);
                 UpdateGeometryGroup();
+            }
+        }
+
+        /// <summary>Atomically updates the center and radius of a completed, unlocked circle.</summary>
+        public void SetCircle(Point center, double radius)
+        {
+            GeometryEditValidation.EnsureEditable(this);
+            GeometryEditValidation.EnsureFinite(center, nameof(center));
+            if (!double.IsFinite(radius) || radius <= 0 || !double.IsFinite(radius * 2))
+                throw new ArgumentOutOfRangeException(nameof(radius), "Radius must be finite, positive and have a finite diameter.");
+            var left = center.X - radius;
+            var right = center.X + radius;
+            var top = center.Y - radius;
+            var bottom = center.Y + radius;
+            if (!double.IsFinite(left) || !double.IsFinite(right) || !double.IsFinite(top) || !double.IsFinite(bottom)
+                || left >= right || top >= bottom)
+                throw new ArgumentOutOfRangeException(nameof(radius), "Radius must define finite, distinct circle extents.");
+            GeometryEditValidation.EnsureBounds(new Rect(left, top, right - left, bottom - top), nameof(radius));
+
+            var centerChanged = _center != center;
+            var radiusChanged = _radius != radius;
+            if (!centerChanged && !radiusChanged) return;
+
+            using (DeferVisualUpdates())
+            {
+                _center = center;
+                _radius = radius;
+                UpdateCircleGeometry();
+                if (centerChanged)
+                {
+                    OnPropertyChanged(nameof(Center));
+                    OnPropertyChanged(nameof(X));
+                    OnPropertyChanged(nameof(Y));
+                }
+                if (radiusChanged) OnPropertyChanged(nameof(Radius));
+                OnPropertyChanged(nameof(BoundsRect));
+                OnPropertyChanged(nameof(SelectionBounds));
             }
         }
 
@@ -207,10 +233,7 @@ namespace Lan.Shapes.Shapes
 
         protected override void TranslateCore(Vector delta)
         {
-            var center = Center + delta;
-            SetField(ref _x, center.X, nameof(X));
-            SetField(ref _y, center.Y, nameof(Y));
-            Center = center;
+            Center += delta;
         }
 
         /// <summary>
@@ -281,33 +304,23 @@ namespace Lan.Shapes.Shapes
         /// </summary>
         protected void UpdateGeometryGroup([CallerMemberName] string propertyName = "")
         {
-            switch (propertyName)
+            if (propertyName == nameof(Center) || propertyName == nameof(Radius)) UpdateCircleGeometry();
+        }
+
+        private void UpdateCircleGeometry()
+        {
+            _ellipseGeometry.Center = Center;
+            if (Radius > 0)
             {
-                case nameof(Center):
-                    _ellipseGeometry.Center = Center;
-                    _dragHandle.GeometryCenter = Center + new Vector(Radius, 0);
-                    _verticalLine.StartPoint = new Point(_center.X, _center.Y) + new Vector(0, -crossSize * 1.0 / 2);
-                    _verticalLine.EndPoint = new Point(_center.X, _center.Y) + new Vector(0, crossSize * 1.0 / 2);
-
-                    _horizontalLine.StartPoint = new Point(_center.X, _center.Y) + new Vector(-crossSize * 1.0 / 2, 0);
-                    _horizontalLine.EndPoint = new Point(_center.X, _center.Y) + new Vector(crossSize * 1.0 / 2, 0);
-                    RequestVisualUpdate();
-
-                    break;
-
-                case nameof(Radius):
-
-                    if (Radius > 0)
-                    {
-                        _ellipseGeometry.RadiusX = Radius;
-                        _ellipseGeometry.RadiusY = Radius;
-                        _dragHandle.GeometryCenter = _ellipseGeometry.Center + new Vector(Radius, 0);
-                    }
-                    RequestVisualUpdate();
-                    break;
-
+                _ellipseGeometry.RadiusX = Radius;
+                _ellipseGeometry.RadiusY = Radius;
             }
-
+            _dragHandle.GeometryCenter = Center + new Vector(Radius, 0);
+            _verticalLine.StartPoint = Center + new Vector(0, -crossSize / 2.0);
+            _verticalLine.EndPoint = Center + new Vector(0, crossSize / 2.0);
+            _horizontalLine.StartPoint = Center + new Vector(-crossSize / 2.0, 0);
+            _horizontalLine.EndPoint = Center + new Vector(crossSize / 2.0, 0);
+            RequestVisualUpdate();
         }
 
         protected override void DrawShape(DrawingContext renderContext)

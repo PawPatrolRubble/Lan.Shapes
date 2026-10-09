@@ -13,6 +13,7 @@ using Lan.Shapes.ExtensionMethods;
 using Lan.Shapes.Handle;
 using Lan.Shapes.Interfaces;
 using Lan.Shapes.Models;
+using Lan.Shapes.Utilities;
 
 #endregion
 
@@ -41,9 +42,7 @@ namespace Lan.Shapes.Shapes
 
                 if (_rectangleGeometry != null)
                 {
-                    _rectangleGeometry.Rect = new Rect(TopLeft, value);
-                    UpdateHandleLocation();
-                    RequestVisualUpdate();
+                    UpdateRectangleGeometry(new Rect(TopLeft, value));
                 }
 
                 OnPropertyChanged(nameof(Width));
@@ -102,19 +101,40 @@ namespace Lan.Shapes.Shapes
 
                 if (_rectangleGeometry == null)
                 {
-                    _rectangleGeometry = new RectangleGeometry();
-                    RenderGeometryGroup.Children.Add(_rectangleGeometry);
-                    _rectangleGeometry.Rect = new Rect(value, value);
+                    UpdateRectangleGeometry(new Rect(value, value));
                 }
                 else
                 {
-                    _rectangleGeometry.Rect = new Rect(value, BottomRight);
+                    UpdateRectangleGeometry(new Rect(value, BottomRight));
                 }
 
-                UpdateHandleLocation();
-                RequestVisualUpdate();
                 OnPropertyChanged(nameof(Width));
                 OnPropertyChanged(nameof(Height));
+            }
+        }
+
+        /// <summary>Atomically sets normalized bounds on a completed, unlocked rectangle.</summary>
+        public void SetBounds(Rect bounds)
+        {
+            GeometryEditValidation.EnsureEditable(this);
+            GeometryEditValidation.EnsureBounds(bounds, nameof(bounds));
+            bounds = new Rect(bounds.TopLeft, bounds.BottomRight);
+            GeometryEditValidation.EnsureBounds(bounds, nameof(bounds));
+            var topLeftChanged = _topLeft != bounds.TopLeft;
+            var bottomRightChanged = _bottomRight != bounds.BottomRight;
+            if (!topLeftChanged && !bottomRightChanged) return;
+
+            using (DeferVisualUpdates())
+            {
+                _topLeft = bounds.TopLeft;
+                _bottomRight = bounds.BottomRight;
+                UpdateRectangleGeometry(bounds);
+                if (topLeftChanged) OnPropertyChanged(nameof(TopLeft));
+                if (bottomRightChanged) OnPropertyChanged(nameof(BottomRight));
+                OnPropertyChanged(nameof(Width));
+                OnPropertyChanged(nameof(Height));
+                OnPropertyChanged(nameof(BoundsRect));
+                OnPropertyChanged(nameof(SelectionBounds));
             }
         }
 
@@ -209,8 +229,19 @@ namespace Lan.Shapes.Shapes
         {
             SetField(ref _topLeft, TopLeft + delta, nameof(TopLeft));
             SetField(ref _bottomRight, BottomRight + delta, nameof(BottomRight));
-            if (_rectangleGeometry != null) _rectangleGeometry.Rect = new Rect(TopLeft, BottomRight);
+            if (_rectangleGeometry != null) UpdateRectangleGeometry(new Rect(TopLeft, BottomRight));
+        }
+
+        private void UpdateRectangleGeometry(Rect bounds)
+        {
+            if (_rectangleGeometry == null)
+            {
+                _rectangleGeometry = new RectangleGeometry();
+                RenderGeometryGroup.Children.Add(_rectangleGeometry);
+            }
+            _rectangleGeometry.Rect = bounds;
             UpdateHandleLocation();
+            RequestVisualUpdate();
         }
 
         /// <summary>

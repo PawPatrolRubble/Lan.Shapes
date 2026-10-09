@@ -255,12 +255,15 @@ namespace Lan.Shapes.Shapes
             var sweep = Math.Atan2(Vector.CrossProduct(a, b), Vector.Multiply(a, b));
             var middle = Math.Atan2(a.Y, a.X) + sweep / 2;
             var radius = Math.Min(28 / ViewportScale, Math.Min(a.Length, b.Length) * 0.4);
-            var distance = radius + 8 / ViewportScale;
-            var position = _vertex + new Vector(Math.Cos(middle), Math.Sin(middle)) * distance;
+            var direction = new Vector(Math.Cos(middle), Math.Sin(middle));
             var text = CreateFormattedText(CalculateDegrees(_firstPoint, _vertex, _secondPoint)
                 .ToString("0.##", CultureInfo.InvariantCulture) + "°",
                 ShapeStyler?.TagColor ?? Brushes.Red);
-            text.SetFontSize(AnnotationFontSize);
+            text.SetFontSize(AnnotationFontSize * 1.2);
+            // Keep the edge of the label clear of the arc, including when its text or font grows.
+            var textExtent = (Math.Abs(direction.X) * text.Width + Math.Abs(direction.Y) * text.Height) / 2;
+            var distance = radius + 16 / ViewportScale + textExtent;
+            var position = _vertex + direction * distance;
             context.DrawText(text, new Point(position.X - text.Width / 2, position.Y - text.Height / 2));
         }
 

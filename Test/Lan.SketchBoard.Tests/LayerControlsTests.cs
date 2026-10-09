@@ -5,8 +5,11 @@ using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Windows;
+using System.Windows.Automation.Peers;
+using System.Windows.Automation.Provider;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Lan.ImageViewer;
@@ -21,6 +24,140 @@ namespace Lan.SketchBoard.Tests;
 
 public class LayerControlsTests
 {
+    [Fact]
+    public void LayerTree_BranchesHaveSpacingAndTheLastConnectorUpdatesWithItsChildren()
+    {
+        RunOnSta(() =>
+        {
+            using var vm = CreateViewModel();
+            AddLine(vm, 50);
+            AddLine(vm, 100);
+            var control = new ImageViewerControl { DataContext = vm };
+            Layout(control);
+            var tree = Assert.IsType<TreeView>(control.FindName("LayerTree"));
+            var parent = Assert.IsType<TreeViewItem>(tree.ItemContainerGenerator.ContainerFromIndex(0));
+            parent.IsExpanded = true;
+            Layout(control);
+            var first = Assert.IsType<TreeViewItem>(parent.ItemContainerGenerator.ContainerFromIndex(0));
+            var last = Assert.IsType<TreeViewItem>(parent.ItemContainerGenerator.ContainerFromIndex(1));
+            Assert.True(first.Margin.Top > 0 && first.Margin.Bottom > 0);
+            var firstHeader = Assert.IsType<Border>(first.Template.FindName("Header", first));
+            var lastHeader = Assert.IsType<Border>(last.Template.FindName("Header", last));
+            var firstBounds = firstHeader.TransformToAncestor(tree).TransformBounds(new Rect(firstHeader.RenderSize));
+            var lastBounds = lastHeader.TransformToAncestor(tree).TransformBounds(new Rect(lastHeader.RenderSize));
+            Assert.Equal(2, lastBounds.Top - firstBounds.Bottom, 5);
+            Assert.Equal(Visibility.Visible, TreePart(first, "BranchTail").Visibility);
+            Assert.Equal(Visibility.Collapsed, TreePart(last, "BranchTail").Visibility);
+
+            var third = AddLine(vm, 150);
+            Layout(control);
+            Assert.Equal(Visibility.Visible, TreePart(last, "BranchTail").Visibility);
+            vm.ShapeRepository.RemoveShape(third);
+            Layout(control);
+            Assert.Equal(Visibility.Collapsed, TreePart(last, "BranchTail").Visibility);
+            Snapshot(tree, "layer-tree-branches");
+
+            var expander = Assert.IsType<ToggleButton>(parent.Template.FindName("Expander", parent));
+            var provider = Assert.IsAssignableFrom<IToggleProvider>(
+                new ToggleButtonAutomationPeer(expander).GetPattern(PatternInterface.Toggle));
+            provider.Toggle();
+            Assert.False(parent.IsExpanded);
+            Assert.Equal(Visibility.Collapsed, TreePart(parent, "ItemsHost").Visibility);
+            provider.Toggle();
+            Assert.True(parent.IsExpanded);
+            Assert.Equal(Visibility.Visible, TreePart(parent, "ItemsHost").Visibility);
+        });
+    }
+
+    [Fact]
+    public void TreeBranches_SupportNestedAndMultilineHeaders()
+    {
+        RunOnSta(() =>
+        {
+            var resources = new ImageViewerControl().Resources;
+            var style = Assert.IsType<Style>(resources["DarkTreeViewItemStyle"]);
+            TreeViewItem Node(string text) => new() { Header = text, Style = style, IsExpanded = true };
+            var parent = Node("parent 1");
+            var branch = Node("parent 1-0");
+            var leaf = Node("leaf");
+            var multiline = Node("multiple line title\nmultiple line title");
+            var last = Node("leaf");
+            branch.Items.Add(leaf);
+            branch.Items.Add(multiline);
+            branch.Items.Add(last);
+            parent.Items.Add(branch);
+            var collapsed = Node("parent 1-1");
+            collapsed.Items.Add(Node("leaf"));
+            collapsed.IsExpanded = false;
+            parent.Items.Add(collapsed);
+            var second = Node("parent 2");
+            second.Items.Add(Node("leaf"));
+            var tree = new TreeView { Background = Brushes.Transparent, BorderThickness = new Thickness(0),
+                Padding = new Thickness(16), FontSize = 14 };
+            tree.Resources.MergedDictionaries.Add(resources);
+            tree.Items.Add(parent);
+            tree.Items.Add(second);
+            Layout(tree, new Size(380, 480));
+            multiline.IsSelected = true;
+            Layout(tree, new Size(380, 480));
+            Assert.Equal(Visibility.Visible, TreePart(branch, "BranchTail").Visibility);
+            Assert.Equal(Visibility.Collapsed, TreePart(last, "BranchTail").Visibility);
+            var singleHeader = Assert.IsType<Border>(leaf.Template.FindName("Header", leaf));
+            var multilineHeader = Assert.IsType<Border>(multiline.Template.FindName("Header", multiline));
+            Assert.True(multilineHeader.ActualHeight > singleHeader.ActualHeight);
+            Snapshot(tree, "nested-tree-reference");
+        });
+    }
+
+    private static FrameworkElement TreePart(TreeViewItem item, string name)
+        => Assert.IsAssignableFrom<FrameworkElement>(item.Template.FindName(name, item));
+
+    [Fact]
+    public void LayerVisibilityIcon_TogglesTheLayerAndReflectsExternalChanges()
+    {
+        RunOnSta(() =>
+        {
+            using var vm = CreateViewModel();
+            var line = AddLine(vm, 50);
+            vm.SelectedShape = line;
+            var control = new ImageViewerControl { DataContext = vm };
+            Layout(control);
+            var tree = Assert.IsType<TreeView>(control.FindName("LayerTree"));
+            var layer = vm.LayerGroups[0];
+            var toggle = Descendants<ToggleButton>(tree).Single(button =>
+                ReferenceEquals(button.DataContext, layer)
+                && BindingOperations.GetBinding(button, ToggleButton.IsCheckedProperty)?.Path.Path == "IsVisible");
+            Assert.IsNotType<CheckBox>(toggle);
+            var icon = Assert.IsType<System.Windows.Shapes.Path>(toggle.Template.FindName("VisibilityIcon", toggle));
+            Assert.True(toggle.IsChecked);
+            Assert.Same(control.Resources["SolidShow"], icon.Data);
+            Snapshot(tree, "layer-eye-visible");
+
+            var peer = new ToggleButtonAutomationPeer(toggle);
+            var provider = Assert.IsAssignableFrom<IToggleProvider>(peer.GetPattern(PatternInterface.Toggle));
+            provider.Toggle();
+            Layout(control);
+            Assert.False(layer.IsVisible);
+            Assert.False(vm.ShapeRepository.IsLayerVisible(layer.LayerId));
+            Assert.True(vm.ShapeRepository.IsLayerVisible(vm.LayerGroups[1].LayerId));
+            Assert.Empty(vm.SelectedShapes);
+            Assert.Same(control.Resources["SolidHide"], icon.Data);
+            Assert.Equal("显示图层", toggle.ToolTip);
+            Snapshot(tree, "layer-eye-hidden");
+
+            provider.Toggle();
+            Layout(control);
+            Assert.True(vm.ShapeRepository.IsLayerVisible(layer.LayerId));
+            Assert.Same(control.Resources["SolidShow"], icon.Data);
+            Assert.Equal("隐藏图层", toggle.ToolTip);
+
+            vm.ShapeRepository.SetLayerVisibility(layer.LayerId, false);
+            Layout(control);
+            Assert.False(toggle.IsChecked);
+            Assert.Same(control.Resources["SolidHide"], icon.Data);
+        });
+    }
+
     [Fact]
     public void CurrentLayerSelector_AssignsNewShapesAndReflectsViewModelChanges()
     {
@@ -188,7 +325,7 @@ public class LayerControlsTests
     }
 
     [Fact]
-    public void ShapeCheckboxes_ToggleSharedSelectionAndDisableLockedShapes()
+    public void ShapeSelectionMarkers_ToggleSharedSelectionAndDisableLockedShapes()
     {
         RunOnSta(() =>
         {
@@ -201,16 +338,16 @@ public class LayerControlsTests
             var tree = Assert.IsType<TreeView>(control.FindName("LayerTree"));
             Assert.IsType<TreeViewItem>(tree.ItemContainerGenerator.ContainerFromIndex(0)).IsExpanded = true;
             Layout(control);
-            var checkbox = Descendants<CheckBox>(tree).Single(x => ReferenceEquals(x.Tag, first));
-            Assert.True(checkbox.IsChecked);
-            checkbox.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            var marker = Descendants<ToggleButton>(tree).Single(x => ReferenceEquals(x.Tag, first));
+            Assert.True(marker.IsChecked);
+            marker.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
             Assert.Same(second, Assert.Single(vm.SelectedShapes));
-            Assert.False(checkbox.IsChecked);
-            checkbox.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            Assert.False(marker.IsChecked);
+            marker.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
             Assert.Equal(2, vm.SelectedShapes.Count);
-            Assert.True(checkbox.IsChecked);
+            Assert.True(marker.IsChecked);
             first.Lock();
-            Assert.False(checkbox.IsEnabled);
+            Assert.False(marker.IsEnabled);
         });
     }
 
@@ -321,7 +458,10 @@ public class LayerControlsTests
         Directory.CreateDirectory(directory);
         var bitmap = new RenderTargetBitmap((int)element.ActualWidth, (int)element.ActualHeight,
             96, 96, PixelFormats.Pbgra32);
-        bitmap.Render(element);
+        var visual = new DrawingVisual();
+        using (var drawing = visual.RenderOpen())
+            drawing.DrawRectangle(new VisualBrush(element), null, new Rect(element.RenderSize));
+        bitmap.Render(visual);
         var encoder = new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using var file = File.Create(Path.Combine(directory, name + ".png"));

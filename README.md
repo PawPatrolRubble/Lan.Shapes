@@ -8,6 +8,7 @@ A high-performance WPF image viewer and geometry sketching control. Built on `Dr
 - **Shape Support**: Rectangle, ellipse, line, polygon, circle, cross, and ruler cross shapes
 - **Custom Shapes**: Extensible architecture for custom geometry types
 - **Shape Groups**: Group shapes on one layer for persistent selection and movement; ungroup to edit members separately
+- **Geometry Properties**: Edit line endpoints/length, rectangle position/size, and circle center/radius in image coordinates
 - **Zoom & Pan**: Mouse wheel zoom, middle-button drag panning, and CTRL+left-drag panning
 - **Pixel Info**: Display RGB values at cursor position
 - **Scale Display**: Real-time zoom ratio display
@@ -130,6 +131,19 @@ Nested groups, group rotation/scaling, movement snapping, and undo/redo are not
 part of this version. Fixed-center circles and image-spanning ruler crosses
 cannot join movable groups. Fiber respects its `EnableTranslation` setting.
 Details and extension contracts: [`docs/shape-groups.md`](docs/shape-groups.md).
+
+Select one independent line, rectangle, or circle to edit its geometry in the
+property pane. Values use image coordinates in pixels and stay unchanged by
+viewport zoom or pan. Press **Enter**, or move focus outside a coordinate/size
+row, to apply that row; **Esc** restores its current values. Moving from X to Y
+inside the same row keeps the draft. Invalid input leaves the drawing unchanged.
+Changing selection discards the previous shape's uncommitted draft.
+
+Line length fixes the start point and direction. Rectangle position preserves
+width/height, and size fixes the geometric top-left corner. Circle position
+preserves radius, and radius fixes its center. Locked, grouped, or independently
+transformed shapes cannot use this first version of the geometry editor.
+Details and public shape-editing methods: [`docs/shape-geometry-editing.md`](docs/shape-geometry-editing.md).
 
 The layer pane provides **New**, **Save**, and **Save as**. New layers copy the
 current definition's full state styles and receive a unique ID; edited names must

@@ -9,6 +9,7 @@ using System.Windows.Media;
 using Lan.Shapes.Handle;
 using Lan.Shapes.Interfaces;
 using Lan.Shapes.Models;
+using Lan.Shapes.Utilities;
 
 namespace Lan.Shapes.Shapes
 {
@@ -64,6 +65,34 @@ namespace Lan.Shapes.Shapes
             }
         }
 
+        /// <summary>Atomically replaces the endpoints of a completed, unlocked line.</summary>
+        public void SetEndpoints(Point start, Point end)
+        {
+            GeometryEditValidation.EnsureEditable(this);
+            GeometryEditValidation.EnsureFinite(start, nameof(start));
+            GeometryEditValidation.EnsureFinite(end, nameof(end));
+            var direction = end - start;
+            var length = GeometryEditValidation.GetLength(direction);
+            if (!double.IsFinite(direction.X) || !double.IsFinite(direction.Y)
+                || !double.IsFinite(length) || length <= 0)
+                throw new ArgumentOutOfRangeException(nameof(end), "Endpoints must define a finite, nonzero length.");
+
+            var startChanged = _start != start;
+            var endChanged = _end != end;
+            if (!startChanged && !endChanged) return;
+
+            using (DeferVisualUpdates())
+            {
+                _start = start;
+                _end = end;
+                UpdateGeometry();
+                if (startChanged) OnPropertyChanged(nameof(Start));
+                if (endChanged) OnPropertyChanged(nameof(End));
+                OnPropertyChanged(nameof(BoundsRect));
+                OnPropertyChanged(nameof(SelectionBounds));
+            }
+        }
+
 
         public override Rect BoundsRect
         {
@@ -96,7 +125,7 @@ namespace Lan.Shapes.Shapes
 
             _leftDragHandle.GeometryCenter = Start;
             _rightDragHandle.GeometryCenter = End;
-            _panHandle.GeometryCenter = new Point((Start.X + End.X) / 2, (Start.Y + End.Y) / 2);
+            _panHandle.GeometryCenter = Start + (End - Start) / 2;
 
             RequestVisualUpdate();
         }
@@ -195,7 +224,7 @@ namespace Lan.Shapes.Shapes
         {
             var dx = End.X - Start.X;
             var dy = End.Y - Start.Y;
-            var length = Math.Sqrt(dx * dx + dy * dy);
+            var length = GeometryEditValidation.GetLength(new Vector(dx, dy));
             var angleFromHorizontal = Math.Atan2(Math.Abs(dy), Math.Abs(dx)) * 180 / Math.PI;
             var lengthInMm = 0.0;
             var measurement = ShapeLayer.Measurement;
@@ -208,7 +237,7 @@ namespace Lan.Shapes.Shapes
             DrawCachedText(renderContext,
                 $"{lengthInMm:f3} {measurement.UnitName}\n{angleFromHorizontal:0.##}°",
                 ShapeStyler?.TagColor ?? Brushes.Red,
-                new Point((Start.X + End.X) / 2, (Start.Y + End.Y) / 2));
+                Start + (End - Start) / 2);
         }
 
         #region Overrides of ShapeVisualBase

@@ -25,7 +25,13 @@
 
 
             </ResourceDictionary.MergedDictionaries>
+            <PathGeometry x:Key="SolidShow">M512 746.667c-325.675 0-423.552-282.325-424.448-285.184l-4.523-13.483 4.48-13.483c0.939-2.859 98.816-285.184 424.491-285.184s423.552 282.325 424.448 285.184l4.523 13.483-4.48 13.483c-0.939 2.859-98.816 285.184-424.491 285.184zM512 277.333c-94.123 0-170.667 76.544-170.667 170.667s76.544 170.667 170.667 170.667 170.667-76.544 170.667-170.667-76.544-170.667-170.667-170.667zM512 533.333c-46.251 0-85.333-39.083-85.333-85.333s39.083-85.333 85.333-85.333 85.333 39.083 85.333 85.333-39.083 85.333-85.333 85.333z</PathGeometry>
+            <PathGeometry x:Key="SolidHide">M344.448 439.723l-164.736 164.736c-64.853-70.699-89.429-141.525-89.856-142.976l-4.523-13.483 4.48-13.483c0.939-2.859 98.816-285.184 424.491-285.184 39.637 0 75.733 4.352 108.885 11.648l-117.163 117.163c-87.403 4.417-157.162 74.175-161.562 161.172l-0.016 0.406zM514.304 746.667c-79.147 0-144-17.237-198.059-42.581l-158.080 158.080-60.331-60.331 768-768 60.331 60.331-140.715 140.715c112.555 83.328 152.704 197.845 153.301 199.637l4.48 13.483-4.48 13.483c-0.939 2.859-98.773 285.184-424.448 285.184zM595.627 424.704c7.979 28.885 1.195 61.397-20.992 83.627s-54.741 28.971-83.627 20.992l-64.341 64.341c24.935 15.566 55.186 24.852 87.596 25.003h0.041c94.123 0 170.667-76.544 170.667-170.667-0.137-32.443-9.443-62.684-25.457-88.301l0.412 0.707-64.299 64.299z</PathGeometry>
+            <PathGeometry x:Key="MousePointer">M10.8601685,11.9953299l2.5251465,6.0802317L11.1703491,19l-2.5252075-6.050354L5,16.6248779V1.1005249  l10.9461327,10.8882742L10.8601685,11.9953299z</PathGeometry>
+            <PathGeometry x:Key="Crosshair2">M7.5 0C7.77614 0 8 0.223858 8 0.5V1.80687C10.6922 2.0935 12.8167 4.28012 13.0068 7H14.5C14.7761 7 15 7.22386 15 7.5C15 7.77614 14.7761 8 14.5 8H12.9888C12.7094 10.6244 10.6244 12.7094 8 12.9888V14.5C8 14.7761 7.77614 15 7.5 15C7.22386 15 7 14.7761 7 14.5V13.0068C4.28012 12.8167 2.0935 10.6922 1.80687 8H0.5C0.223858 8 0 7.77614 0 7.5C0 7.22386 0.223858 7 0.5 7H1.78886C1.98376 4.21166 4.21166 1.98376 7 1.78886V0.5C7 0.223858 7.22386 0 7.5 0ZM8 12.0322V9.5C8 9.22386 7.77614 9 7.5 9C7.22386 9 7 9.22386 7 9.5V12.054C4.80517 11.8689 3.04222 10.1668 2.76344 8H5.5C5.77614 8 6 7.77614 6 7.5C6 7.22386 5.77614 7 5.5 7H2.7417C2.93252 4.73662 4.73662 2.93252 7 2.7417V5.5C7 5.77614 7.22386 6 7.5 6C7.77614 6 8 5.77614 8 5.5V2.76344C10.1668 3.04222 11.8689 4.80517 12.054 7H9.5C9.22386 7 9 7.22386 9 7.5C9 7.77614 9.22386 8 9.5 8H12.0322C11.7621 10.0991 10.0991 11.7621 8 12.0322Z</PathGeometry>
 
+            <PathGeometry x:Key="PanelRightClose">M185.625 914.4166666666669C137.875 905.5416666666666 100.5833333333333 870.4166666666667 86.6666666666667 821.25C84.4583333333333 813.4583333333334 84.375 800.0416666666666 84.375 500C84.375 199.9583333333334 84.4583333333333 186.5416666666668 86.6666666666667 178.75C99.7916666666667 132.25 132.25 99.7916666666667 178.75 86.6666666666666C186.5416666666667 84.4583333333334 199.9583333333334 84.375 500 84.375C800.0416666666666 84.375 813.4583333333333 84.4583333333334 821.25 86.6666666666666C867.75 99.7916666666667 900.2083333333333 132.25 913.3333333333334 178.75C915.5416666666666 186.5416666666668 915.625 199.9583333333334 915.625 500C915.625 800.0416666666666 915.5416666666666 813.4583333333334 913.3333333333334 821.25C900.4166666666666 867 868.25 899.625 823.1249999999999 912.7083333333334L813.125 915.625L503.7499999999999 915.8333333333334C254.5833333333334 916 192.6666666666666 915.7083333333334 185.625 914.4166666666669M583.75 500L583.75 166.25L395.7916666666667 166.25C273.625 166.25 205.5 166.7083333333335 201.125 167.5416666666668C187.4166666666667 170.125 176.375 178.7916666666668 170.4166666666667 191.7083333333334L166.875 199.375L166.875 500L166.875 800.625L170.375 808.125C176.625 821.4583333333334 188.2916666666667 830.5416666666666 201.875 832.5C205.2916666666666 833.0416666666667 292.625 833.5 395.9166666666667 833.5833333333334L583.75 833.75L583.75 500M808.2916666666666 829.5833333333334C817.7916666666666 825.2083333333334 825.0833333333333 817.875 829.625 808.125L833.125 800.625L833.125 500L833.125 199.375L829.5833333333333 191.7083333333334C823.6249999999999 178.7916666666668 812.5833333333333 170.125 798.8749999999999 167.5416666666668C794.875 166.75 766.6666666666665 166.25 729.2083333333334 166.25L666.25 166.25L666.25 500.0833333333334L666.25 833.9166666666666L733.4166666666666 833.5L800.625 833.125L808.2916666666666 829.5833333333334M319.7083333333333 664.375C296.7916666666667 655.9583333333334 285.5416666666667 629.8333333333333 295.4583333333333 608.125C298.4583333333333 601.5416666666667 305.0416666666667 594.4583333333333 349.0833333333333 550.2916666666667L399.2916666666667 500L349.0833333333333 449.7083333333334C291.9583333333333 392.4583333333334 292.0416666666667 392.5416666666667 292.0416666666667 375C292.0416666666667 363 296 353.75 304.9166666666667 345.0833333333334C316.25 334.0416666666667 332.8333333333333 330.7083333333334 348.375 336.375C355.2083333333333 338.875 359.5 342.9166666666668 424.125 407.3333333333334C501.8749999999999 484.9166666666667 499.3749999999999 481.7916666666667 499.3749999999999 500C499.3749999999999 518.2083333333333 501.9166666666666 515.0833333333334 424.125 592.6666666666667C359.5833333333334 657 355.2083333333333 661.0833333333333 348.375 663.5833333333334C340 666.6666666666667 326.9583333333333 667.0416666666667 319.7083333333333 664.375</PathGeometry>
+            <PathGeometry x:Key="PanelRightOpen">M185.625 914.4166666666669C137.875 905.5416666666666 100.5833333333333 870.4166666666667 86.6666666666667 821.25C84.4583333333333 813.4583333333334 84.375 800.0416666666666 84.375 500C84.375 199.9583333333334 84.4583333333333 186.5416666666668 86.6666666666667 178.75C99.7916666666667 132.25 132.25 99.7916666666667 178.75 86.6666666666666C186.5416666666667 84.4583333333334 199.9583333333334 84.375 500 84.375C800.0416666666666 84.375 813.4583333333333 84.4583333333334 821.25 86.6666666666666C867.75 99.7916666666667 900.2083333333333 132.25 913.3333333333334 178.75C915.5416666666666 186.5416666666668 915.625 199.9583333333334 915.625 500C915.625 800.0416666666666 915.5416666666666 813.4583333333334 913.3333333333334 821.25C900.4166666666666 867 868.25 899.625 823.1249999999999 912.7083333333334L813.125 915.625L503.7499999999999 915.8333333333334C254.5833333333334 916 192.6666666666666 915.7083333333334 185.625 914.4166666666669M583.75 500L583.75 166.25L395.7916666666667 166.25C273.625 166.25 205.5 166.7083333333335 201.125 167.5416666666668C187.4166666666667 170.125 176.375 178.7916666666668 170.4166666666667 191.7083333333334L166.875 199.375L166.875 500L166.875 800.625L170.375 808.125C176.625 821.4583333333334 188.2916666666667 830.5416666666666 201.875 832.5C205.2916666666666 833.0416666666667 292.625 833.5 395.9166666666667 833.5833333333334L583.75 833.75L583.75 500M808.2916666666666 829.5833333333334C817.7916666666666 825.2083333333334 825.0833333333333 817.875 829.625 808.125L833.125 800.625L833.125 500L833.125 199.375L829.5833333333333 191.7083333333334C823.6249999999999 178.7916666666668 812.5833333333333 170.125 798.8749999999999 167.5416666666668C794.875 166.75 766.6666666666665 166.25 729.2083333333334 166.25L666.25 166.25L666.25 500.0833333333334L666.25 833.9166666666666L733.4166666666666 833.5L800.625 833.125L808.2916666666666 829.5833333333334M401.25 663.5833333333334C395 661.2083333333334 388.25 654.875 325.875 592.6666666666667C248.0833333333333 515.0833333333334 250.625 518.2083333333333 250.625 500C250.625 481.7916666666667 248.125 484.9166666666667 325.875 407.3333333333334C390.5 342.9166666666668 394.7916666666667 338.875 401.625 336.375C417.1666666666667 330.7083333333334 433.75 334.0416666666667 445.0833333333333 345.0833333333334C454 353.75 457.9583333333333 363 457.9583333333333 375C457.9583333333333 392.5416666666667 458.0416666666666 392.4583333333334 400.9166666666667 449.7083333333334L350.7083333333333 500L400.9166666666667 550.2916666666667C458.0416666666666 607.5416666666667 457.9583333333333 607.4583333333334 457.9583333333333 625C457.9583333333333 632.4583333333334 457.2916666666666 635.8333333333334 454.7083333333333 641.5C450.7499999999999 650.125 442.7083333333333 658.4583333333334 434.3333333333333 662.5416666666667C425.5833333333333 666.8333333333333 410.875 667.2916666666667 401.25 663.5833333333334</PathGeometry>
             <!--<xamlFlair:Offset x:Key="PositiveOffset" OffsetValue="20" />
             <xamlFlair:Offset x:Key="NegativeOffset" OffsetValue="-50" />
 
@@ -49,10 +55,115 @@
             <Style BasedOn="{StaticResource DarkComboBoxItemStyle}" TargetType="ComboBoxItem">
                 <Setter Property="ContentTemplate" Value="{StaticResource DarkComboBoxTextTemplate}" />
             </Style>
-            <Style
-                x:Key="ShapeSelectionCheckBoxStyle"
-                BasedOn="{StaticResource DarkPropertyCheckBoxStyle}"
-                TargetType="CheckBox">
+            <Style x:Key="LayerVisibilityToggleStyle" TargetType="ToggleButton">
+                <Setter Property="Width" Value="24" />
+                <Setter Property="Height" Value="24" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{StaticResource DarkPanel.LabelForeground}" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="ToolTip" Value="显示图层" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border
+                                x:Name="VisibilityButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="Transparent"
+                                BorderThickness="1"
+                                CornerRadius="4">
+                                <Path
+                                    x:Name="VisibilityIcon"
+                                    Width="16"
+                                    Height="16"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Data="{StaticResource SolidHide}"
+                                    Fill="{TemplateBinding Foreground}"
+                                    Stretch="Uniform" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="VisibilityIcon" Property="Data" Value="{StaticResource SolidShow}" />
+                                    <Setter Property="Foreground" Value="{StaticResource DarkPanel.ValueForeground}" />
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="VisibilityButtonBorder" Property="Background" Value="{StaticResource DarkPanel.ItemHover}" />
+                                    <Setter Property="Foreground" Value="{StaticResource DarkPanel.Accent}" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="VisibilityButtonBorder" Property="Background" Value="{StaticResource DarkPanel.ItemSelected}" />
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter TargetName="VisibilityButtonBorder" Property="BorderBrush" Value="{StaticResource DarkPanel.Accent}" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.42" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <Trigger Property="IsChecked" Value="True">
+                        <Setter Property="ToolTip" Value="隐藏图层" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="ShapeSelectionMarkerStyle" TargetType="ToggleButton">
+                <Setter Property="Width" Value="20" />
+                <Setter Property="Height" Value="20" />
+                <Setter Property="Margin" Value="0,0,4,0" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Focusable" Value="True" />
+                <Setter Property="ToolTip" Value="加入或移出选择" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border
+                                x:Name="FocusRing"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="1"
+                                CornerRadius="4">
+                                <Grid Margin="2">
+                                    <Path
+                                        x:Name="SelectionHandles"
+                                        Data="M5,1 H1 V5 M11,1 H15 V5 M15,11 V15 H11 M5,15 H1 V11"
+                                        Stretch="Fill"
+                                        Stroke="#85858F"
+                                        StrokeEndLineCap="Square"
+                                        StrokeStartLineCap="Square"
+                                        StrokeThickness="1.5" />
+                                    <Ellipse
+                                        x:Name="SelectedMark"
+                                        Width="4"
+                                        Height="4"
+                                        Fill="{StaticResource DarkPanel.Accent}"
+                                        Visibility="Collapsed" />
+                                </Grid>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="SelectionHandles" Property="Stroke" Value="{StaticResource DarkPanel.Accent}" />
+                                    <Setter TargetName="SelectedMark" Property="Visibility" Value="Visible" />
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="FocusRing" Property="Background" Value="#252529" />
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter TargetName="FocusRing" Property="BorderBrush" Value="{StaticResource DarkPanel.Accent}" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.42" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding IsLocked}" Value="True">
                         <Setter Property="IsEnabled" Value="False" />
@@ -69,7 +180,7 @@
     </UserControl.Resources>
 
 
-    <Grid>
+    <Grid ClipToBounds="True">
 
 
         <local:ImageViewer
@@ -122,9 +233,16 @@
                     <Button
                         Margin="2,0,4,0"
                         Command="{Binding SelectionModeCommand}"
-                        Content="选择"
                         Style="{StaticResource DarkButtonStyle}"
-                        ToolTip="选择图形；Ctrl 多选，空白处拖动框选，中键平移" />
+                        ToolTip="选择图形；Ctrl 多选，空白处拖动框选，中键平移">
+                        <Path
+                            Width="16"
+                            Height="16"
+                            Data="{StaticResource MousePointer}"
+                            Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                            Stretch="Uniform" />
+                    </Button>
+
                     <!--  Geometry Drawing Tools  -->
                     <ItemsControl
                         x:Name="Tools"
@@ -188,6 +306,8 @@
                             <ComboBoxItem Content="Horizontal" Tag="{x:Static shapeEnums:LineDirectionMode.Horizontal}" />
                             <ComboBoxItem Content="Vertical" Tag="{x:Static shapeEnums:LineDirectionMode.Vertical}" />
                         </ComboBox>
+
+
                     </StackPanel>
 
                     <!--  Divider between tools and action buttons  -->
@@ -237,24 +357,38 @@
                         <Path
                             Width="16"
                             Height="16"
-                            Data="{StaticResource Crosshair}"
+                            Data="{StaticResource Crosshair2}"
                             Fill="{Binding RelativeSource={RelativeSource AncestorType=ToggleButton}, Path=Foreground}"
                             Stretch="Uniform" />
                     </ToggleButton>
 
-                    <!--  Gear Icon ToggleButton (Show / Hide Properties Panel)  -->
+                    <!--  Open / Close Properties Panel  -->
                     <ToggleButton
                         x:Name="BtnToggleProperties"
                         Margin="2,0"
+                        AutomationProperties.Name="显示/隐藏属性面板"
+                        Checked="PropertyPanelToggle_Changed"
                         IsChecked="{Binding ShowSimpleCanvas, Mode=TwoWay, Converter={StaticResource BooleanInverseConverter}}"
                         Style="{StaticResource DarkIconButtonToggleStyle}"
-                        ToolTip="显示/隐藏属性面板">
+                        ToolTip="显示/隐藏属性面板"
+                        Unchecked="PropertyPanelToggle_Changed">
                         <Path
+                            x:Name="PropertiesPanelIcon"
                             Width="16"
                             Height="16"
-                            Data="{StaticResource Gear}"
                             Fill="{Binding RelativeSource={RelativeSource AncestorType=ToggleButton}, Path=Foreground}"
-                            Stretch="Uniform" />
+                            Stretch="Uniform">
+                            <Path.Style>
+                                <Style TargetType="Path">
+                                    <Setter Property="Data" Value="{StaticResource PanelRightOpen}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                            <Setter Property="Data" Value="{StaticResource PanelRightClose}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Path.Style>
+                        </Path>
                     </ToggleButton>
 
                     <!--  Save canvas contents (image + geometries)  -->
@@ -292,7 +426,10 @@
                 BorderThickness="1"
                 CornerRadius="5"
                 SnapsToDevicePixels="True"
-                Visibility="{Binding ShowSimpleCanvas, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
+                Visibility="Collapsed">
+                <Border.RenderTransform>
+                    <TranslateTransform x:Name="LayerPanelSlideTransform" />
+                </Border.RenderTransform>
                 <Border.Effect>
                     <DropShadowEffect
                         BlurRadius="12"
@@ -306,7 +443,7 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
@@ -359,72 +496,100 @@
                         <TreeView
                             x:Name="LayerTree"
                             Grid.Row="1"
-                            MinHeight="100"
-                            MaxHeight="220"
+                            MinHeight="200"
                             Margin="0,0,0,6"
-                            Background="#1A1A1C"
+                            Padding="6"
+                            Background="{StaticResource DarkTree.Background}"
                             BorderBrush="#333338"
+                            BorderThickness="0"
+                            FontSize="12"
                             Foreground="#EEEEEE"
                             ItemsSource="{Binding LayerGroups}"
                             PreviewKeyDown="LayerTree_PreviewKeyDown"
                             PreviewMouseLeftButtonDown="LayerTree_PreviewMouseLeftButtonDown"
-                            SelectedItemChanged="LayerTree_SelectedItemChanged">
+                            SelectedItemChanged="LayerTree_SelectedItemChanged"
+                            TextElement.FontSize="12">
                             <TreeView.Resources>
                                 <Style BasedOn="{StaticResource DarkTreeViewItemStyle}" TargetType="TreeViewItem">
+                                    <Setter Property="FontSize" Value="12" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource DarkPanel.ItemSelected}" />
+                                            <Setter Property="Background" Value="{StaticResource DarkTree.Selected}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </TreeView.Resources>
                             <TreeView.ItemTemplate>
                                 <HierarchicalDataTemplate ItemsSource="{Binding Shapes}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <CheckBox
-                                            VerticalAlignment="Center"
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <ToggleButton
+                                            AutomationProperties.HelpText="显示或隐藏此图层的所有图形"
+                                            AutomationProperties.Name="{Binding Name, StringFormat='切换图层 {0} 的显示状态'}"
                                             IsChecked="{Binding IsVisible, Mode=TwoWay}"
-                                            Style="{StaticResource DarkPropertyCheckBoxStyle}"
-                                            ToolTip="显示或隐藏此图层的所有图形" />
+                                            Style="{StaticResource LayerVisibilityToggleStyle}" />
                                         <TextBlock
+                                            Grid.Column="1"
                                             MaxWidth="95"
                                             Margin="5,0"
                                             VerticalAlignment="Center"
+                                            FontSize="12"
                                             Foreground="{StaticResource DarkPanel.ValueForeground}"
                                             Text="{Binding Name}"
                                             TextTrimming="CharacterEllipsis"
                                             ToolTip="{Binding Name}" />
                                         <Button
+                                            Grid.Column="2"
                                             Margin="4,0,0,0"
                                             Padding="4,0"
                                             Click="EditLayer_Click"
                                             Content="编辑"
+                                            FontSize="10"
                                             IsEnabled="{Binding CanEdit}"
                                             Style="{StaticResource DarkButtonStyle}"
                                             ToolTip="编辑图层样式" />
                                         <Button
+                                            Grid.Column="3"
                                             Margin="4,0,0,0"
                                             Padding="4,0"
                                             Click="SelectLayerShapes_Click"
                                             Content="选择"
+                                            FontSize="10"
                                             Style="{StaticResource DarkButtonStyle}"
                                             ToolTip="选中此图层中可见、未锁定的图形" />
-                                    </StackPanel>
+                                    </Grid>
                                     <HierarchicalDataTemplate.ItemTemplate>
                                         <DataTemplate>
-                                            <StackPanel Orientation="Horizontal">
-                                                <CheckBox
-                                                    VerticalAlignment="Center"
+                                            <Grid x:Name="ShapeRow" Margin="1">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <ToggleButton
+                                                    Grid.Column="0"
                                                     Click="ShapeSelection_Click"
                                                     IsChecked="{Binding IsSelected, Mode=OneWay}"
-                                                    Style="{StaticResource ShapeSelectionCheckBoxStyle}"
-                                                    Tag="{Binding}"
-                                                    ToolTip="加入或移出选择" />
+                                                    Style="{StaticResource ShapeSelectionMarkerStyle}"
+                                                    Tag="{Binding}" />
                                                 <TextBlock
-                                                    Margin="4,2"
+                                                    x:Name="ShapeLabel"
+                                                    Grid.Column="1"
+                                                    Margin="1,2"
+                                                    FontSize="12"
                                                     Foreground="{StaticResource DarkPanel.ValueForeground}"
                                                     Text="{Binding GeometryType}" />
-                                            </StackPanel>
+                                            </Grid>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter TargetName="ShapeLabel" Property="Foreground" Value="#F7FAFC" />
+                                                    <Setter TargetName="ShapeLabel" Property="FontWeight" Value="SemiBold" />
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
                                         </DataTemplate>
                                     </HierarchicalDataTemplate.ItemTemplate>
                                 </HierarchicalDataTemplate>
@@ -453,8 +618,8 @@
                                     <ComboBox
                                         x:Name="AssignedLayerSelector"
                                         Margin="0,4,0,5"
-                                        AutomationProperties.Name="所选图形所属图层"
                                         HorizontalAlignment="Stretch"
+                                        AutomationProperties.Name="所选图形所属图层"
                                         ItemsSource="{Binding Layers}"
                                         SelectedItem="{Binding TargetShapeLayer, Mode=TwoWay}"
                                         Style="{StaticResource DarkComboBoxStyle}">

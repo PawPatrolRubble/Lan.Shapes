@@ -172,6 +172,7 @@ namespace Lan.SketchBoard
                 var localDelta = matrix.Transform(delta);
                 if (!IsFinite(localDelta.X) || !IsFinite(localDelta.Y))
                     throw new ArgumentException("Every shape must have a finite local displacement.", nameof(shapes));
+                shape.ValidateTranslation(localDelta);
                 displacements.Add(shape, localDelta);
             }
             if (delta.X == 0 && delta.Y == 0) return 0;
