@@ -20,6 +20,9 @@
     <SolidColorBrush x:Key="DarkPanel.Accent" Color="#389BFF" />
     <SolidColorBrush x:Key="DarkPanel.ItemHover" Color="#2E2E34" />
     <SolidColorBrush x:Key="DarkPanel.ItemSelected" Color="#0E639C" />
+    <SolidColorBrush x:Key="DarkPanel.ScrollThumb" Color="#55555E" />
+    <SolidColorBrush x:Key="DarkPanel.ScrollThumbHover" Color="#777781" />
+    <SolidColorBrush x:Key="DarkPanel.ScrollThumbDragging" Color="#93939D" />
 
     <!--  Dark Card Border Style  -->
     <Style x:Key="DarkPropertyCardStyle" TargetType="Border">
