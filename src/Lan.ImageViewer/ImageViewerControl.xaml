@@ -22,11 +22,10 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/Lan.ImageViewer;component/Style.xaml" />
                 <ResourceDictionary Source="/Lan.ImageViewer;component/Geometries.xaml" />
+                <ResourceDictionary Source="/Lan.ImageViewer;component/LayerPanelTheme.xaml" />
 
 
             </ResourceDictionary.MergedDictionaries>
-            <PathGeometry x:Key="SolidShow">M512 746.667c-325.675 0-423.552-282.325-424.448-285.184l-4.523-13.483 4.48-13.483c0.939-2.859 98.816-285.184 424.491-285.184s423.552 282.325 424.448 285.184l4.523 13.483-4.48 13.483c-0.939 2.859-98.816 285.184-424.491 285.184zM512 277.333c-94.123 0-170.667 76.544-170.667 170.667s76.544 170.667 170.667 170.667 170.667-76.544 170.667-170.667-76.544-170.667-170.667-170.667zM512 533.333c-46.251 0-85.333-39.083-85.333-85.333s39.083-85.333 85.333-85.333 85.333 39.083 85.333 85.333-39.083 85.333-85.333 85.333z</PathGeometry>
-            <PathGeometry x:Key="SolidHide">M344.448 439.723l-164.736 164.736c-64.853-70.699-89.429-141.525-89.856-142.976l-4.523-13.483 4.48-13.483c0.939-2.859 98.816-285.184 424.491-285.184 39.637 0 75.733 4.352 108.885 11.648l-117.163 117.163c-87.403 4.417-157.162 74.175-161.562 161.172l-0.016 0.406zM514.304 746.667c-79.147 0-144-17.237-198.059-42.581l-158.080 158.080-60.331-60.331 768-768 60.331 60.331-140.715 140.715c112.555 83.328 152.704 197.845 153.301 199.637l4.48 13.483-4.48 13.483c-0.939 2.859-98.773 285.184-424.448 285.184zM595.627 424.704c7.979 28.885 1.195 61.397-20.992 83.627s-54.741 28.971-83.627 20.992l-64.341 64.341c24.935 15.566 55.186 24.852 87.596 25.003h0.041c94.123 0 170.667-76.544 170.667-170.667-0.137-32.443-9.443-62.684-25.457-88.301l0.412 0.707-64.299 64.299z</PathGeometry>
             <PathGeometry x:Key="MousePointer">M10.8601685,11.9953299l2.5251465,6.0802317L11.1703491,19l-2.5252075-6.050354L5,16.6248779V1.1005249  l10.9461327,10.8882742L10.8601685,11.9953299z</PathGeometry>
             <PathGeometry x:Key="Crosshair2">M7.5 0C7.77614 0 8 0.223858 8 0.5V1.80687C10.6922 2.0935 12.8167 4.28012 13.0068 7H14.5C14.7761 7 15 7.22386 15 7.5C15 7.77614 14.7761 8 14.5 8H12.9888C12.7094 10.6244 10.6244 12.7094 8 12.9888V14.5C8 14.7761 7.77614 15 7.5 15C7.22386 15 7 14.7761 7 14.5V13.0068C4.28012 12.8167 2.0935 10.6922 1.80687 8H0.5C0.223858 8 0 7.77614 0 7.5C0 7.22386 0.223858 7 0.5 7H1.78886C1.98376 4.21166 4.21166 1.98376 7 1.78886V0.5C7 0.223858 7.22386 0 7.5 0ZM8 12.0322V9.5C8 9.22386 7.77614 9 7.5 9C7.22386 9 7 9.22386 7 9.5V12.054C4.80517 11.8689 3.04222 10.1668 2.76344 8H5.5C5.77614 8 6 7.77614 6 7.5C6 7.22386 5.77614 7 5.5 7H2.7417C2.93252 4.73662 4.73662 2.93252 7 2.7417V5.5C7 5.77614 7.22386 6 7.5 6C7.77614 6 8 5.77614 8 5.5V2.76344C10.1668 3.04222 11.8689 4.80517 12.054 7H9.5C9.22386 7 9 7.22386 9 7.5C9 7.77614 9.22386 8 9.5 8H12.0322C11.7621 10.0991 10.0991 11.7621 8 12.0322Z</PathGeometry>
 
@@ -416,13 +415,13 @@
             <Border
                 x:Name="LayerPanel"
                 Grid.Row="1"
-                Width="260"
+                Width="360"
                 MaxHeight="{Binding ActualHeight, ElementName=Root, Converter={StaticResource AvailablePanelHeightConverter}}"
                 Margin="0,6,0,0"
-                Padding="8"
+                Padding="0"
                 HorizontalAlignment="Right"
-                Background="{StaticResource DarkPanel.Background}"
-                BorderBrush="{StaticResource DarkPanel.Border}"
+                Background="{StaticResource LayerPanel.Background}"
+                BorderBrush="{StaticResource LayerPanel.Border}"
                 BorderThickness="1"
                 CornerRadius="5"
                 SnapsToDevicePixels="True"
@@ -443,87 +442,145 @@
                 </Border.Effect>
 
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                    <Grid>
+                    <Grid MinHeight="560">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <StackPanel Grid.Row="0" Margin="2,2,2,6">
-                            <DockPanel>
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    FontWeight="SemiBold"
-                                    Foreground="{StaticResource DarkPanel.HeaderForeground}"
-                                    Text="图层与图形" />
-                                <Border
-                                    Padding="6,1"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    Background="#333338"
-                                    CornerRadius="8">
+                        <Border
+                            Grid.Row="0"
+                            Padding="12"
+                            Background="{StaticResource LayerPanel.Section}"
+                            BorderBrush="{StaticResource LayerPanel.Border}"
+                            BorderThickness="0,0,0,1">
+                            <StackPanel>
+                                <DockPanel>
                                     <TextBlock
-                                        FontSize="11"
-                                        Foreground="#AAAAAA"
-                                        Text="{Binding Shapes.Count, StringFormat='{}{0}'}" />
+                                        VerticalAlignment="Center"
+                                        DockPanel.Dock="Right"
+                                        FontFamily="{StaticResource LayerPanel.MonoFont}"
+                                        FontSize="10"
+                                        Foreground="{StaticResource LayerPanel.Muted}"
+                                        Text="CAD Tree" />
+                                    <Path
+                                        Width="14"
+                                        Height="16"
+                                        Margin="0,0,8,0"
+                                        VerticalAlignment="Center"
+                                        Data="{StaticResource LayerPanel.LayersIcon}"
+                                        Fill="{StaticResource LayerPanel.Cyan}"
+                                        Stretch="Uniform" />
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontSize="14"
+                                        FontWeight="SemiBold"
+                                        Foreground="{StaticResource LayerPanel.Text}"
+                                        Text="图层与图形" />
+                                    <Border
+                                        Margin="8,0,0,0"
+                                        Padding="6,0"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Background="{StaticResource LayerPanel.Border}"
+                                        CornerRadius="8">
+                                        <TextBlock
+                                            FontSize="11"
+                                            Foreground="{StaticResource LayerPanel.Cyan}"
+                                            Text="{Binding Shapes.Count, StringFormat='{}{0}'}" />
+                                    </Border>
+                                </DockPanel>
+                                <UniformGrid Margin="0,10,0,0" Columns="3">
+                                    <Button
+                                        Margin="0,0,5,0"
+                                        AutomationProperties.Name="新增图层"
+                                        Click="NewLayer_Click"
+                                        Content="新增"
+                                        Style="{StaticResource LayerPanelIconButtonStyle}"
+                                        Tag="{StaticResource LayerPanel.AddIcon}" />
+                                    <Button
+                                        Margin="0,0,5,0"
+                                        AutomationProperties.Name="保存图层配置"
+                                        Click="SaveLayers_Click"
+                                        Content="保存"
+                                        Style="{StaticResource LayerPanelIconButtonStyle}"
+                                        Tag="{StaticResource Save}" />
+                                    <Button
+                                        AutomationProperties.Name="图层配置另存为"
+                                        Click="SaveLayersAs_Click"
+                                        Content="另存为"
+                                        Style="{StaticResource LayerPanelIconButtonStyle}"
+                                        Tag="{StaticResource LayerPanel.SaveAsIcon}" />
+                                </UniformGrid>
+                                <Border
+                                    Margin="0,10,0,0"
+                                    Padding="8,5"
+                                    Background="{StaticResource LayerPanel.Background}"
+                                    BorderBrush="{StaticResource LayerPanel.Border}"
+                                    BorderThickness="1"
+                                    CornerRadius="4">
+                                    <DockPanel>
+                                        <StackPanel
+                                            Margin="8,0,0,0"
+                                            DockPanel.Dock="Right"
+                                            Orientation="Horizontal">
+                                            <StackPanel.Style>
+                                                <Style TargetType="StackPanel">
+                                                    <Setter Property="TextElement.Foreground" Value="{StaticResource LayerPanel.Amber}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding LayerConfigurationStatus, Converter={StaticResource LayerConfigurationSaveStateConverter}, ConverterParameter=IsSaved}" Value="True">
+                                                            <Setter Property="TextElement.Foreground" Value="{StaticResource LayerPanel.Green}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </StackPanel.Style>
+                                            <Path
+                                                Width="10"
+                                                Height="10"
+                                                Margin="0,0,4,0"
+                                                VerticalAlignment="Center"
+                                                Data="{StaticResource LayerPanel.CheckIcon}"
+                                                Fill="{Binding Path=(TextElement.Foreground), RelativeSource={RelativeSource AncestorType=StackPanel}}"
+                                                Stretch="Uniform" />
+                                            <TextBlock
+                                                FontSize="10"
+                                                Foreground="{Binding Path=(TextElement.Foreground), RelativeSource={RelativeSource AncestorType=StackPanel}}"
+                                                Text="{Binding LayerConfigurationStatus, Converter={StaticResource LayerConfigurationSaveStateConverter}}" />
+                                        </StackPanel>
+                                        <TextBlock
+                                            x:Name="LayerConfigurationFileText"
+                                            FontFamily="{StaticResource LayerPanel.MonoFont}"
+                                            FontSize="11"
+                                            Foreground="{StaticResource LayerPanel.Muted}"
+                                            Text="{Binding LayerConfigurationPath, Converter={StaticResource LayerConfigurationFileNameConverter}}"
+                                            TextTrimming="CharacterEllipsis"
+                                            ToolTip="{Binding LayerConfigurationPath}" />
+                                    </DockPanel>
                                 </Border>
-                            </DockPanel>
-                            <WrapPanel Margin="0,6,0,0">
-                                <Button
-                                    Margin="0,0,5,0"
-                                    Click="NewLayer_Click"
-                                    Content="新增"
-                                    Style="{StaticResource DarkButtonStyle}" />
-                                <Button
-                                    Margin="0,0,5,0"
-                                    Click="SaveLayers_Click"
-                                    Content="保存"
-                                    Style="{StaticResource DarkButtonStyle}" />
-                                <Button
-                                    Click="SaveLayersAs_Click"
-                                    Content="另存为"
-                                    Style="{StaticResource DarkButtonStyle}" />
-                            </WrapPanel>
-                            <TextBlock
-                                Margin="0,4,0,0"
-                                FontSize="11"
-                                Foreground="{StaticResource DarkPanel.LabelForeground}"
-                                Text="{Binding LayerConfigurationStatus}"
-                                TextTrimming="CharacterEllipsis"
-                                ToolTip="{Binding LayerConfigurationPath}" />
-                        </StackPanel>
+                            </StackPanel>
+                        </Border>
 
                         <TreeView
                             x:Name="LayerTree"
                             Grid.Row="1"
-                            MinHeight="200"
-                            Margin="0,0,0,6"
-                            Padding="6"
-                            Background="{StaticResource DarkTree.Background}"
-                            BorderBrush="#333338"
+                            MinHeight="360"
+                            Margin="0"
+                            Padding="8,10"
+                            Background="{StaticResource LayerPanel.Background}"
+                            BorderBrush="{StaticResource LayerPanel.Border}"
                             BorderThickness="0"
                             FontSize="12"
                             Foreground="#EEEEEE"
+                            ItemContainerStyle="{StaticResource LayerPanelLayerItemStyle}"
                             ItemsSource="{Binding LayerGroups}"
                             PreviewKeyDown="LayerTree_PreviewKeyDown"
                             PreviewMouseLeftButtonDown="LayerTree_PreviewMouseLeftButtonDown"
                             SelectedItemChanged="LayerTree_SelectedItemChanged"
                             TextElement.FontSize="12">
-                            <TreeView.Resources>
-                                <Style BasedOn="{StaticResource DarkTreeViewItemStyle}" TargetType="TreeViewItem">
-                                    <Setter Property="FontSize" Value="12" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource DarkTree.Selected}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TreeView.Resources>
                             <TreeView.ItemTemplate>
-                                <HierarchicalDataTemplate ItemsSource="{Binding Shapes}">
+                                <HierarchicalDataTemplate ItemContainerStyle="{StaticResource LayerPanelShapeItemStyle}" ItemsSource="{Binding Shapes}">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
@@ -535,17 +592,50 @@
                                             AutomationProperties.HelpText="显示或隐藏此图层的所有图形"
                                             AutomationProperties.Name="{Binding Name, StringFormat='切换图层 {0} 的显示状态'}"
                                             IsChecked="{Binding IsVisible, Mode=TwoWay}"
-                                            Style="{StaticResource LayerVisibilityToggleStyle}" />
-                                        <TextBlock
+                                            Style="{StaticResource LayerPanelVisibilityStyle}" />
+                                        <Grid
                                             Grid.Column="1"
-                                            MaxWidth="95"
-                                            Margin="5,0"
-                                            VerticalAlignment="Center"
-                                            FontSize="12"
-                                            Foreground="{StaticResource DarkPanel.ValueForeground}"
-                                            Text="{Binding Name}"
-                                            TextTrimming="CharacterEllipsis"
-                                            ToolTip="{Binding Name}" />
+                                            Margin="4,0"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Ellipse
+                                                Width="8"
+                                                Height="8"
+                                                Margin="0,0,7,0"
+                                                Fill="{Binding Color}" />
+                                            <TextBlock
+                                                x:Name="LayerName"
+                                                Grid.Column="1"
+                                                MaxWidth="120"
+                                                AutomationProperties.HelpText="双击设为当前图层"
+                                                Cursor="Hand"
+                                                FontFamily="{StaticResource LayerPanel.MonoFont}"
+                                                FontSize="12"
+                                                Foreground="{StaticResource LayerPanel.Text}"
+                                                MouseLeftButtonDown="LayerName_MouseLeftButtonDown"
+                                                Text="{Binding Name}"
+                                                TextTrimming="CharacterEllipsis"
+                                                ToolTip="{Binding Name}" />
+                                            <Border
+                                                Grid.Column="2"
+                                                Margin="5,0,0,0"
+                                                Padding="4,1"
+                                                Background="#422006"
+                                                BorderBrush="#854D0E"
+                                                BorderThickness="1"
+                                                CornerRadius="3"
+                                                Visibility="{Binding IsActive, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <TextBlock
+                                                    FontSize="9"
+                                                    Foreground="{StaticResource LayerPanel.Amber}"
+                                                    Text="当前活动" />
+                                            </Border>
+                                        </Grid>
                                         <Button
                                             Grid.Column="2"
                                             Margin="4,0,0,0"
@@ -554,7 +644,7 @@
                                             Content="编辑"
                                             FontSize="10"
                                             IsEnabled="{Binding CanEdit}"
-                                            Style="{StaticResource DarkButtonStyle}"
+                                            Style="{StaticResource LayerPanelRowButtonStyle}"
                                             ToolTip="编辑图层样式" />
                                         <Button
                                             Grid.Column="3"
@@ -563,38 +653,138 @@
                                             Click="SelectLayerShapes_Click"
                                             Content="选择"
                                             FontSize="10"
-                                            Style="{StaticResource DarkButtonStyle}"
+                                            Style="{StaticResource LayerPanelSelectButtonStyle}"
                                             ToolTip="选中此图层中可见、未锁定的图形" />
                                     </Grid>
                                     <HierarchicalDataTemplate.ItemTemplate>
                                         <DataTemplate>
-                                            <Grid x:Name="ShapeRow" Margin="1">
+                                            <Grid
+                                                x:Name="ShapeRow"
+                                                Margin="1"
+                                                VerticalAlignment="Center">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="Auto" />
                                                     <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
+                                                <Border
+                                                    x:Name="SelectionAccent"
+                                                    Width="2"
+                                                    Margin="-4,0,0,0"
+                                                    HorizontalAlignment="Left"
+                                                    Background="{StaticResource LayerPanel.Border}" />
                                                 <ToggleButton
                                                     Grid.Column="0"
+                                                    AutomationProperties.Name="{Binding GeometryType, StringFormat='切换 {0} 的选中状态'}"
                                                     Click="ShapeSelection_Click"
                                                     IsChecked="{Binding IsSelected, Mode=OneWay}"
-                                                    Style="{StaticResource ShapeSelectionMarkerStyle}"
+                                                    Style="{StaticResource LayerPanelShapeMarkerStyle}"
                                                     Tag="{Binding}" />
-                                                <TextBlock
-                                                    x:Name="ShapeLabel"
-                                                    Grid.Column="1"
-                                                    Margin="1,2"
-                                                    FontSize="12"
-                                                    Foreground="{StaticResource DarkPanel.ValueForeground}"
-                                                    Text="{Binding GeometryType}" />
+                                                <Grid Grid.Column="1" VerticalAlignment="Center">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock
+                                                        x:Name="ShapeLabel"
+                                                        Margin="1,2"
+                                                        VerticalAlignment="Center"
+                                                        FontFamily="{StaticResource LayerPanel.MonoFont}"
+                                                        FontSize="12"
+                                                        Foreground="{StaticResource LayerPanel.Text}"
+                                                        Text="{Binding GeometryType}"
+                                                        TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock
+                                                        x:Name="ShapeDetail"
+                                                        Grid.Column="1"
+                                                        Margin="6,0,0,0"
+                                                        VerticalAlignment="Center"
+                                                        FontFamily="{StaticResource LayerPanel.MonoFont}"
+                                                        FontSize="10"
+                                                        Foreground="{StaticResource LayerPanel.Subtle}"
+                                                        TextTrimming="CharacterEllipsis">
+                                                        <TextBlock.Text>
+                                                            <MultiBinding Converter="{StaticResource ShapeTreeDetailConverter}">
+                                                                <Binding Path="GeometryType" />
+                                                                <Binding Path="BoundsRect" />
+                                                                <Binding Path="ShapeLayer.Measurement.PixelPerUnit" />
+                                                                <Binding Path="ShapeLayer.Measurement.UnitName" />
+                                                            </MultiBinding>
+                                                        </TextBlock.Text>
+                                                    </TextBlock>
+                                                </Grid>
+                                                <Grid Grid.Column="2" Margin="6,0,2,0">
+                                                    <Path
+                                                        x:Name="ShapeVisibilityStatus"
+                                                        Width="12"
+                                                        Height="12"
+                                                        VerticalAlignment="Center"
+                                                        Data="{StaticResource SolidShow}"
+                                                        Fill="{StaticResource LayerPanel.Muted}"
+                                                        Stretch="Uniform">
+                                                        <Path.Style>
+                                                            <Style TargetType="Path">
+                                                                <Setter Property="ToolTip" Value="图形可见" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding DataContext.IsVisible, RelativeSource={RelativeSource AncestorType=TreeViewItem, AncestorLevel=2}}" Value="False">
+                                                                        <Setter Property="Opacity" Value="0.35" />
+                                                                        <Setter Property="ToolTip" Value="所属图层已隐藏" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding IsGeometryRendered}" Value="False">
+                                                                        <Setter Property="Opacity" Value="0.35" />
+                                                                        <Setter Property="ToolTip" Value="图形尚未完成" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Path.Style>
+                                                    </Path>
+                                                    <StackPanel
+                                                        x:Name="ShapeLockStatus"
+                                                        Orientation="Horizontal"
+                                                        Visibility="Collapsed">
+                                                        <Ellipse
+                                                            x:Name="ShapeReadyStatus"
+                                                            Width="6"
+                                                            Height="6"
+                                                            Margin="0,0,5,0"
+                                                            Fill="{StaticResource LayerPanel.Green}" />
+                                                        <Path
+                                                            x:Name="ShapeLockIcon"
+                                                            Width="12"
+                                                            Height="12"
+                                                            VerticalAlignment="Center"
+                                                            Data="{StaticResource LayerPanel.UnlockedIcon}"
+                                                            Fill="{StaticResource LayerPanel.Amber}"
+                                                            Stretch="Uniform"
+                                                            ToolTip="未锁定，可编辑" />
+                                                    </StackPanel>
+                                                </Grid>
                                             </Grid>
                                             <DataTemplate.Triggers>
                                                 <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                    <Setter TargetName="ShapeLabel" Property="Foreground" Value="#F7FAFC" />
+                                                    <Setter TargetName="ShapeLabel" Property="Foreground" Value="{StaticResource LayerPanel.Amber}" />
                                                     <Setter TargetName="ShapeLabel" Property="FontWeight" Value="SemiBold" />
+                                                    <Setter TargetName="ShapeDetail" Property="Foreground" Value="{StaticResource LayerPanel.Amber}" />
+                                                    <Setter TargetName="SelectionAccent" Property="Background" Value="{StaticResource LayerPanel.Amber}" />
+                                                    <Setter TargetName="ShapeVisibilityStatus" Property="Visibility" Value="Collapsed" />
+                                                    <Setter TargetName="ShapeLockStatus" Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsLocked}" Value="True">
+                                                    <Setter TargetName="ShapeVisibilityStatus" Property="Visibility" Value="Collapsed" />
+                                                    <Setter TargetName="ShapeLockStatus" Property="Visibility" Value="Visible" />
+                                                    <Setter TargetName="ShapeReadyStatus" Property="Visibility" Value="Collapsed" />
+                                                    <Setter TargetName="ShapeLockIcon" Property="Data" Value="{StaticResource LayerPanel.LockedIcon}" />
+                                                    <Setter TargetName="ShapeLockIcon" Property="ToolTip" Value="已锁定，双击画布中的图形可解锁" />
                                                 </DataTrigger>
                                             </DataTemplate.Triggers>
                                         </DataTemplate>
                                     </HierarchicalDataTemplate.ItemTemplate>
+                                    <HierarchicalDataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                            <Setter TargetName="LayerName" Property="FontWeight" Value="SemiBold" />
+                                            <Setter TargetName="LayerName" Property="Foreground" Value="White" />
+                                        </DataTrigger>
+                                    </HierarchicalDataTemplate.Triggers>
                                 </HierarchicalDataTemplate>
                             </TreeView.ItemTemplate>
                         </TreeView>
@@ -602,57 +792,109 @@
                         <Separator
                             Grid.Row="2"
                             Height="1"
-                            Margin="0,2,0,6"
-                            Background="{StaticResource DarkPanel.Border}" />
+                            Margin="0"
+                            Background="{StaticResource LayerPanel.Border}" />
 
                         <DockPanel Grid.Row="3">
                             <Border
-                                Margin="0,0,0,6"
+                                Margin="0,0,0,10"
+                                Padding="12"
+                                Background="{StaticResource LayerPanel.Section}"
+                                BorderBrush="{StaticResource LayerPanel.Border}"
+                                BorderThickness="0,0,0,1"
                                 DockPanel.Dock="Top"
-                                Style="{StaticResource DarkPropertyCardStyle}">
+                                TextElement.FontFamily="{StaticResource LayerPanel.TextFont}">
                                 <StackPanel>
-                                    <TextBlock Foreground="{StaticResource DarkPanel.HeaderForeground}" Text="{Binding SelectedShapeCount, StringFormat='已选 {0} 个图形'}" />
+                                    <Grid Margin="0,0,0,12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock FontSize="12" Foreground="{StaticResource LayerPanel.Muted}">
+                                            <Run Text="已选 " /><Run Foreground="{StaticResource LayerPanel.Amber}" Text="{Binding SelectedShapeCount, Mode=OneWay}" /><Run Text=" 个图形" />
+                                        </TextBlock>
+                                        <TextBlock
+                                            x:Name="SelectedShapeSummaryText"
+                                            Grid.Column="1"
+                                            Margin="8,0,0,0"
+                                            HorizontalAlignment="Right"
+                                            FontFamily="{StaticResource LayerPanel.MonoFont}"
+                                            FontSize="10"
+                                            Foreground="{StaticResource LayerPanel.Green}"
+                                            TextTrimming="CharacterEllipsis">
+                                            <TextBlock.Text>
+                                                <MultiBinding Converter="{StaticResource ShapeSelectionSummaryConverter}">
+                                                    <Binding Path="SelectedShapeCount" />
+                                                    <Binding Path="SelectedShape.GeometryType" />
+                                                    <Binding Path="SelectedLayerSummary" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </Grid>
                                     <TextBlock
-                                        Margin="0,3,0,5"
-                                        Foreground="{StaticResource DarkPanel.LabelForeground}"
-                                        Text="{Binding SelectedLayerSummary}"
-                                        TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Foreground="{StaticResource DarkPanel.LabelForeground}" Text="所属图层" />
-                                    <ComboBox
-                                        x:Name="AssignedLayerSelector"
-                                        Margin="0,4,0,5"
-                                        HorizontalAlignment="Stretch"
-                                        AutomationProperties.Name="所选图形所属图层"
-                                        ItemsSource="{Binding Layers}"
-                                        SelectedItem="{Binding TargetShapeLayer, Mode=TwoWay}"
-                                        Style="{StaticResource DarkComboBoxStyle}">
-                                        <ComboBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Foreground="{StaticResource DarkPanel.ValueForeground}" Text="{Binding Name}" />
-                                            </DataTemplate>
-                                        </ComboBox.ItemTemplate>
-                                    </ComboBox>
-                                    <Button
-                                        Click="AssignLayer_Click"
-                                        Content="应用到所选图形"
-                                        IsEnabled="{Binding CanAssignSelectedLayer}"
-                                        Style="{StaticResource DarkButtonStyle}" />
+                                        FontSize="11"
+                                        Foreground="{StaticResource LayerPanel.Muted}"
+                                        Text="所属图层归属" />
+                                    <Grid Margin="0,6,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox
+                                            x:Name="AssignedLayerSelector"
+                                            Margin="0,0,6,0"
+                                            HorizontalAlignment="Stretch"
+                                            AutomationProperties.Name="所选图形所属图层"
+                                            Background="{StaticResource LayerPanel.Background}"
+                                            BorderBrush="{StaticResource LayerPanel.Border}"
+                                            FontFamily="{StaticResource LayerPanel.MonoFont}"
+                                            ItemsSource="{Binding Layers}"
+                                            SelectedItem="{Binding TargetShapeLayer, Mode=TwoWay}"
+                                            Style="{StaticResource DarkComboBoxStyle}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Foreground="{StaticResource DarkPanel.ValueForeground}" Text="{Binding Name}" />
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                        <Button
+                                            x:Name="AssignLayerButton"
+                                            Grid.Column="1"
+                                            Click="AssignLayer_Click"
+                                            Content="应用到所选图形"
+                                            IsEnabled="{Binding CanAssignSelectedLayer}"
+                                            Style="{StaticResource LayerPanelButtonStyle}" />
+                                    </Grid>
                                     <TextBlock
-                                        Margin="0,4,0,0"
+                                        Margin="0,6,0,0"
                                         FontSize="10"
-                                        Foreground="{StaticResource DarkPanel.LabelForeground}"
-                                        Text="移入隐藏图层后，图形将在画布隐藏"
+                                        Foreground="{StaticResource LayerPanel.Subtle}"
+                                        Text="移入隐藏图层后，图形将在检测画布中自动隐藏。"
                                         TextWrapping="Wrap" />
                                     <Separator
                                         Height="1"
                                         Margin="0,9,0,8"
-                                        Background="{StaticResource DarkPanel.Border}" />
-                                    <TextBlock
-                                        x:Name="SelectedGroupSummaryText"
-                                        Foreground="{StaticResource DarkPanel.HeaderForeground}"
-                                        Text="{Binding SelectedGroupSummary}"
-                                        TextTrimming="CharacterEllipsis"
-                                        ToolTip="{Binding SelectedGroupSummary}" />
+                                        Background="{StaticResource LayerPanel.Border}" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock
+                                            FontSize="11"
+                                            Foreground="{StaticResource LayerPanel.Muted}"
+                                            Text="图元编组操作" />
+                                        <TextBlock
+                                            x:Name="SelectedGroupSummaryText"
+                                            Grid.Column="1"
+                                            Margin="8,0,0,0"
+                                            HorizontalAlignment="Right"
+                                            FontSize="10"
+                                            Foreground="{StaticResource LayerPanel.Subtle}"
+                                            Text="{Binding SelectedGroupSummary}"
+                                            TextTrimming="CharacterEllipsis"
+                                            ToolTip="{Binding SelectedGroupSummary}" />
+                                    </Grid>
                                     <Grid Margin="0,6,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -661,37 +903,43 @@
                                         <Button
                                             x:Name="GroupShapesButton"
                                             Margin="0,0,3,0"
+                                            AutomationProperties.Name="组合所选图形"
                                             Command="{Binding GroupShapesCommand}"
                                             Content="组合"
-                                            Style="{StaticResource DarkButtonStyle}"
+                                            Style="{StaticResource LayerPanelIconButtonStyle}"
+                                            Tag="{StaticResource LayerPanel.GroupIcon}"
                                             ToolTip="将所选图形组合在一起（Ctrl+G）" />
                                         <Button
                                             x:Name="UngroupShapesButton"
                                             Grid.Column="1"
                                             Margin="3,0,0,0"
+                                            AutomationProperties.Name="取消所选图形的组合"
                                             Command="{Binding UngroupShapesCommand}"
                                             Content="取消组合"
-                                            Style="{StaticResource DarkButtonStyle}"
+                                            Style="{StaticResource LayerPanelIconButtonStyle}"
+                                            Tag="{StaticResource LayerPanel.UngroupIcon}"
                                             ToolTip="取消所选图形的组合（Ctrl+Shift+G）" />
                                     </Grid>
                                     <TextBlock
                                         Margin="0,5,0,0"
                                         FontSize="10"
-                                        Foreground="{StaticResource DarkPanel.LabelForeground}"
+                                        Foreground="{StaticResource LayerPanel.Subtle}"
                                         Text="{Binding GroupingPrompt}"
                                         TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
                             <TextBlock
-                                Margin="2,0,2,6"
+                                Margin="12,0,12,6"
                                 DockPanel.Dock="Top"
+                                FontFamily="{StaticResource LayerPanel.TextFont}"
                                 FontSize="13"
                                 FontWeight="SemiBold"
-                                Foreground="{StaticResource DarkPanel.HeaderForeground}"
+                                Foreground="{StaticResource LayerPanel.Text}"
                                 Text="属性" />
 
                             <ScrollViewer
                                 MaxHeight="320"
+                                Margin="8,0,8,8"
                                 HorizontalScrollBarVisibility="Disabled"
                                 VerticalScrollBarVisibility="Auto">
                                 <ContentControl Content="{Binding PropertyShape}">
@@ -704,14 +952,14 @@
                                                             <ControlTemplate>
                                                                 <Border
                                                                     Padding="12"
-                                                                    Background="#1A1A1C"
-                                                                    BorderBrush="#2D2D32"
+                                                                    Background="{StaticResource LayerPanel.Section}"
+                                                                    BorderBrush="{StaticResource LayerPanel.Border}"
                                                                     BorderThickness="1"
                                                                     CornerRadius="4">
                                                                     <TextBlock
                                                                         VerticalAlignment="Center"
                                                                         FontSize="12"
-                                                                        Foreground="#777780"
+                                                                        Foreground="{StaticResource LayerPanel.Muted}"
                                                                         LineHeight="18"
                                                                         Text="{Binding SelectionPrompt}"
                                                                         TextAlignment="Center" />

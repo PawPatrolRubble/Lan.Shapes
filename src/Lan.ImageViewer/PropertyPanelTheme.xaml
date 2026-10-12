@@ -6,6 +6,10 @@
     xmlns:local="clr-namespace:Lan.ImageViewer"
     xmlns:shapes="clr-namespace:Lan.Shapes.Shapes;assembly=Lan.Shapes">
 
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="/Lan.ImageViewer;component/LayerPanelTheme.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
     <!--  Dark Theme Brushes for Properties Panel  -->
     <SolidColorBrush x:Key="DarkPanel.Background" Color="#222225" />
     <SolidColorBrush x:Key="DarkPanel.CardBackground" Color="#1E1E20" />
@@ -227,21 +231,9 @@
 
     <!--  1. Circle  -->
     <DataTemplate DataType="{x:Type shapes:Circle}">
-        <Border Style="{StaticResource DarkPropertyCardStyle}">
+        <Border Style="{StaticResource CadPropertyCardStyle}">
             <StackPanel>
-                <DockPanel Margin="0,0,0,6">
-                    <TextBlock
-                        FontSize="13"
-                        FontWeight="Bold"
-                        Foreground="{StaticResource DarkPanel.Accent}"
-                        Text="Circle" />
-                    <TextBlock
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"
-                        FontSize="11"
-                        Foreground="#888888"
-                        Text="{Binding State}" />
-                </DockPanel>
+                <TextBlock Style="{StaticResource CadPropertyHeaderStyle}" Text="Circle" />
 
                 <local:ShapeGeometryEditorControl
                     ShapeRepository="{Binding DataContext.ShapeRepository, RelativeSource={RelativeSource AncestorType={x:Type local:ImageViewerControl}}}"
@@ -252,39 +244,27 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Tag" />
                     <TextBox
                         Grid.Column="1"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
                 <CheckBox
                     Margin="0,6,0,0"
-                    Content="锁定 (Lock)"
+                    Content="锁定"
                     IsChecked="{Binding IsLocked, Mode=TwoWay}"
-                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                    Style="{StaticResource CadPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
     <!--  2. Rectangle  -->
     <DataTemplate DataType="{x:Type shapes:Rectangle}">
-        <Border Style="{StaticResource DarkPropertyCardStyle}">
+        <Border Style="{StaticResource CadPropertyCardStyle}">
             <StackPanel>
-                <DockPanel Margin="0,0,0,6">
-                    <TextBlock
-                        FontSize="13"
-                        FontWeight="Bold"
-                        Foreground="{StaticResource DarkPanel.Accent}"
-                        Text="Rectangle" />
-                    <TextBlock
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"
-                        FontSize="11"
-                        Foreground="#888888"
-                        Text="{Binding State}" />
-                </DockPanel>
+                <TextBlock Style="{StaticResource CadPropertyHeaderStyle}" Text="Rectangle" />
 
                 <local:ShapeGeometryEditorControl
                     ShapeRepository="{Binding DataContext.ShapeRepository, RelativeSource={RelativeSource AncestorType={x:Type local:ImageViewerControl}}}"
@@ -295,39 +275,27 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Tag" />
                     <TextBox
                         Grid.Column="1"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
                 <CheckBox
                     Margin="0,6,0,0"
-                    Content="锁定 (Lock)"
+                    Content="锁定"
                     IsChecked="{Binding IsLocked, Mode=TwoWay}"
-                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                    Style="{StaticResource CadPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
     <!--  3. Rectangle2 (Rotated Rectangle)  -->
     <DataTemplate DataType="{x:Type shapes:Rectangle2}">
-        <Border Style="{StaticResource DarkPropertyCardStyle}">
+        <Border Style="{StaticResource CadPropertyCardStyle}">
             <StackPanel>
-                <DockPanel Margin="0,0,0,6">
-                    <TextBlock
-                        FontSize="13"
-                        FontWeight="Bold"
-                        Foreground="{StaticResource DarkPanel.Accent}"
-                        Text="Rectangle2" />
-                    <TextBlock
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"
-                        FontSize="11"
-                        Foreground="#888888"
-                        Text="{Binding State}" />
-                </DockPanel>
+                <TextBlock Style="{StaticResource CadPropertyHeaderStyle}" Text="Rectangle2" />
 
                 <Grid Margin="0,2">
                     <Grid.ColumnDefinitions>
@@ -335,17 +303,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Center" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Center" />
                     <TextBox
                         Grid.Column="1"
                         Margin="0,0,2,0"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Column, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
                         ToolTip="Center X / Column" />
                     <TextBox
                         Grid.Column="2"
                         Margin="2,0,0,0"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Row, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
                         ToolTip="Center Y / Row" />
                 </Grid>
@@ -355,10 +323,10 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Phi (rad)" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Phi (rad)" />
                     <TextBox
                         Grid.Column="1"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Phi, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F3}'}" />
                 </Grid>
 
@@ -368,17 +336,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Lengths" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Lengths" />
                     <TextBox
                         Grid.Column="1"
                         Margin="0,0,2,0"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Length1, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
                         ToolTip="Half Length 1" />
                     <TextBox
                         Grid.Column="2"
                         Margin="2,0,0,0"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Length2, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
                         ToolTip="Half Length 2" />
                 </Grid>
@@ -388,39 +356,27 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Tag" />
                     <TextBox
                         Grid.Column="1"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
                 <CheckBox
                     Margin="0,6,0,0"
-                    Content="锁定 (Lock)"
+                    Content="锁定"
                     IsChecked="{Binding IsLocked, Mode=TwoWay}"
-                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                    Style="{StaticResource CadPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
     <!--  4. Line  -->
     <DataTemplate DataType="{x:Type shapes:Line}">
-        <Border Style="{StaticResource DarkPropertyCardStyle}">
+        <Border Style="{StaticResource CadPropertyCardStyle}">
             <StackPanel>
-                <DockPanel Margin="0,0,0,6">
-                    <TextBlock
-                        FontSize="13"
-                        FontWeight="Bold"
-                        Foreground="{StaticResource DarkPanel.Accent}"
-                        Text="Line" />
-                    <TextBlock
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"
-                        FontSize="11"
-                        Foreground="#888888"
-                        Text="{Binding State}" />
-                </DockPanel>
+                <TextBlock Style="{StaticResource CadPropertyHeaderStyle}" Text="Line" />
 
                 <local:ShapeGeometryEditorControl
                     ShapeRepository="{Binding DataContext.ShapeRepository, RelativeSource={RelativeSource AncestorType={x:Type local:ImageViewerControl}}}"
@@ -431,39 +387,27 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Tag" />
                     <TextBox
                         Grid.Column="1"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
                 <CheckBox
                     Margin="0,6,0,0"
-                    Content="锁定 (Lock)"
+                    Content="锁定"
                     IsChecked="{Binding IsLocked, Mode=TwoWay}"
-                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                    Style="{StaticResource CadPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
     <!--  5. Ellipse  -->
     <DataTemplate DataType="{x:Type shapes:Ellipse}">
-        <Border Style="{StaticResource DarkPropertyCardStyle}">
+        <Border Style="{StaticResource CadPropertyCardStyle}">
             <StackPanel>
-                <DockPanel Margin="0,0,0,6">
-                    <TextBlock
-                        FontSize="13"
-                        FontWeight="Bold"
-                        Foreground="{StaticResource DarkPanel.Accent}"
-                        Text="Ellipse" />
-                    <TextBlock
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"
-                        FontSize="11"
-                        Foreground="#888888"
-                        Text="{Binding State}" />
-                </DockPanel>
+                <TextBlock Style="{StaticResource CadPropertyHeaderStyle}" Text="Ellipse" />
 
                 <Grid Margin="0,2">
                     <Grid.ColumnDefinitions>
@@ -471,16 +415,16 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Center" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Center" />
                     <TextBox
                         Grid.Column="1"
                         Margin="0,0,2,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyReadOnlyTextBoxStyle}"
                         Text="{Binding Center.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
                     <TextBox
                         Grid.Column="2"
                         Margin="2,0,0,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyReadOnlyTextBoxStyle}"
                         Text="{Binding Center.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
                 </Grid>
 
@@ -490,17 +434,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Radius" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Radius" />
                     <TextBox
                         Grid.Column="1"
                         Margin="0,0,2,0"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding RadiusX, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
                         ToolTip="Radius X" />
                     <TextBox
                         Grid.Column="2"
                         Margin="2,0,0,0"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding RadiusY, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
                         ToolTip="Radius Y" />
                 </Grid>
@@ -510,39 +454,27 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Tag" />
                     <TextBox
                         Grid.Column="1"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
                 <CheckBox
                     Margin="0,6,0,0"
-                    Content="锁定 (Lock)"
+                    Content="锁定"
                     IsChecked="{Binding IsLocked, Mode=TwoWay}"
-                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                    Style="{StaticResource CadPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
     <!--  6. Polygon  -->
     <DataTemplate DataType="{x:Type shapes:Polygon}">
-        <Border Style="{StaticResource DarkPropertyCardStyle}">
+        <Border Style="{StaticResource CadPropertyCardStyle}">
             <StackPanel>
-                <DockPanel Margin="0,0,0,6">
-                    <TextBlock
-                        FontSize="13"
-                        FontWeight="Bold"
-                        Foreground="{StaticResource DarkPanel.Accent}"
-                        Text="Polygon" />
-                    <TextBlock
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"
-                        FontSize="11"
-                        Foreground="#888888"
-                        Text="{Binding State}" />
-                </DockPanel>
+                <TextBlock Style="{StaticResource CadPropertyHeaderStyle}" Text="Polygon" />
 
                 <Grid Margin="0,2">
                     <Grid.ColumnDefinitions>
@@ -550,16 +482,16 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Bounds" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Bounds" />
                     <TextBox
                         Grid.Column="1"
                         Margin="0,0,2,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyReadOnlyTextBoxStyle}"
                         Text="{Binding BoundsRect.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
                     <TextBox
                         Grid.Column="2"
                         Margin="2,0,0,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyReadOnlyTextBoxStyle}"
                         Text="{Binding BoundsRect.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
                 </Grid>
 
@@ -569,16 +501,16 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Size" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Size" />
                     <TextBox
                         Grid.Column="1"
                         Margin="0,0,2,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyReadOnlyTextBoxStyle}"
                         Text="{Binding BoundsRect.Width, Mode=OneWay, StringFormat='W: {0:F1}'}" />
                     <TextBox
                         Grid.Column="2"
                         Margin="2,0,0,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyReadOnlyTextBoxStyle}"
                         Text="{Binding BoundsRect.Height, Mode=OneWay, StringFormat='H: {0:F1}'}" />
                 </Grid>
 
@@ -587,39 +519,27 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Tag" />
                     <TextBox
                         Grid.Column="1"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
                 <CheckBox
                     Margin="0,6,0,0"
-                    Content="锁定 (Lock)"
+                    Content="锁定"
                     IsChecked="{Binding IsLocked, Mode=TwoWay}"
-                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                    Style="{StaticResource CadPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
     <!--  7. Cross  -->
     <DataTemplate DataType="{x:Type shapes:Cross}">
-        <Border Style="{StaticResource DarkPropertyCardStyle}">
+        <Border Style="{StaticResource CadPropertyCardStyle}">
             <StackPanel>
-                <DockPanel Margin="0,0,0,6">
-                    <TextBlock
-                        FontSize="13"
-                        FontWeight="Bold"
-                        Foreground="{StaticResource DarkPanel.Accent}"
-                        Text="Cross" />
-                    <TextBlock
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"
-                        FontSize="11"
-                        Foreground="#888888"
-                        Text="{Binding State}" />
-                </DockPanel>
+                <TextBlock Style="{StaticResource CadPropertyHeaderStyle}" Text="Cross" />
 
                 <Grid Margin="0,2">
                     <Grid.ColumnDefinitions>
@@ -627,16 +547,16 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Center" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Center" />
                     <TextBox
                         Grid.Column="1"
                         Margin="0,0,2,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyReadOnlyTextBoxStyle}"
                         Text="{Binding Center.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
                     <TextBox
                         Grid.Column="2"
                         Margin="2,0,0,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyReadOnlyTextBoxStyle}"
                         Text="{Binding Center.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
                 </Grid>
 
@@ -646,17 +566,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Size" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Size" />
                     <TextBox
                         Grid.Column="1"
                         Margin="0,0,2,0"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Width, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                         ToolTip="Width" />
                     <TextBox
                         Grid.Column="2"
                         Margin="2,0,0,0"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Height, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                         ToolTip="Height" />
                 </Grid>
@@ -666,39 +586,27 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Tag" />
                     <TextBox
                         Grid.Column="1"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
                 <CheckBox
                     Margin="0,6,0,0"
-                    Content="锁定 (Lock)"
+                    Content="锁定"
                     IsChecked="{Binding IsLocked, Mode=TwoWay}"
-                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                    Style="{StaticResource CadPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
     <!--  8. RulerCross  -->
     <DataTemplate DataType="{x:Type shapes:RulerCross}">
-        <Border Style="{StaticResource DarkPropertyCardStyle}">
+        <Border Style="{StaticResource CadPropertyCardStyle}">
             <StackPanel>
-                <DockPanel Margin="0,0,0,6">
-                    <TextBlock
-                        FontSize="13"
-                        FontWeight="Bold"
-                        Foreground="{StaticResource DarkPanel.Accent}"
-                        Text="RulerCross" />
-                    <TextBlock
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"
-                        FontSize="11"
-                        Foreground="#888888"
-                        Text="{Binding State}" />
-                </DockPanel>
+                <TextBlock Style="{StaticResource CadPropertyHeaderStyle}" Text="RulerCross" />
 
                 <Grid Margin="0,2">
                     <Grid.ColumnDefinitions>
@@ -706,16 +614,16 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Center" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Center" />
                     <TextBox
                         Grid.Column="1"
                         Margin="0,0,2,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyReadOnlyTextBoxStyle}"
                         Text="{Binding Center.X, Mode=OneWay, StringFormat='X: {0:F1}'}" />
                     <TextBox
                         Grid.Column="2"
                         Margin="2,0,0,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyReadOnlyTextBoxStyle}"
                         Text="{Binding Center.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}" />
                 </Grid>
 
@@ -725,16 +633,16 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Size" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Size" />
                     <TextBox
                         Grid.Column="1"
                         Margin="0,0,2,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyReadOnlyTextBoxStyle}"
                         Text="{Binding Width, Mode=OneWay, StringFormat='W: {0:F1}'}" />
                     <TextBox
                         Grid.Column="2"
                         Margin="2,0,0,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyReadOnlyTextBoxStyle}"
                         Text="{Binding Height, Mode=OneWay, StringFormat='H: {0:F1}'}" />
                 </Grid>
 
@@ -743,10 +651,10 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tick" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Tick" />
                     <TextBox
                         Grid.Column="1"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyReadOnlyTextBoxStyle}"
                         Text="{Binding MajorTickInterval, Mode=OneWay, StringFormat='{}{0:F1}'}" />
                 </Grid>
 
@@ -755,39 +663,27 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Tag" />
                     <TextBox
                         Grid.Column="1"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
                 <CheckBox
                     Margin="0,6,0,0"
-                    Content="锁定 (Lock)"
+                    Content="锁定"
                     IsChecked="{Binding IsLocked, Mode=TwoWay}"
-                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                    Style="{StaticResource CadPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
     <!--  9. Fiber  -->
     <DataTemplate DataType="{x:Type custom:Fiber}">
-        <Border Style="{StaticResource DarkPropertyCardStyle}">
+        <Border Style="{StaticResource CadPropertyCardStyle}">
             <StackPanel>
-                <DockPanel Margin="0,0,0,6">
-                    <TextBlock
-                        FontSize="13"
-                        FontWeight="Bold"
-                        Foreground="{StaticResource DarkPanel.Accent}"
-                        Text="Fiber" />
-                    <TextBlock
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"
-                        FontSize="11"
-                        Foreground="#888888"
-                        Text="{Binding State}" />
-                </DockPanel>
+                <TextBlock Style="{StaticResource CadPropertyHeaderStyle}" Text="Fiber" />
 
                 <Grid Margin="0,2">
                     <Grid.ColumnDefinitions>
@@ -795,17 +691,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Center" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Center" />
                     <TextBox
                         Grid.Column="1"
                         Margin="0,0,2,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyReadOnlyTextBoxStyle}"
                         Text="{Binding FilletCenter.X, Mode=OneWay, StringFormat='X: {0:F1}'}"
                         ToolTip="Fillet Center X" />
                     <TextBox
                         Grid.Column="2"
                         Margin="2,0,0,0"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyReadOnlyTextBoxStyle}"
                         Text="{Binding FilletCenter.Y, Mode=OneWay, StringFormat='Y: {0:F1}'}"
                         ToolTip="Fillet Center Y" />
                 </Grid>
@@ -815,10 +711,10 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Radius" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Radius" />
                     <TextBox
                         Grid.Column="1"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Radius, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
                         ToolTip="Fillet Radius" />
                 </Grid>
@@ -828,10 +724,10 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tip Angle" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Tip Angle" />
                     <TextBox
                         Grid.Column="1"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding TipAngle, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
                         ToolTip="Tip Angle in Degrees" />
                 </Grid>
@@ -844,18 +740,18 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Size" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Size" />
                     <TextBlock
                         Grid.Column="1"
                         Margin="0,0,4,0"
                         VerticalAlignment="Center"
                         FontSize="11"
-                        Foreground="#888888"
+                        Foreground="{StaticResource LayerPanel.Muted}"
                         Text="W" />
                     <TextBox
                         Grid.Column="2"
                         Margin="0,0,4,0"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Width, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
                         ToolTip="Width" />
                     <TextBlock
@@ -863,11 +759,11 @@
                         Margin="0,0,4,0"
                         VerticalAlignment="Center"
                         FontSize="11"
-                        Foreground="#888888"
+                        Foreground="{StaticResource LayerPanel.Muted}"
                         Text="H" />
                     <TextBox
                         Grid.Column="4"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Height, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
                         ToolTip="Height" />
                 </Grid>
@@ -877,10 +773,10 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Angle" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Angle" />
                     <TextBox
                         Grid.Column="1"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding FiberAngle, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:F1}'}"
                         ToolTip="Fiber Angle in Degrees" />
                 </Grid>
@@ -890,49 +786,37 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Tag" />
                     <TextBox
                         Grid.Column="1"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
                 <CheckBox
                     Margin="0,6,0,0"
-                    Content="锁定 (Lock)"
+                    Content="锁定"
                     IsChecked="{Binding IsLocked, Mode=TwoWay}"
-                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                    Style="{StaticResource CadPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>
 
     <!--  10. Fallback for any ShapeVisualBase  -->
     <DataTemplate DataType="{x:Type lanShapes:ShapeVisualBase}">
-        <Border Style="{StaticResource DarkPropertyCardStyle}">
+        <Border Style="{StaticResource CadPropertyCardStyle}">
             <StackPanel>
-                <DockPanel Margin="0,0,0,6">
-                    <TextBlock
-                        FontSize="13"
-                        FontWeight="Bold"
-                        Foreground="{StaticResource DarkPanel.Accent}"
-                        Text="{Binding GeometryType}" />
-                    <TextBlock
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"
-                        FontSize="11"
-                        Foreground="#888888"
-                        Text="{Binding State}" />
-                </DockPanel>
+                <TextBlock Style="{StaticResource CadPropertyHeaderStyle}" Text="{Binding GeometryType}" />
 
                 <Grid Margin="0,2">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Bounds" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Bounds" />
                     <TextBox
                         Grid.Column="1"
-                        Style="{StaticResource DarkPropertyReadOnlyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyReadOnlyTextBoxStyle}"
                         Text="{Binding BoundsRect, Mode=OneWay, StringFormat='{}{0:F1}'}" />
                 </Grid>
 
@@ -941,18 +825,18 @@
                         <ColumnDefinition Width="65" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource DarkPropertyLabelStyle}" Text="Tag" />
+                    <TextBlock Style="{StaticResource CadPropertyLabelStyle}" Text="Tag" />
                     <TextBox
                         Grid.Column="1"
-                        Style="{StaticResource DarkPropertyTextBoxStyle}"
+                        Style="{StaticResource CadPropertyTextBoxStyle}"
                         Text="{Binding Tag, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </Grid>
 
                 <CheckBox
                     Margin="0,6,0,0"
-                    Content="锁定 (Lock)"
+                    Content="锁定"
                     IsChecked="{Binding IsLocked, Mode=TwoWay}"
-                    Style="{StaticResource DarkPropertyCheckBoxStyle}" />
+                    Style="{StaticResource CadPropertyCheckBoxStyle}" />
             </StackPanel>
         </Border>
     </DataTemplate>

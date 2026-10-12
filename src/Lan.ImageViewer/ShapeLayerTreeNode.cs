@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Windows.Media;
 using Lan.Shapes;
+using Lan.Shapes.Enums;
 
 namespace Lan.ImageViewer
 {
@@ -13,6 +15,7 @@ namespace Lan.ImageViewer
         private readonly Action<int, bool> _setVisibility;
         private bool _isVisible;
         private bool _canEdit = true;
+        private bool _isActive;
 
         public ShapeLayerTreeNode(ShapeLayer layer, bool isVisible, Action<int, bool> setVisibility)
         {
@@ -28,6 +31,17 @@ namespace Lan.ImageViewer
         public int LayerId => Layer.LayerId;
         public string Name => Layer.Name;
         public bool IsSelected => false;
+        public Brush Color => Layer.GetStyler(ShapeVisualState.Normal).SketchPen.Brush;
+        public bool IsActive
+        {
+            get => _isActive;
+            set
+            {
+                if (_isActive == value) return;
+                _isActive = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsActive)));
+            }
+        }
         public bool CanEdit
         {
             get => _canEdit;
@@ -67,6 +81,7 @@ namespace Lan.ImageViewer
                 Layer.PropertyChanged += Layer_PropertyChanged;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Layer)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Color)));
             }
 
             var desired = shapes.ToList();
@@ -84,6 +99,8 @@ namespace Lan.ImageViewer
         {
             if (e.PropertyName == nameof(ShapeLayer.Name))
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
+            if (e.PropertyName == nameof(ShapeLayer.Stylers))
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Color)));
         }
 
         public void Dispose() => Layer.PropertyChanged -= Layer_PropertyChanged;

@@ -161,7 +161,7 @@ public class ShapeGeometryEditorControlTests
                 Pump();
                 Assert.Equal(new Point(70, 100), line.End);
                 var panel = Assert.IsType<Border>(viewer.FindName("LayerPanel"));
-                Assert.Equal(260, panel.ActualWidth);
+                Assert.Equal(360, panel.ActualWidth);
                 var editorBounds = editor.TransformToAncestor(panel).TransformBounds(new Rect(editor.RenderSize));
                 Assert.True(editorBounds.Left >= 0 && editorBounds.Right <= panel.ActualWidth);
                 foreach (var field in fields)

@@ -442,7 +442,8 @@ namespace Lan.ImageViewer.Prism
         private ShapeLayerTreeNode CreateLayerNode(ShapeLayer layer, bool canEdit)
         {
             var node = new ShapeLayerTreeNode(layer, ShapeRepository.IsLayerVisible(layer.LayerId),
-                (id, visible) => ShapeRepository.SetLayerVisibility(id, visible)) { CanEdit = canEdit };
+                (id, visible) => ShapeRepository.SetLayerVisibility(id, visible))
+                { CanEdit = canEdit, IsActive = layer.LayerId == _selectedShapeLayer.LayerId };
             _layerNodes.Add(layer.LayerId, node);
             return node;
         }
@@ -491,6 +492,8 @@ namespace Lan.ImageViewer.Prism
                 if (SetProperty(ref _selectedShapeLayer, definition))
                 {
                     ShapeRepository.SetShapeLayer(definition);
+                    foreach (var node in LayerGroups)
+                        node.IsActive = node.LayerId == definition.LayerId;
                 }
             }
         }

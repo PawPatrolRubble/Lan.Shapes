@@ -5,7 +5,8 @@
     Focusable="False">
     <UserControl.Resources>
         <Style x:Key="GeometryMessageStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{DynamicResource DarkPanel.LabelForeground}" />
+            <Setter Property="Foreground" Value="{DynamicResource LayerPanel.Muted}" />
+            <Setter Property="FontFamily" Value="{DynamicResource LayerPanel.TextFont}" />
             <Setter Property="FontSize" Value="11" />
             <Setter Property="TextWrapping" Value="Wrap" />
             <Setter Property="Margin" Value="0,3,0,0" />
@@ -32,10 +33,6 @@
 
     <Grid x:Name="EditorRoot" Margin="0,2,0,4">
         <StackPanel>
-            <TextBlock
-                Margin="0,0,0,5"
-                Style="{DynamicResource DarkPropertyLabelStyle}"
-                Text="图像坐标 · px" />
             <ItemsControl ItemsSource="{Binding Groups}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
@@ -51,7 +48,7 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Style="{DynamicResource DarkPropertyLabelStyle}" Text="{Binding Label}" />
+                                    <TextBlock Style="{DynamicResource CadPropertyLabelStyle}" Text="{Binding Label}" />
                                     <ItemsControl Grid.Column="1" ItemsSource="{Binding Fields}">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
@@ -67,14 +64,14 @@
                                                     </Grid.ColumnDefinitions>
                                                     <TextBlock
                                                         Margin="0,0,4,0"
-                                                        Style="{DynamicResource DarkPropertyLabelStyle}"
+                                                        Style="{DynamicResource CadPropertyLabelStyle}"
                                                         Text="{Binding Label}" />
                                                     <Border Grid.Column="1" Style="{StaticResource GeometryInputBorderStyle}">
                                                         <TextBox
                                                             MinWidth="32"
                                                             AutomationProperties.HelpText="{Binding DataContext.ErrorMessage, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                             AutomationProperties.Name="{Binding AutomationName}"
-                                                            Style="{DynamicResource DarkPropertyTextBoxStyle}"
+                                                            Style="{DynamicResource CadPropertyTextBoxStyle}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                                     </Border>
                                                 </Grid>
@@ -83,13 +80,9 @@
                                     </ItemsControl>
                                     <TextBlock
                                         Grid.Column="2"
-                                        Style="{DynamicResource DarkPropertyLabelStyle}"
+                                        Style="{DynamicResource CadPropertyLabelStyle}"
                                         Text="px" />
                                 </Grid>
-                                <TextBlock
-                                    Margin="65,3,0,0"
-                                    Style="{StaticResource GeometryMessageStyle}"
-                                    Text="{Binding Hint}" />
                                 <TextBlock
                                     Foreground="Salmon"
                                     Style="{StaticResource GeometryMessageStyle}"
@@ -107,11 +100,12 @@
                                 <ColumnDefinition Width="65" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Style="{DynamicResource DarkPropertyLabelStyle}" Text="{Binding Label}" />
+                            <TextBlock Style="{DynamicResource CadPropertyLabelStyle}" Text="{Binding Label}" />
                             <TextBlock
                                 Grid.Column="1"
-                                Foreground="{DynamicResource DarkPanel.ValueForeground}"
-                                Style="{DynamicResource DarkPropertyLabelStyle}"
+                                FontFamily="{DynamicResource LayerPanel.MonoFont}"
+                                Foreground="{DynamicResource LayerPanel.Amber}"
+                                Style="{DynamicResource CadPropertyLabelStyle}"
                                 Text="{Binding Value}"
                                 TextWrapping="Wrap" />
                         </Grid>
@@ -122,10 +116,9 @@
                 Style="{StaticResource GeometryMessageStyle}"
                 Text="{Binding UnavailableReason, FallbackValue='暂不支持编辑此图形。'}" />
             <TextBlock
-                Foreground="{DynamicResource DarkPanel.Accent}"
+                Foreground="{DynamicResource LayerPanel.Cyan}"
                 Style="{StaticResource GeometryMessageStyle}"
                 Text="{Binding StatusMessage, FallbackValue=''}" />
-            <TextBlock Style="{StaticResource GeometryMessageStyle}" Text="Enter 提交 · Esc 取消" />
         </StackPanel>
     </Grid>
 </UserControl>

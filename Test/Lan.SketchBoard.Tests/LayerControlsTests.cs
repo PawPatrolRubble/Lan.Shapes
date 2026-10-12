@@ -10,6 +10,7 @@ using System.Windows.Automation.Provider;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Lan.ImageViewer;
@@ -24,6 +25,94 @@ namespace Lan.SketchBoard.Tests;
 
 public class LayerControlsTests
 {
+    [Fact]
+    public void CadLayerPanel_ReflectsActiveLayerCalibrationSavingAndLocks()
+    {
+        RunOnSta(() =>
+        {
+            var manager = new ShapeLayerManager();
+            var colors = new[] { Colors.SlateGray, Colors.DodgerBlue, Colors.MediumPurple, Colors.Crimson, Colors.Gold };
+            for (var index = 0; index < colors.Length; index++)
+            {
+                var definition = TestShapeLayer.Create().ToShapeLayerParameter();
+                definition.LayerId = index + 1;
+                definition.Name = index == 0 ? "default" : $"layer{index + 1}";
+                definition.StyleSchema[ShapeVisualState.Normal].StrokeColor = new SolidColorBrush(colors[index]);
+                manager.Layers.Add(new ShapeLayer(definition));
+            }
+            using var vm = new ImageViewerControlViewModel(manager, new SketchBoardDataManager(), new GeometryTypeManager());
+            vm.SelectedShapeLayer = vm.Layers[4];
+            vm.SelectedShapeLayer.Measurement.PixelPerUnit = 20;
+            vm.SelectedShapeLayer.Measurement.UnitName = "μm";
+            var cross = new Cross(vm.SelectedShapeLayer);
+            cross.FromData(new CrossData { Center = new Point(50, 50), Width = 40, Height = 40, StrokeThickness = 1 });
+            var circle = new Circle(vm.SelectedShapeLayer);
+            circle.FromData(new EllipseData { Center = new Point(100, 100), RadiusX = 38.65 });
+            vm.ShapeRepository.AddShape(cross);
+            vm.ShapeRepository.AddShape(circle);
+            vm.SelectedShape = circle;
+            var directory = Path.Combine(Path.GetTempPath(), "lan-shapes-panel-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            try
+            {
+                var control = new ImageViewerControl { DataContext = vm };
+                AddHostTextStyles(control.Resources);
+                Layout(control);
+                var panel = Assert.IsType<Border>(control.FindName("LayerPanel"));
+                Assert.Contains(Descendants<TextBlock>(panel), text => text.Text == "未保存");
+                vm.SaveLayerConfiguration(Path.Combine(directory, "LanShapesConfig.json"));
+                Layout(control);
+                var tree = Assert.IsType<TreeView>(control.FindName("LayerTree"));
+                var active = vm.LayerGroups[4];
+                var parent = Assert.IsType<TreeViewItem>(tree.ItemContainerGenerator.ContainerFromItem(active));
+                parent.IsExpanded = true;
+                Layout(control);
+                var frame = Assert.IsType<Border>(parent.Template.FindName("LayerFrame", parent));
+                Assert.Equal(new Thickness(1), frame.BorderThickness);
+                Assert.Same(active, Assert.Single(vm.LayerGroups, node => node.IsActive));
+                Assert.Equal(Colors.Gold, Assert.IsType<SolidColorBrush>(active.Color).Color);
+                Assert.Equal("LanShapesConfig.json", Assert.IsType<TextBlock>(control.FindName("LayerConfigurationFileText")).Text);
+                Assert.Equal("Circle · layer5", Assert.IsType<TextBlock>(control.FindName("SelectedShapeSummaryText")).Text);
+                Assert.Contains(Descendants<TextBlock>(panel), text => text.Text == "已保存");
+                Assert.Contains(Descendants<TextBlock>(parent), text => text.Text == "(Ø 3.865 μm)");
+                var selector = Assert.IsType<ComboBox>(control.FindName("AssignedLayerSelector"));
+                var assign = Assert.IsType<Button>(control.FindName("AssignLayerButton"));
+                var selectorBounds = selector.TransformToAncestor(panel).TransformBounds(new Rect(selector.RenderSize));
+                var buttonBounds = assign.TransformToAncestor(panel).TransformBounds(new Rect(assign.RenderSize));
+                Assert.True(selectorBounds.Width > 100);
+                Assert.True(selectorBounds.Right < buttonBounds.Left);
+                Assert.Equal(selectorBounds.Top, buttonBounds.Top, 5);
+                Snapshot(panel, "cad-layer-panel-reference");
+
+                circle.SetCircle(circle.Center, 50);
+                Layout(control);
+                Assert.Contains(Descendants<TextBlock>(parent), text => text.Text == "(Ø 5 μm)");
+                circle.Lock();
+                Layout(control);
+                Assert.False(Descendants<ToggleButton>(parent).Single(marker => ReferenceEquals(marker.Tag, circle)).IsEnabled);
+                Assert.Contains(Descendants<System.Windows.Shapes.Path>(parent), icon =>
+                    ReferenceEquals(icon.Data, control.Resources["LayerPanel.LockedIcon"])
+                    && VisualTreeHelper.GetParent(icon) is StackPanel { Visibility: Visibility.Visible });
+
+                vm.SelectedShapeLayer = vm.Layers[1];
+                Layout(control);
+                Assert.Same(vm.LayerGroups[1], Assert.Single(vm.LayerGroups, node => node.IsActive));
+                Assert.Equal(new Thickness(0), frame.BorderThickness);
+                var edited = vm.Layers[1].ToShapeLayerParameter();
+                edited.StyleSchema[ShapeVisualState.Normal].StrokeColor = Brushes.LimeGreen;
+                vm.UpdateLayerConfiguration(edited);
+                Layout(control);
+                Assert.Equal(Colors.LimeGreen, Assert.IsType<SolidColorBrush>(vm.LayerGroups[1].Color).Color);
+                Assert.Contains(Descendants<TextBlock>(panel), text => text.Text == "已保存");
+                Snapshot(panel, "cad-layer-panel-active-and-locked");
+            }
+            finally
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        });
+    }
+
     [Fact]
     public void LayerTree_BranchesHaveSpacingAndTheLastConnectorUpdatesWithItsChildren()
     {
@@ -156,6 +245,75 @@ public class LayerControlsTests
             Assert.False(toggle.IsChecked);
             Assert.Same(control.Resources["SolidHide"], icon.Data);
         });
+    }
+
+    [Fact]
+    public void LayerName_DoubleClickActivatesTheDrawingLayerAndKeepsExistingShapes()
+    {
+        RunOnSta(() =>
+        {
+            using var vm = CreateViewModel();
+            var existing = AddLine(vm, 50);
+            var originalLayer = existing.ShapeLayer;
+            vm.SelectedShape = existing;
+            var control = new ImageViewerControl { DataContext = vm };
+            Layout(control);
+            var tree = Assert.IsType<TreeView>(control.FindName("LayerTree"));
+            var name = Descendants<TextBlock>(tree).Single(text => text.Name == "LayerName"
+                && ReferenceEquals(text.DataContext, vm.LayerGroups[1]));
+
+            ClickLayerName(name, clickCount: 1);
+            Assert.Same(vm.Layers[0], vm.SelectedShapeLayer);
+
+            var doubleClick = ClickLayerName(name, clickCount: 2);
+            Assert.True(doubleClick.Handled);
+            Assert.Same(vm.Layers[1], vm.SelectedShapeLayer);
+            Assert.Same(vm.LayerGroups[1], Assert.Single(vm.LayerGroups, node => node.IsActive));
+            Assert.Equal(vm.Layers[1].LayerId, vm.ShapeRepository.CurrentShapeLayer!.LayerId);
+            Assert.Same(vm.Layers[1], Assert.IsType<ComboBox>(control.FindName("CurrentLayerSelector")).SelectedItem);
+            Assert.Same(existing, vm.SelectedShape);
+            Assert.Same(originalLayer, existing.ShapeLayer);
+
+            vm.ShapeRepository.SetGeometryType(typeof(Line));
+            var created = vm.ShapeRepository.CreateNewGeometry(new Point(10, 10));
+            Assert.Equal(vm.Layers[1].LayerId, created!.ShapeLayer.LayerId);
+        });
+    }
+
+    [Fact]
+    public void LayerName_DoubleClickIgnoresLayersOutsideTheCatalogue()
+    {
+        RunOnSta(() =>
+        {
+            using var vm = CreateViewModel();
+            var definition = TestShapeLayer.Create().ToShapeLayerParameter();
+            definition.LayerId = 99;
+            definition.Name = "External layer";
+            var external = new Line(new ShapeLayer(definition));
+            external.FromData(new PointsData(99, new List<Point> { new(40, 50), new(100, 50) }));
+            vm.ShapeRepository.AddShape(external);
+            var control = new ImageViewerControl { DataContext = vm };
+            Layout(control);
+            var tree = Assert.IsType<TreeView>(control.FindName("LayerTree"));
+            var name = Descendants<TextBlock>(tree).Single(text => text.Name == "LayerName"
+                && text.DataContext is ShapeLayerTreeNode { LayerId: 99 });
+
+            ClickLayerName(name, clickCount: 2);
+
+            Assert.Same(vm.Layers[0], vm.SelectedShapeLayer);
+            Assert.Same(vm.LayerGroups[0], Assert.Single(vm.LayerGroups, node => node.IsActive));
+        });
+    }
+
+    private static MouseButtonEventArgs ClickLayerName(TextBlock name, int clickCount)
+    {
+        var args = new MouseButtonEventArgs(Mouse.PrimaryDevice, 0, MouseButton.Left)
+        {
+            RoutedEvent = UIElement.MouseLeftButtonDownEvent
+        };
+        typeof(MouseButtonEventArgs).GetProperty(nameof(MouseButtonEventArgs.ClickCount))!.SetValue(args, clickCount);
+        name.RaiseEvent(args);
+        return args;
     }
 
     [Fact]

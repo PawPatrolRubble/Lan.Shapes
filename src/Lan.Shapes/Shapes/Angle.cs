@@ -15,18 +15,7 @@ namespace Lan.Shapes.Shapes
     /// <summary>An angle defined by an endpoint, its vertex, and a second endpoint.</summary>
     public sealed class Angle : ShapeVisualBase, IDataExport<PointsData>, IStagedSketch
     {
-        private readonly LineGeometry _firstRay = new LineGeometry();
-        private readonly LineGeometry _secondRay = new LineGeometry();
-        private readonly PathGeometry _arc = new PathGeometry();
-        private readonly DragHandle _firstHandle;
-        private readonly DragHandle _vertexHandle;
-        private readonly DragHandle _secondHandle;
-
-        private Point _firstPoint;
-        private Point _vertex;
-        private Point _secondPoint;
-        private Point? _previewPoint;
-        private int _clicks;
+        #region constructor
 
         public Angle(ShapeLayer layer) : base(layer)
         {
@@ -38,38 +27,148 @@ namespace Lan.Shapes.Shapes
             RenderGeometryGroup.Children.Add(_arc);
         }
 
+        #endregion
+
+        #region private fields
+
+        private readonly PathGeometry _arc = new();
+        private readonly DragHandle _firstHandle;
+        private readonly LineGeometry _firstRay = new();
+        private readonly DragHandle _secondHandle;
+        private readonly LineGeometry _secondRay = new();
+        private readonly DragHandle _vertexHandle;
+        private int _clicks;
+
+        private Point _firstPoint;
+        private Point? _previewPoint;
+        private Point _secondPoint;
+        private Point _vertex;
+
+        #endregion
+
+        #region properties
+
         public Point FirstPoint
         {
-            get => _firstPoint;
-            set { SetField(ref _firstPoint, value); UpdateGeometry(); }
+            get { return _firstPoint; }
+            set
+            {
+                SetField(ref _firstPoint, value);
+                UpdateGeometry();
+            }
         }
 
         public Point Vertex
         {
-            get => _vertex;
-            set { SetField(ref _vertex, value); UpdateGeometry(); }
+            get { return _vertex; }
+            set
+            {
+                SetField(ref _vertex, value);
+                UpdateGeometry();
+            }
         }
 
         public Point SecondPoint
         {
-            get => _secondPoint;
-            set { SetField(ref _secondPoint, value); UpdateGeometry(); }
+            get { return _secondPoint; }
+            set
+            {
+                SetField(ref _secondPoint, value);
+                UpdateGeometry();
+            }
         }
 
         /// <summary>The smaller angle between the two rays, from 0 to 180 degrees.</summary>
-        public double AngleDegrees => CalculateDegrees(_firstPoint, _vertex, _secondPoint);
+        public double AngleDegrees
+        {
+            get { return CalculateDegrees(_firstPoint, _vertex, _secondPoint); }
+        }
 
-        public override Rect BoundsRect => RenderGeometryGroup.Bounds;
+        public override Rect BoundsRect
+        {
+            get { return RenderGeometryGroup.Bounds; }
+        }
 
-        public override IEnumerable<Point> GetSnapPoints() => new[] { FirstPoint, Vertex, SecondPoint };
+        public override bool CanSnapDuringResize
+        {
+            get { return base.CanSnapDuringResize && SelectedDragHandle != null; }
+        }
 
-        public override bool CanSnapDuringResize => base.CanSnapDuringResize && SelectedDragHandle != null;
+        public override bool CanTranslate
+        {
+            get { return true; }
+        }
+
+        protected override bool CanCompleteCreation
+        {
+            get { return _clicks >= 3; }
+        }
+
+        #endregion
+
+        #region interface implementation
+
+        public void FromData(PointsData data)
+        {
+            if (data?.DataPoints == null || data.DataPoints.Count != 3)
+            {
+                throw new ArgumentException("Angle data must contain exactly three points.", nameof(data));
+            }
+
+            _firstPoint = data.DataPoints[0];
+            _vertex = data.DataPoints[1];
+            _secondPoint = data.DataPoints[2];
+            _clicks = 3;
+            IsGeometryRendered = true;
+            Tag = data.Tag;
+            UpdateGeometry();
+        }
+
+        public PointsData GetMetaData()
+        {
+            return new PointsData(Tag ?? string.Empty,
+                ShapeStyler?.SketchPen.Thickness ?? 1,
+                new List<Point> { FirstPoint, Vertex, SecondPoint });
+        }
+
+        public void PreviewPointer(Point point)
+        {
+            if (IsLocked || IsGeometryRendered || _clicks == 0 || _clicks > 2)
+            {
+                return;
+            }
+
+            _previewPoint = point;
+            if (_clicks == 1)
+            {
+                _vertex = point;
+            }
+            else
+            {
+                _secondPoint = point;
+            }
+
+            UpdateGeometry();
+        }
+
+        #endregion
+
+        #region other members
+
+        public override IEnumerable<Point> GetSnapPoints()
+        {
+            return new[] { FirstPoint, Vertex, SecondPoint };
+        }
 
         private static double CalculateDegrees(Point first, Point vertex, Point second)
         {
             var a = first - vertex;
             var b = second - vertex;
-            if (a.LengthSquared == 0 || b.LengthSquared == 0) return 0;
+            if (a.LengthSquared == 0 || b.LengthSquared == 0)
+            {
+                return 0;
+            }
+
             return Math.Abs(Math.Atan2(Vector.CrossProduct(a, b), Vector.Multiply(a, b))) * 180 / Math.PI;
         }
 
@@ -108,23 +207,36 @@ namespace Lan.Shapes.Shapes
             RequestVisualUpdate();
         }
 
-        protected override void CreateHandles() { }
+        protected override void CreateHandles()
+        {
+        }
 
         protected override void HandleResizing(Point point)
         {
-            if (ReferenceEquals(SelectedDragHandle, _firstHandle)) FirstPoint = point;
-            else if (ReferenceEquals(SelectedDragHandle, _vertexHandle)) Vertex = point;
-            else if (ReferenceEquals(SelectedDragHandle, _secondHandle)) SecondPoint = point;
+            if (ReferenceEquals(SelectedDragHandle, _firstHandle))
+            {
+                FirstPoint = point;
+            }
+            else if (ReferenceEquals(SelectedDragHandle, _vertexHandle))
+            {
+                Vertex = point;
+            }
+            else if (ReferenceEquals(SelectedDragHandle, _secondHandle))
+            {
+                SecondPoint = point;
+            }
         }
 
         protected override void HandleTranslate(Point point)
         {
-            if (OldPointForTranslate is not Point previous) return;
+            if (OldPointForTranslate is not Point previous)
+            {
+                return;
+            }
+
             Translate(point - previous);
             OldPointForTranslate = point;
         }
-
-        public override bool CanTranslate => true;
 
         protected override void TranslateCore(Vector delta)
         {
@@ -139,7 +251,10 @@ namespace Lan.Shapes.Shapes
 
         public override void OnMouseLeftButtonDown(Point point)
         {
-            if (IsLocked) return;
+            if (IsLocked)
+            {
+                return;
+            }
 
             if (IsGeometryRendered)
             {
@@ -148,9 +263,19 @@ namespace Lan.Shapes.Shapes
             }
 
             _previewPoint = null;
-            if (_clicks == 0) _firstPoint = point;
-            else if (_clicks == 1) _vertex = point;
-            else if (_clicks == 2) _secondPoint = point;
+            if (_clicks == 0)
+            {
+                _firstPoint = point;
+            }
+            else if (_clicks == 1)
+            {
+                _vertex = point;
+            }
+            else if (_clicks == 2)
+            {
+                _secondPoint = point;
+            }
+
             _clicks++;
             OldPointForTranslate = point;
             UpdateGeometry();
@@ -158,24 +283,29 @@ namespace Lan.Shapes.Shapes
 
         public override void OnMouseLeftButtonDoubleClick(Point point)
         {
-            if (!IsGeometryRendered) OnMouseLeftButtonDown(point);
-        }
-
-        public void PreviewPointer(Point point)
-        {
-            if (IsLocked || IsGeometryRendered || _clicks == 0 || _clicks > 2) return;
-            _previewPoint = point;
-            if (_clicks == 1) _vertex = point;
-            else _secondPoint = point;
-            UpdateGeometry();
+            if (!IsGeometryRendered)
+            {
+                OnMouseLeftButtonDown(point);
+            }
         }
 
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
-            if (!IsGeometryRendered || buttonState != MouseButtonState.Pressed || IsLocked || !MouseDownPoint.HasValue) return;
+            if (!IsGeometryRendered || buttonState != MouseButtonState.Pressed || IsLocked || !MouseDownPoint.HasValue)
+            {
+                return;
+            }
+
             IsBeingDraggedOrPanMoving = true;
-            if (SelectedDragHandle != null) HandleResizing(point);
-            else HandleTranslate(point);
+            if (SelectedDragHandle != null)
+            {
+                HandleResizing(point);
+            }
+            else
+            {
+                HandleTranslate(point);
+            }
+
             OldPointForTranslate = point;
         }
 
@@ -201,22 +331,36 @@ namespace Lan.Shapes.Shapes
             base.OnMouseLeftButtonUp(point);
         }
 
-        protected override bool CanCompleteCreation => _clicks >= 3;
-
         public override void OnMouseRightButtonUp(Point point)
         {
-            if (IsLocked) return;
+            if (IsLocked)
+            {
+                return;
+            }
 
-            if (!IsGeometryRendered) OnShapeCreationCancelled();
-            else base.OnMouseRightButtonUp(point);
+            if (!IsGeometryRendered)
+            {
+                OnShapeCreationCancelled();
+            }
+            else
+            {
+                base.OnMouseRightButtonUp(point);
+            }
         }
 
-        protected override void OnViewportScaleChanged(double viewportScale) => UpdateGeometry();
+        protected override void OnViewportScaleChanged(double viewportScale)
+        {
+            UpdateGeometry();
+        }
 
         protected override void DrawShape(DrawingContext context)
         {
             var styler = ShapeStyler;
-            if (styler == null) return;
+            if (styler == null)
+            {
+                return;
+            }
+
             if (_clicks >= 1 || IsGeometryRendered)
             {
                 if (_clicks >= 2 || IsGeometryRendered || _previewPoint.HasValue)
@@ -224,6 +368,7 @@ namespace Lan.Shapes.Shapes
                     context.DrawGeometry(null, new Pen(Brushes.Transparent, 12 / ViewportScale), _firstRay);
                     context.DrawGeometry(null, styler.SketchPen, _firstRay);
                 }
+
                 if (_clicks >= 3 || IsGeometryRendered || (_clicks == 2 && _previewPoint.HasValue))
                 {
                     context.DrawGeometry(null, new Pen(Brushes.Transparent, 12 / ViewportScale), _secondRay);
@@ -251,13 +396,17 @@ namespace Lan.Shapes.Shapes
         {
             var a = _firstPoint - _vertex;
             var b = _secondPoint - _vertex;
-            if (a.LengthSquared == 0 || b.LengthSquared == 0) return;
+            if (a.LengthSquared == 0 || b.LengthSquared == 0)
+            {
+                return;
+            }
+
             var sweep = Math.Atan2(Vector.CrossProduct(a, b), Vector.Multiply(a, b));
             var middle = Math.Atan2(a.Y, a.X) + sweep / 2;
             var radius = Math.Min(28 / ViewportScale, Math.Min(a.Length, b.Length) * 0.4);
             var direction = new Vector(Math.Cos(middle), Math.Sin(middle));
             var text = CreateFormattedText(CalculateDegrees(_firstPoint, _vertex, _secondPoint)
-                .ToString("0.##", CultureInfo.InvariantCulture) + "°",
+                    .ToString("0.##", CultureInfo.InvariantCulture) + "°",
                 ShapeStyler?.TagColor ?? Brushes.Red);
             text.SetFontSize(AnnotationFontSize * 1.2);
             // Keep the edge of the label clear of the arc, including when its text or font grows.
@@ -267,21 +416,6 @@ namespace Lan.Shapes.Shapes
             context.DrawText(text, new Point(position.X - text.Width / 2, position.Y - text.Height / 2));
         }
 
-        public void FromData(PointsData data)
-        {
-            if (data?.DataPoints == null || data.DataPoints.Count != 3)
-                throw new ArgumentException("Angle data must contain exactly three points.", nameof(data));
-            _firstPoint = data.DataPoints[0];
-            _vertex = data.DataPoints[1];
-            _secondPoint = data.DataPoints[2];
-            _clicks = 3;
-            IsGeometryRendered = true;
-            Tag = data.Tag;
-            UpdateGeometry();
-        }
-
-        public PointsData GetMetaData() => new PointsData(Tag ?? string.Empty,
-            ShapeStyler?.SketchPen.Thickness ?? 1,
-            new List<Point> { FirstPoint, Vertex, SecondPoint });
+        #endregion
     }
 }

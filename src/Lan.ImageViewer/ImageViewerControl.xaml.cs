@@ -238,6 +238,18 @@ namespace Lan.ImageViewer
             LayerPanelSlideTransform.BeginAnimation(TranslateTransform.XProperty, animation, HandoffBehavior.SnapshotAndReplace);
         }
 
+        private void LayerName_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount != 2 || sender is not TextBlock { DataContext: ShapeLayerTreeNode node }
+                || DataContext is not IImageViewerViewModel vm) return;
+
+            var layer = vm.Layers.FirstOrDefault(candidate => candidate.LayerId == node.LayerId);
+            if (layer == null) return;
+
+            vm.SelectedShapeLayer = layer;
+            e.Handled = true;
+        }
+
         private void LayerTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             if (!_handlingTreeSelection && e.NewValue is ShapeVisualBase shape && DataContext is IImageViewerViewModel vm)
