@@ -192,7 +192,8 @@ namespace Lan.SketchBoard
             if (geometry is ILineDirectionConstraint { ConstraintOrigin: not null }
                 && _lastRawDragPoint is Point point && _lastDragPoint.HasValue
                 && (IsDrawing || ShouldSnapResize(geometry, point)))
-                HandleMouseMove(point, MouseButtonState.Pressed, modifiers);
+                HandleMouseMove(point, IsDrawing && geometry is IStagedSketch
+                    ? MouseButtonState.Released : MouseButtonState.Pressed, modifiers);
         }
 
         #region others
@@ -337,7 +338,7 @@ namespace Lan.SketchBoard
             {
                 UpdateHoveredShape(null);
                 _mouseDownHitExistingShape = false;
-                position = SnapPoint(position, SketchBoardDataManager.CurrentGeometryInEdit);
+                position = ResolveEditPoint(position, SketchBoardDataManager.CurrentGeometryInEdit, modifiers);
                 _lastDragPoint = position;
                 var isNewSketch = SketchBoardDataManager.CurrentGeometryInEdit == null;
                 var sketch = SketchBoardDataManager.CurrentGeometryInEdit
@@ -616,7 +617,12 @@ namespace Lan.SketchBoard
             }
             if (buttonState == MouseButtonState.Pressed && (_suppressLeftDrag || _leftDragCancelled)) return;
 
-            if (buttonState == MouseButtonState.Pressed)
+            var isDrawing = IsDrawing;
+            var shapeInEdit = isDrawing
+                ? SketchBoardDataManager?.CurrentGeometryInEdit
+                : SketchBoardDataManager?.SelectedGeometry;
+
+            if (buttonState == MouseButtonState.Pressed || (isDrawing && shapeInEdit is IStagedSketch))
             {
                 _lastRawDragPoint = position;
                 _dragModifiers = modifiers;
@@ -626,10 +632,6 @@ namespace Lan.SketchBoard
                 _lastRawDragPoint = null;
             }
 
-            var isDrawing = IsDrawing;
-            var shapeInEdit = isDrawing
-                ? SketchBoardDataManager?.CurrentGeometryInEdit
-                : SketchBoardDataManager?.SelectedGeometry;
             var isResizing = !isDrawing && buttonState == MouseButtonState.Pressed
                 && ShouldSnapResize(shapeInEdit, position);
             var isMoving = !isDrawing && buttonState == MouseButtonState.Pressed
@@ -664,7 +666,9 @@ namespace Lan.SketchBoard
                 {
                     if (shapeInEdit is IStagedSketch previewShape)
                     {
-                        previewShape.PreviewPointer(position);
+                        using (shapeInEdit.DeferVisualUpdates())
+                            previewShape.PreviewPointer(position);
+                        _lastDragPoint = position;
                     }
                     UpdateHoveredShape(null);
                     Mouse.SetCursor(Cursors.Cross);

@@ -45,7 +45,9 @@ public class SnappingInteractionTests
             board.Press(new Point(103, 82));
             var line = Assert.IsType<Line>(manager.CurrentGeometryInEdit);
             Assert.Equal(new Point(100, 80), line.Start);
-            board.Move(new Point(220, 180), MouseButtonState.Pressed);
+            board.Release(new Point(103, 82));
+            board.Move(new Point(220, 180), MouseButtonState.Released);
+            board.Press(new Point(157, 118));
             board.Release(new Point(157, 118));
 
             Assert.Equal(new Point(160, 120), line.End);
@@ -139,7 +141,9 @@ public class SnappingInteractionTests
             board.Press(near);
             var line = Assert.IsType<Line>(manager.CurrentGeometryInEdit);
             Assert.Equal(anchor, line.Start);
-            board.Move(new Point(260, 200), MouseButtonState.Pressed);
+            board.Release(near);
+            board.Move(new Point(260, 200), MouseButtonState.Released);
+            board.Press(new Point(150, 130) + new Vector(3 / scale, 2 / scale));
             board.Release(new Point(150, 130) + new Vector(3 / scale, 2 / scale));
 
             Assert.Equal(new Point(150, 130), line.End);
@@ -250,8 +254,10 @@ public class SnappingInteractionTests
             board.Press(new Point(103, 22));
             var line = Assert.IsType<Line>(manager.CurrentGeometryInEdit);
             Assert.Equal(new Point(100, 20), line.Start);
-            board.Move(new Point(160, 150), MouseButtonState.Pressed);
-            // No intervening move at this corner: the release must apply the snap.
+            board.Release(new Point(103, 22));
+            board.Move(new Point(160, 150), MouseButtonState.Released);
+            // No intervening move at this corner: the final click must apply the snap.
+            board.Press(new Point(22, 77));
             board.Release(new Point(22, 77));
 
             Assert.Equal(new Point(20, 80), line.End);
@@ -345,6 +351,8 @@ public class SnappingInteractionTests
             board.Move(new Point(150, 160), MouseButtonState.Pressed);
             var end = new Point(151, 162);
             board.Move(end, MouseButtonState.Pressed);
+            board.Release(end);
+            board.Press(end);
             board.Release(end);
 
             Assert.Equal(end, line.End);

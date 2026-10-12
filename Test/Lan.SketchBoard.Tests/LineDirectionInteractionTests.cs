@@ -26,7 +26,7 @@ public class LineDirectionInteractionTests
 
     [Theory]
     [MemberData(nameof(LineTypesAndAxes))]
-    public void ShiftDrawing_ConstrainsNearestAxisIncludingFinalRelease(Type type, bool horizontal)
+    public void ShiftDrawing_ConstrainsNearestAxisIncludingFinalCommit(Type type, bool horizontal)
     {
         RunOnSta(() =>
         {
@@ -36,7 +36,7 @@ public class LineDirectionInteractionTests
             var line = manager.CurrentGeometryInEdit!;
             board.Move(horizontal ? new Point(180, 100) : new Point(100, 180), ModifierKeys.Shift);
             Assert.Equal(horizontal ? new Point(180, 60) : new Point(60, 180), Data(line).DataPoints[1]);
-            board.Release(horizontal ? new Point(200, 110) : new Point(110, 200), ModifierKeys.Shift);
+            board.CommitDrawing(horizontal ? new Point(200, 110) : new Point(110, 200), ModifierKeys.Shift);
 
             Assert.Equal(horizontal ? new Point(200, 60) : new Point(60, 200), Data(line).DataPoints[1]);
             Assert.Equal(new Point(60, 60), Data(line).DataPoints[0]);
@@ -58,7 +58,7 @@ public class LineDirectionInteractionTests
             var line = manager.CurrentGeometryInEdit!;
             var pointer = new Point(40 + dx, 40 + dy);
             board.Move(pointer, ModifierKeys.Shift);
-            board.Release(pointer, ModifierKeys.Shift);
+            board.CommitDrawing(pointer, ModifierKeys.Shift);
             Assert.Equal(new Point(x, y), Data(line).DataPoints[1]);
         });
     }
@@ -82,7 +82,7 @@ public class LineDirectionInteractionTests
             board.ModifiersChanged(ModifierKeys.None);
             Assert.Equal(new Point(180, 100), Data(line).DataPoints[1]);
             board.ModifiersChanged(ModifierKeys.Shift);
-            board.Release(new Point(200, 110));
+            board.CommitDrawing(new Point(200, 110));
 
             Assert.Equal(new Point(200, 110), Data(line).DataPoints[1]);
             board.ModifiersChanged(ModifierKeys.Shift);
@@ -105,7 +105,7 @@ public class LineDirectionInteractionTests
                 var line = manager.CurrentGeometryInEdit!;
                 var pointer = horizontal ? new Point(100, 200) : new Point(200, 100);
                 board.Move(pointer, ModifierKeys.Shift);
-                board.Release(pointer, ModifierKeys.Shift);
+                board.CommitDrawing(pointer, ModifierKeys.Shift);
                 Assert.Equal(horizontal ? new Point(100, 60) : new Point(60, 100), Data(line).DataPoints[1]);
             }
         });
@@ -197,7 +197,7 @@ public class LineDirectionInteractionTests
             board.Move(inside);
             Assert.Equal(anchor, Data(line).DataPoints[1]);
             Assert.Equal(13.5, board.MarkerBounds.Width * scale, precision: 8);
-            board.Release(inside);
+            board.CommitDrawing(inside);
             Assert.Equal(anchor, Data(line).DataPoints[1]);
             Assert.True(target.IsLocked);
             Assert.True(board.MarkerBounds.IsEmpty);
@@ -217,7 +217,7 @@ public class LineDirectionInteractionTests
             board.Move(new Point(103, 62), ModifierKeys.Shift);
             Assert.Equal(new Point(103, 60), Data(line).DataPoints[1]);
             Assert.True(board.MarkerBounds.IsEmpty);
-            board.Release(new Point(103, 62), ModifierKeys.Shift);
+            board.CommitDrawing(new Point(103, 62), ModifierKeys.Shift);
             Assert.Equal(new Point(103, 60), Data(line).DataPoints[1]);
         });
     }
@@ -247,7 +247,7 @@ public class LineDirectionInteractionTests
     }
 
     [Fact]
-    public void ReleasedPointer_StopsModifierKeysFromChangingUnfinishedSketch()
+    public void ReleasedPointer_KeepsStagedPreviewResponsiveToModifierKeys()
     {
         RunOnSta(() =>
         {
@@ -258,6 +258,8 @@ public class LineDirectionInteractionTests
             board.Move(new Point(180, 100));
             board.PointerReleased(new Point(180, 100));
             board.ModifiersChanged(ModifierKeys.Shift);
+            Assert.Equal(new Point(180, 60), Data(line).DataPoints[1]);
+            board.ModifiersChanged(ModifierKeys.None);
             Assert.Equal(new Point(180, 100), Data(line).DataPoints[1]);
         });
     }
@@ -274,7 +276,7 @@ public class LineDirectionInteractionTests
             board.Press(new Point(40, 60));
             var line = manager.CurrentGeometryInEdit!;
             board.Move(new Point(103, 62), ModifierKeys.Shift);
-            board.Release(new Point(103, 62), ModifierKeys.Shift);
+            board.CommitDrawing(new Point(103, 62), ModifierKeys.Shift);
             Assert.Equal(new Point(103, 60), Data(line).DataPoints[1]);
             Assert.True(board.MarkerBounds.IsEmpty);
         });
@@ -340,6 +342,15 @@ public class LineDirectionInteractionTests
         public void Move(Point point, ModifierKeys modifiers = ModifierKeys.None)
             => HandleMouseMove(point, MouseButtonState.Pressed, modifiers);
         public void Release(Point point, ModifierKeys modifiers = ModifierKeys.None) => HandleLeftButtonUp(point, modifiers);
+        public void CommitDrawing(Point point, ModifierKeys modifiers = ModifierKeys.None)
+        {
+            if (SketchBoardDataManager?.CurrentGeometryInEdit is Line { IsGeometryRendered: false })
+            {
+                HandleLeftButtonUp(point, modifiers);
+                HandleLeftButtonDown(point, 1, modifiers);
+            }
+            HandleLeftButtonUp(point, modifiers);
+        }
         public void ModifiersChanged(ModifierKeys modifiers) => HandleModifierKeysChanged(modifiers);
         public void PointerReleased(Point point) => HandleMouseMove(point, MouseButtonState.Released);
     }

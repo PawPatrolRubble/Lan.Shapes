@@ -261,8 +261,8 @@ public class ShapeVisualContractRegressionTests
             Assert.Same(line, manager.CurrentGeometryInEdit);
             Assert.Equal(0, completed);
 
-            board.Press(new Point(40, 30));
-            board.Move(new Point(140, 130), MouseButtonState.Pressed);
+            board.Move(new Point(140, 130), MouseButtonState.Released);
+            board.Press(new Point(140, 130));
             board.Release(new Point(140, 130));
             Assert.True(line.IsGeometryRendered);
             Assert.Equal(1, completed);

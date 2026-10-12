@@ -158,7 +158,10 @@ public class GeometryLockInteractionTests
             var line = Assert.IsType<Line>(manager.CurrentGeometryInEdit);
             Assert.Equal(rectangle.TopLeft, line.Start);
             Assert.Same(line, manager.SelectedGeometry);
-            board.Move(new Point(150, 160), MouseButtonState.Pressed);
+            board.Release();
+            Assert.False(line.IsGeometryRendered);
+            board.Move(new Point(150, 160), MouseButtonState.Released);
+            board.Press(new Point(150, 160), clickCount: 1);
             board.Release();
             Assert.Equal(new Point(150, 160), line.End);
             Assert.True(line.IsGeometryRendered);

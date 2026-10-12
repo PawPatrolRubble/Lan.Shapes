@@ -124,7 +124,7 @@ internal static class Program
             Require(completions == 0, "Stale release raised a completion event.");
 
             if (captureTarget.IsMouseCaptured) captureTarget.ReleaseMouseCapture();
-            board.Press(creating ? start : start + new Vector(20, 0));
+            board.Press(creating ? start + new Vector(60, 30) : start + new Vector(20, 0));
             board.MovePressed(start + new Vector(60, 30));
             board.Release(start + new Vector(60, 30));
             Require(shape.BoundsRect != bounds, "Fresh mouse down did not resume editing.");

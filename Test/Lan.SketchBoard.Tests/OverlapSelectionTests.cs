@@ -243,7 +243,9 @@ public class OverlapSelectionTests
             var end = new Point(230, 170);
 
             board.Press(start, ModifierKeys.Alt);
-            board.Move(end, MouseButtonState.Pressed);
+            board.Release(start);
+            board.Move(end, MouseButtonState.Released);
+            board.Press(end, ModifierKeys.Alt);
             board.Release(end);
 
             var line = Assert.IsType<Line>(manager.Shapes[2]);

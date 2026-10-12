@@ -13,7 +13,7 @@ using Lan.Shapes.Utilities;
 
 namespace Lan.Shapes.Shapes
 {
-    public class Line : ShapeVisualBase, IDataExport<PointsData>, ILineDirectionConstraint
+    public class Line : ShapeVisualBase, IDataExport<PointsData>, ILineDirectionConstraint, IStagedSketch
     {
         #region constructor
 
@@ -40,6 +40,7 @@ namespace Lan.Shapes.Shapes
 
         private Point _end;
         private Point _start;
+        private int _creationClicks;
 
         #endregion
 
@@ -109,7 +110,9 @@ namespace Lan.Shapes.Shapes
         public override bool CanSnapDuringResize => base.CanSnapDuringResize
             && (ReferenceEquals(SelectedDragHandle, _leftDragHandle) || ReferenceEquals(SelectedDragHandle, _rightDragHandle));
 
-        Point? ILineDirectionConstraint.ConstraintOrigin => !IsGeometryRendered ? Start
+        protected override bool CanCompleteCreation => _creationClicks == 2 && Start != End;
+
+        Point? ILineDirectionConstraint.ConstraintOrigin => !IsGeometryRendered ? (_creationClicks > 0 ? Start : null)
             : ReferenceEquals(SelectedDragHandle, _leftDragHandle) ? End
             : ReferenceEquals(SelectedDragHandle, _rightDragHandle) ? Start
             : null;
@@ -165,8 +168,20 @@ namespace Lan.Shapes.Shapes
             base.OnMouseLeftButtonDown(mousePoint);
             if (!IsGeometryRendered)
             {
-                Start = mousePoint;
-                End = mousePoint + new Vector(10, 10);
+                using (DeferVisualUpdates())
+                {
+                    if (_creationClicks == 0)
+                    {
+                        Start = mousePoint;
+                        End = mousePoint;
+                        _creationClicks = 1;
+                    }
+                    else if (_creationClicks == 1)
+                    {
+                        End = mousePoint;
+                        if (Start != End) _creationClicks = 2;
+                    }
+                }
             }
             else
             {
@@ -181,39 +196,58 @@ namespace Lan.Shapes.Shapes
             base.FindSelectedHandle(p);
         }
 
+        public override void OnMouseLeftButtonDoubleClick(Point point)
+        {
+            if (!IsGeometryRendered) OnMouseLeftButtonDown(point);
+            else base.OnMouseLeftButtonDoubleClick(point);
+        }
+
+        public void PreviewPointer(Point point)
+        {
+            if (IsLocked || IsGeometryRendered || _creationClicks != 1) return;
+            End = point;
+        }
+
+        public override void OnMouseRightButtonUp(Point point)
+        {
+            if (IsLocked) return;
+            if (!IsGeometryRendered)
+            {
+                CancelInteraction();
+                OnShapeCreationCancelled();
+            }
+            else base.OnMouseRightButtonUp(point);
+        }
+
         public override void OnMouseMove(Point point, MouseButtonState buttonState)
         {
             if (IsLocked || (buttonState == MouseButtonState.Pressed && !MouseDownPoint.HasValue)) return;
+
+            if (!IsGeometryRendered)
+            {
+                if (buttonState == MouseButtonState.Released) CancelInteraction();
+                PreviewPointer(point);
+                return;
+            }
 
             var oldPointForTranslate = OldPointForTranslate;
 
             base.OnMouseMove(point, buttonState);
 
-            if (buttonState == MouseButtonState.Pressed)
+            if (buttonState == MouseButtonState.Pressed && SelectedDragHandle != null)
             {
-                if (!IsGeometryRendered)
+                switch (SelectedDragHandle)
                 {
-                    End = point;
-                }
-                else // handle reallocation of start and end points of line
-                {
-
-                    if (SelectedDragHandle != null)
-                    {
-                        switch (SelectedDragHandle)
-                        {
-                            case var handle when handle == _leftDragHandle:
-                                Start = point;
-                                break;
-                            case var handle when handle == _rightDragHandle:
-                                End = point;
-                                break;
-                            default:
-                                OldPointForTranslate = oldPointForTranslate;
-                                HandleTranslate(point);
-                                break;
-                        }
-                    }
+                    case var handle when handle == _leftDragHandle:
+                        Start = point;
+                        break;
+                    case var handle when handle == _rightDragHandle:
+                        End = point;
+                        break;
+                    default:
+                        OldPointForTranslate = oldPointForTranslate;
+                        HandleTranslate(point);
+                        break;
                 }
             }
         }
@@ -270,6 +304,7 @@ namespace Lan.Shapes.Shapes
 
             Start = data.DataPoints[0];
             End = data.DataPoints[1];
+            _creationClicks = 2;
             IsGeometryRendered = true;
             RequestVisualUpdate();
         }
