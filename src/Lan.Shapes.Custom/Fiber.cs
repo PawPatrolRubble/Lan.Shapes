@@ -31,6 +31,8 @@ namespace Lan.Shapes.Custom
         private bool _enableTranslation = true;
         private double _fiberAngle;
         private double _filletRadius = 30.0;
+        // Reference coordinates remain meaningful even when no fillet is drawn.
+        private Point _filletCenter;
         private Point _tipBottomRight;
         private double _triangleAngleInDeg = 45.0;
         private Point _rectTopLeft;
@@ -70,6 +72,10 @@ namespace Lan.Shapes.Custom
             get => _filletRadius;
             set
             {
+                if (value < 0.0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "Fillet radius cannot be negative.");
+                }
                 if (SetField(ref _filletRadius, value, nameof(FilletRadius)))
                 {
                     OnPropertyChanged(nameof(Radius));
@@ -150,12 +156,12 @@ namespace Lan.Shapes.Custom
             {
                 double oldAngle = _fiberAngle;
                 if (Math.Abs(_fiberAngle - value) < 0.0001) return;
-                Point center = _filletGeometry.Center;
+                Point center = FilletCenter;
                 RotateAboutAngle(AngleToRadian(-(value - oldAngle)), center);
             }
         }
 
-        public Point FilletCenter => _filletGeometry.Center;
+        public Point FilletCenter => _filletCenter;
 
         public double TriangleBottomEdgeAngleInDeg
         {
@@ -269,6 +275,11 @@ namespace Lan.Shapes.Custom
                 throw new ArgumentNullException(nameof(data));
             }
 
+            if (data.FilletRadius < 0.0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(data.FilletRadius), data.FilletRadius, "Fillet radius cannot be negative.");
+            }
+
             SetField(ref _enableTranslation, data.EnableTranslation, nameof(CanTranslate));
             _fiberAngle = data.FiberAngleInDeg;
             _filletRadius = data.FilletRadius;
@@ -292,7 +303,7 @@ namespace Lan.Shapes.Custom
             UpdateGeometry();
 
             // Correct residual fillet-center drift after geometry rebuild.
-            Point currentCenter = _filletGeometry.Center;
+            Point currentCenter = FilletCenter;
             Vector vec = new Vector(data.FilletCenter.X - currentCenter.X, data.FilletCenter.Y - currentCenter.Y);
             if (vec.LengthSquared > 0)
             {
@@ -324,7 +335,7 @@ namespace Lan.Shapes.Custom
             return new FiberData()
             {
                 FiberAngleInDeg = GetFiberAngleInDeg(),
-                FilletCenter = _filletGeometry.Center,
+                FilletCenter = FilletCenter,
                 FilletRadius = FilletRadius,
                 Width = w,
                 Height = h,
@@ -497,7 +508,7 @@ namespace Lan.Shapes.Custom
                             if (dir.Length > 0.0)
                             {
                                 dir.Normalize();
-                                FilletRadius += -Vector.Multiply(new Vector(point.X - OldPointForTranslate.Value.X, point.Y - OldPointForTranslate.Value.Y), dir);
+                                FilletRadius = Math.Max(0.0, FilletRadius - Vector.Multiply(point - OldPointForTranslate.Value, dir));
                             }
                             OldPointForTranslate = point;
                         }
@@ -505,7 +516,7 @@ namespace Lan.Shapes.Custom
                     case 10:
                         if (OldPointForTranslate.HasValue)
                         {
-                            Point center = _filletGeometry.Center;
+                            Point center = FilletCenter;
                             Vector vOld = new Vector(OldPointForTranslate.Value.X - center.X, OldPointForTranslate.Value.Y - center.Y);
                             Vector vNew = new Vector(point.X - center.X, point.Y - center.Y);
                             if (vOld.Length > 0.0 && vNew.Length > 0.0)
@@ -565,39 +576,40 @@ namespace Lan.Shapes.Custom
 
         private void UpdateFilletCircle()
         {
-            if (FilletRadius <= 0.0)
+            // At zero radius the geometric center is the apex, not the image origin.
+            // FromData positions the body so this center matches the requested reference.
+            Point center = TriangleApex;
+            if (FilletRadius > 0.0)
             {
-                _filletGeometry.Center = new Point(0.0, 0.0);
-                _filletGeometry.RadiusX = 0.0;
-                _filletGeometry.RadiusY = 0.0;
-            }
-            else
-            {
-                double num = FilletRadius / Math.Sin((180.0 - 2.0 * TriangleBottomEdgeAngleInDeg) * Math.PI / 2.0 / 180.0);
+                double offset = FilletRadius / Math.Sin((180.0 - 2.0 * TriangleBottomEdgeAngleInDeg) * Math.PI / 2.0 / 180.0);
                 double angleInDegrees = 90.0 - TriangleBottomEdgeAngleInDeg;
 
                 Point pointLine1AnglePoint1 = GetIntersectionPoint_Line1AnglePoint(RectTopLeft, RectBottomLeft, TriangleApex, angleInDegrees);
                 Point pointLine1AnglePoint2 = GetIntersectionPoint_Line1AnglePoint(RectTopRight, RectBottomRight, TriangleApex, -angleInDegrees);
 
-                Vector vector1 = new Vector(pointLine1AnglePoint1.X - TriangleApex.X, pointLine1AnglePoint1.Y - TriangleApex.Y);
-                Vector vector2 = new Vector(pointLine1AnglePoint2.X - TriangleApex.X, pointLine1AnglePoint2.Y - TriangleApex.Y);
+                Vector vector1 = pointLine1AnglePoint1 - TriangleApex;
+                Vector vector2 = pointLine1AnglePoint2 - TriangleApex;
                 if (vector1.Length > 0) vector1.Normalize();
                 if (vector2.Length > 0) vector2.Normalize();
 
-                Vector vector3 = new Vector((vector1.X + vector2.X) / 2.0, (vector1.Y + vector2.Y) / 2.0);
-                if (vector3.Length > 0) vector3.Normalize();
-
-                Point point = new Point(TriangleApex.X + vector3.X * num, TriangleApex.Y + vector3.Y * num);
-
-                _filletGeometry.Center = point;
-                _filletGeometry.RadiusX = FilletRadius;
-                _filletGeometry.RadiusY = FilletRadius;
-                _centerMarkHorizontal.StartPoint = new Point(point.X, point.Y - _crossSize / 2.0);
-                _centerMarkHorizontal.EndPoint = new Point(point.X, point.Y + _crossSize / 2.0);
-                _centerMarkVertical.StartPoint = new Point(point.X - _crossSize / 2.0, point.Y);
-                _centerMarkVertical.EndPoint = new Point(point.X + _crossSize / 2.0, point.Y);
-                _filletRadiusHandle.GeometryCenter = new Point(point.X + vector3.X * FilletRadius, point.Y + vector3.Y * FilletRadius);
+                Vector direction = (vector1 + vector2) / 2.0;
+                if (direction.Length > 0) direction.Normalize();
+                center = TriangleApex + direction * offset;
+                _filletRadiusHandle.GeometryCenter = center + direction * FilletRadius;
             }
+            else
+            {
+                _filletRadiusHandle.GeometryCenter = center;
+            }
+
+            _filletCenter = center;
+            _filletGeometry.Center = center;
+            _filletGeometry.RadiusX = FilletRadius;
+            _filletGeometry.RadiusY = FilletRadius;
+            _centerMarkHorizontal.StartPoint = new Point(center.X, center.Y - _crossSize / 2.0);
+            _centerMarkHorizontal.EndPoint = new Point(center.X, center.Y + _crossSize / 2.0);
+            _centerMarkVertical.StartPoint = new Point(center.X - _crossSize / 2.0, center.Y);
+            _centerMarkVertical.EndPoint = new Point(center.X + _crossSize / 2.0, center.Y);
         }
 
         protected override void OnStrokeThicknessChanges(double strokeThickness)
