@@ -427,6 +427,9 @@
                 CornerRadius="5"
                 SnapsToDevicePixels="True"
                 Visibility="Collapsed">
+                <Border.Resources>
+                    <Style BasedOn="{StaticResource DarkScrollBarStyle}" TargetType="ScrollBar" />
+                </Border.Resources>
                 <Border.RenderTransform>
                     <TranslateTransform x:Name="LayerPanelSlideTransform" />
                 </Border.RenderTransform>

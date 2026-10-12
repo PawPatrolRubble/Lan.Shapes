@@ -358,6 +358,7 @@ public class LayerControlsTests
         {
             var vm = CreateViewModel();
             vm.SelectedShape = AddLine(vm, 50);
+            for (var i = 1; i < 12; i++) AddLine(vm, 50 + i * 20);
             var control = new ImageViewerControl { DataContext = vm };
             AddHostTextStyles(control.Resources);
             Layout(control, new Size(800, 450));
@@ -368,6 +369,18 @@ public class LayerControlsTests
             Assert.InRange(panel.ActualHeight, 1, 380);
             var scroll = Assert.IsType<ScrollViewer>(panel.Child);
             Assert.True(scroll.ExtentHeight > scroll.ViewportHeight);
+            Snapshot(panel, "property-panel-dark-scrollbar");
+            var scrollbar = Assert.IsType<ScrollBar>(scroll.Template.FindName("PART_VerticalScrollBar", scroll));
+            var track = Assert.IsType<Track>(scrollbar.Template.FindName("PART_Track", scrollbar));
+            Assert.True(ScrollBar.PageDownCommand.CanExecute(null, track.IncreaseRepeatButton));
+            ScrollBar.PageDownCommand.Execute(null, track.IncreaseRepeatButton);
+            Layout(control, new Size(800, 450));
+            Assert.True(scroll.VerticalOffset > 0);
+            var offsetBeforeDrag = scroll.VerticalOffset;
+            track.Thumb.RaiseEvent(new DragDeltaEventArgs(0, -12) { RoutedEvent = Thumb.DragDeltaEvent });
+            Layout(control, new Size(800, 450));
+            Assert.True(scroll.VerticalOffset < offsetBeforeDrag);
+            Assert.Equal(scroll.VerticalOffset, scrollbar.Value, 5);
             scroll.ScrollToBottom();
             Layout(control, new Size(800, 450));
             Assert.True(scroll.VerticalOffset > 0);
