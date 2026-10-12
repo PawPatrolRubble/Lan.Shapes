@@ -648,8 +648,9 @@ to the `Nexus` package source with `--skip-duplicate`. `NEXUS_API_KEY` must be
 set or the script aborts immediately. Bump `<PackageVersion>` in both csproj
 files before releasing.
 
-> The script does not abort when `dotnet build` fails, so check the build output
-> before relying on the push.
+Use `./scripts/release-packages.ps1 -PackOnly` to restore, build, and pack without
+publishing or requiring an API key. The script stops if restore, build, pack, or
+push fails. The output directory must be inside the repository.
 
 ## License
 
