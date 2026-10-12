@@ -1,20 +1,84 @@
-# WpfGeometrySketcher
+# Lan.Shapes
 
-A high-performance WPF image viewer and geometry sketching control. Built on `DrawingVisual` for superior rendering performance compared to standard WPF shape controls, with extensible support for custom shapes.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md)
+
+A high-performance, Windows-only WPF image viewer and geometry sketching control
+for image-based inspection and annotation hosts. Shapes render through
+`DrawingVisual` instead of standard WPF shape controls, which keeps large
+sketches responsive, and the shape catalogue is extensible with custom geometry
+types.
+
+Two packages are published for host applications: **`Lan.ImageViewer`** (the
+zoom/pan control and viewer chrome) and **`Lan.ImageViewer.Prism`** (the Prism
+composition root). See [Installation](#installation).
+
+## Table of contents
+
+- [Installation](#installation)
+- [Features](#features)
+- [Getting Started](#getting-started)
+  - [Navigation Controls](#navigation-controls)
+  - [Angle tool](#angle-tool)
+  - [Ruler cross tool](#ruler-cross-tool)
+  - [Canvas export](#canvas-export)
+- [Building and testing](#building-and-testing)
+- [Architecture](#architecture)
+  - [Modules](#modules)
+  - [Design docs](#design-docs)
+  - [Packaging note (fat packages)](#packaging-note-fat-packages)
+- [Adding a New Shape](#adding-a-new-shape)
+- [Requirements](#requirements)
+- [Releasing](#releasing)
+- [License](#license)
+
+## Installation
+
+`Lan.ImageViewer` and `Lan.ImageViewer.Prism` are published to a private Nexus
+NuGet feed rather than nuget.org. Register the feed once, then reference the
+package the host needs:
+
+```powershell
+dotnet nuget add source <nexus-feed-url> --name Nexus
+```
+
+```xml
+<!-- Viewer only -->
+<PackageReference Include="Lan.ImageViewer" Version="2.0.0" />
+
+<!-- Prism hosts: one package brings the whole viewer stack -->
+<PackageReference Include="Lan.ImageViewer.Prism" Version="2.0.0" />
+```
+
+Both are *fat* packages — they embed `Lan.Shapes`, `Lan.Shapes.Custom`,
+`Lan.Shapes.DialogGeometry`, and `Lan.SketchBoard`, so hosts do not reference
+those projects directly. See the [packaging note](#packaging-note-fat-packages).
+The current release is **2.0.0**.
 
 ## Features
 
-- **Performance**: Built on `DrawingVisual` for optimized rendering
-- **Shape Support**: Rectangle, ellipse, line, polygon, circle, cross, and ruler cross shapes
-- **Custom Shapes**: Extensible architecture for custom geometry types
-- **Shape Groups**: Group shapes on one layer for persistent selection and movement; ungroup to edit members separately
+- **Performance**: Built on `DrawingVisual` for optimized rendering; pointer
+  updates coalesce redraws so one drag sample produces one render pass
+- **Shape support**: Rectangle, ellipse, line, polygon, circle, cross, ruler
+  cross, angle, and DXF geometry
+- **Custom shapes**: Extensible architecture for custom geometry types, including
+  a base class for shapes with an adjustable stroke width
+- **Shape groups**: Group shapes on one layer for persistent selection and
+  movement; ungroup to edit members separately
 - **Geometry Properties**: Edit line endpoints/length, rectangle position/size, and circle center/radius in image coordinates
-- **Zoom & Pan**: Mouse wheel zoom, middle-button drag panning, and CTRL+left-drag panning
-- **Pixel Info**: Display RGB values at cursor position
-- **Scale Display**: Real-time zoom ratio display
-- **Auto-Sized Handles**: Drag handles automatically sized based on shape dimensions
-- **Dialog Integration**: Grid rectangles with interactive row/column input
-- **DXF Export**: Export shapes to DXF format
+- **CAD-style layers**: Layer tree with visibility, current-layer selection,
+  per-state styling, and save/load of layer definitions
+- **Zoom & pan**: Mouse wheel zoom, middle-button drag panning, and CTRL+left-drag panning
+- **Snapping**: Snap anchors on corners, endpoints, midpoints, and circle
+  quadrants while drawing or resizing, with a configurable tolerance
+- **Measurement**: Calibrated unit display, line and circle labels, the angle
+  tool, and the ruler cross
+- **Pixel info**: Display RGB values at cursor position
+- **Scale display**: Real-time zoom ratio display
+- **Crosshair overlay**: Toggle with the `ImageViewerControl.ShowCrossLine` dependency property
+- **Auto-sized handles**: Drag handles automatically sized based on shape dimensions
+- **Canvas export**: Save the image plus its geometries to PNG, JPEG, or BMP
+- **DXF export**: Export shapes to DXF format
+- **Dialog integration**: Grid rectangles with interactive row/column input
 
 ## Getting Started
 
@@ -168,9 +232,9 @@ view-model. `MainPageViewModel` demonstrates owner disposal in Prism; MSDI hosts
 dispose their service scope or provider. Details: [`docs/layer-management-fixes.md`](docs/layer-management-fixes.md).
 
 Custom implementations of `IShapeRepository`, `IShapeLayerManager`, and
-`IImageViewerViewModel` must implement the new selection, layer-management, and group
-members. Shapes with custom handle visibility should honor `ShowSelectionHandles`
-when multiple shapes are selected.
+`IImageViewerViewModel` must implement the selection, layer-management, and
+shape-group members. Shapes with custom handle visibility should honor
+`ShowSelectionHandles` when multiple shapes are selected.
 
 Custom shapes opt into group movement with `CanTranslate` and `TranslateCore(Vector)`.
 The base `Translate(Vector)` validates the request, coalesces redraws, and moves
@@ -247,24 +311,75 @@ as the other measurement tools. Tick spacing adjusts with zoom, while tick lengt
 label size remain constant on screen. Add `"RulerCross"` to `AvailableGeometryTypes` in
 hosts that restrict the palette. `RulerCrossData` saves the origin and image dimensions.
 
+### Canvas export
+
+`ImageViewer.SaveCanvasContent(string filePath)` composes the loaded image plus
+every geometry on the board into one bitmap and writes it to disk:
+
+```csharp
+viewer.SaveCanvasContent(@"C:\temp\sketch.png");
+```
+
+The encoder is chosen from the file extension — `.png`, `.jpg`/`.jpeg`, or
+`.bmp`. Any other extension throws `NotSupportedException`, and saving a canvas
+with no content throws `InvalidOperationException`.
+
+`ImageViewer.RenderCanvasContent()` returns the same composition as a frozen
+`BitmapSource` when the host needs the bitmap rather than a file. It renders at
+the image's native pixel resolution and draws shapes at their image-space stroke
+thickness, so the output does not depend on the current zoom; it returns `null`
+when there is nothing to render. `ImageViewerBasic.SaveImage(bitmap, filePath)`
+writes an arbitrary bitmap using the same extension mapping.
+
+## Building and testing
+
+```powershell
+dotnet restore Lan.Shapes.sln
+dotnet build   Lan.Shapes.sln --configuration Release
+dotnet test    Lan.Shapes.sln --configuration Release
+```
+
+`Lan.Shapes.sln` covers the two shippable packages, the sample hosts, and the
+test projects. To exercise the control, run either host:
+
+```powershell
+dotnet run --project Lan.Shapes.SimpleApp
+dotnet run --project Test/Lan.Shapes.TestApp
+```
+
+`Lan.Shapes.SimpleApp` is the canonical Prism + DryIoc host and
+`Test/Lan.Shapes.TestApp` is the Microsoft.Extensions.DependencyInjection host.
+`Test/Lan.Shapes.InteractionProbe` holds interactive checks that need an HWND and
+a real desktop input stream, so it is deliberately kept out of `Lan.Shapes.sln`
+and out of CI.
+
 ## Architecture
 
 The project is a **Windows-only WPF** image viewer and geometry sketcher. Shapes render via `DrawingVisual` for performance. There is no non-WPF target.
 
 ### Modules
 
-- **Lan.Shapes**: Core shape rendering, layers, stylers, handles, metadata contracts
-- **Lan.SketchBoard**: Canvas host, shape repository, visual-collection mirror
-- **Lan.ImageViewer**: Image zoom/pan control and viewer chrome
-- **Lan.Shapes.Custom**: Extended shape implementations
-- **Lan.Shapes.DialogGeometry**: Dialog-based geometry types (grid rectangles, DXF)
-- **Lan.ImageViewer.Prism**: Prism composition root (DI module, default VM, registrations)
+| Project | Role |
+|---|---|
+| **Lan.Shapes** | Core shape rendering, layers, stylers, handles, metadata contracts |
+| **Lan.SketchBoard** | Canvas host, shape repository, visual-collection mirror |
+| **Lan.ImageViewer** | Image zoom/pan control and viewer chrome |
+| **Lan.Shapes.Custom** | Extended shape implementations |
+| **Lan.Shapes.DialogGeometry** | Dialog-based geometry types (grid rectangles, DXF) |
+| **Lan.ImageViewer.Prism** | Prism composition root (DI module, default VM, registrations) |
+| **Lan.ImageViewer.Halcon** | Halcon-backed viewer host; not part of the shipped packages |
+| **Lan.Shapes.SimpleApp** | Canonical Prism + DryIoc sample host |
+| **Test/Lan.Shapes.TestApp** | Microsoft.Extensions.DependencyInjection sample host |
+| **Test/Lan.SketchBoard.Tests**, **src/Lan.Shapes.Tests** | xUnit and MSTest suites |
 
 ### Design docs
 
 - [`docs/adr/0001-wpf-native-sketch-architecture.md`](docs/adr/0001-wpf-native-sketch-architecture.md) — target ownership model, lifecycle, scale policy
 - [`docs/refactor-checklist.md`](docs/refactor-checklist.md) — phased refactor plan mapped to concrete files
 - [`docs/architecture-issues.md`](docs/architecture-issues.md) — issue log (status table kept in sync with phases)
+- [`docs/shape-groups.md`](docs/shape-groups.md) — group semantics and extension contracts
+- [`docs/layer-management-fixes.md`](docs/layer-management-fixes.md) — layer ownership, persistence, and disposal rules
+- [`docs/shape-visual-validation.md`](docs/shape-visual-validation.md) — visual regression checks for shape rendering
 
 ### Packaging note (fat packages)
 
@@ -505,10 +620,37 @@ dataManager.LoadShape<MyShape, MyShapeData>(data);
 
 ## Requirements
 
-- .NET 8.0 Windows
-- WPF
-- Extended.Wpf.Toolkit (v4.5.1)
+Building from source needs the **.NET 8 SDK** or newer on Windows. The projects
+target `net8.0-windows` and use WPF, so there is no non-Windows target.
+
+| Area | Dependency |
+|---|---|
+| Runtime | .NET 8.0 (`net8.0-windows`), WPF |
+| Viewer | Extended.Wpf.Toolkit 4.5.1 |
+| Prism host | Prism.Wpf 8.1.97, HandyControls 3.4.5, netDxf 2023.11.10 |
+| Serialization | Newtonsoft.Json 13.0.3 |
+| Sample host (`Lan.Shapes.SimpleApp`) | Prism.DryIoc 8.1.97, Prism.Container.Extensions 8.0.62, Microsoft.Extensions.* 8.0.0, Serilog |
+| Halcon host (`Lan.ImageViewer.Halcon`) | visiondotnet 1.0.3, System.Drawing.Common 9.0.9 |
+| Tests | xUnit 2.9.2 (`Test/Lan.SketchBoard.Tests`), MSTest 2.2.8 (`src/Lan.Shapes.Tests`) |
+
+## Releasing
+
+Packages are packed and published by [`scripts/release-packages.ps1`](scripts/release-packages.ps1):
+
+```powershell
+$env:NEXUS_API_KEY = '<api key>'
+./scripts/release-packages.ps1
+```
+
+The script restores and builds `Lan.Shapes.sln`, packs `Lan.ImageViewer` and
+`Lan.ImageViewer.Prism` into `artifacts/packages`, and pushes the `.nupkg` files
+to the `Nexus` package source with `--skip-duplicate`. `NEXUS_API_KEY` must be
+set or the script aborts immediately. Bump `<PackageVersion>` in both csproj
+files before releasing.
+
+> The script does not abort when `dotnet build` fails, so check the build output
+> before relying on the push.
 
 ## License
 
-See LICENSE.md for details.
+Released under the [MIT License](LICENSE.md).

@@ -237,7 +237,7 @@ namespace Lan.Shapes.Shapes
             DrawCachedText(renderContext,
                 $"{lengthInMm:f3} {measurement.UnitName}\n{angleFromHorizontal:0.##}°",
                 ShapeStyler?.TagColor ?? Brushes.Red,
-                Start + (End - Start) / 2);
+                Start);
         }
 
         #region Overrides of ShapeVisualBase
