@@ -195,6 +195,37 @@ namespace Lan.ImageViewer
             }
         }
 
+        private void ImageViewer_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (BtnToggleProperties.IsChecked != true ||
+                ImageViewer.Template?.FindName("containerCanvas", ImageViewer) is not Canvas canvas) return;
+
+            var position = e.GetPosition(canvas);
+            if (!new Rect(canvas.RenderSize).Contains(position)) return;
+
+            var hitGeometry = false;
+            VisualTreeHelper.HitTest(canvas,
+                visual => visual is UIElement element && (!element.IsVisible || !element.IsHitTestVisible)
+                    ? HitTestFilterBehavior.ContinueSkipSelfAndChildren : HitTestFilterBehavior.Continue,
+                result =>
+                {
+                    if (FindAncestor<ShapeVisualBase>(result.VisualHit) == null)
+                        return HitTestResultBehavior.Continue;
+                    hitGeometry = true;
+                    return HitTestResultBehavior.Stop;
+                }, new PointHitTestParameters(position));
+
+            // Resize handles can accept clicks beyond their visible drawing.
+            var manager = ImageViewer.SketchBoardDataManager;
+            if (!hitGeometry && ImageViewer.ShowGeometries && manager != null)
+                hitGeometry = manager.Shapes.Any(shape =>
+                    manager.IsLayerVisible(shape.ShapeLayer.LayerId) && manager.GetGroup(shape) == null
+                    && shape.TransformToAncestor(canvas).Inverse?.Transform(position) is Point localPoint
+                    && shape.HasDragHandleAt(localPoint));
+
+            if (!hitGeometry) BtnToggleProperties.SetCurrentValue(ToggleButton.IsCheckedProperty, false);
+        }
+
         private void PropertyPanelToggle_Changed(object sender, RoutedEventArgs e)
             => UpdatePropertyPanelVisibility(animate: IsLoaded);
 

@@ -191,6 +191,7 @@
             ImageSource="{Binding Image, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
             LineDirectionMode="{Binding LineDirectionMode, ElementName=Root}"
             MouseDoubleClickPosition="{Binding MouseDoubleClickPosition, UpdateSourceTrigger=PropertyChanged, Mode=OneWayToSource}"
+            PreviewMouseLeftButtonDown="ImageViewer_PreviewMouseLeftButtonDown"
             Scale="{Binding Scale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
             ShowCrossLine="{Binding ShowCrossLine, ElementName=Root}"
             ShowGeometries="{Binding ShowGeometries, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=True, TargetNullValue=True}"
