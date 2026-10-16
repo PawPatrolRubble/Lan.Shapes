@@ -67,6 +67,18 @@ namespace Lan.Shapes.Custom
             _geometry = BuildGeometry(_textGeometryData);
         }
 
+        protected override object CaptureGeometryStateCore() => CaptureTranslationStateCore();
+
+        protected override void RestoreGeometryStateCore(object state) => RestoreTranslationStateCore(state);
+
+        protected override object CaptureTranslationStateCore() => _textGeometryData!.Location;
+
+        protected override void RestoreTranslationStateCore(object state)
+        {
+            _textGeometryData!.Location = (Point)state;
+            _geometry = BuildGeometry(_textGeometryData);
+        }
+
         protected override void CreateHandles()
         {
         }

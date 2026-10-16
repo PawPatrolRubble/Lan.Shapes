@@ -214,6 +214,27 @@ namespace Lan.Shapes.Custom
             DistanceResizeHandle.GeometryCenter += delta;
         }
 
+        protected override object CaptureGeometryStateCore() => (Center, Radius, StrokeThickness);
+
+        protected override void RestoreGeometryStateCore(object state)
+        {
+            var (center, radius, thickness) = ((Point, double, double))state;
+            Center = center;
+            StrokeThickness = thickness;
+            Radius = radius;
+        }
+
+        protected override object CaptureTranslationStateCore()
+            => (Center, _resizeHandle.GeometryCenter, DistanceResizeHandle.GeometryCenter);
+
+        protected override void RestoreTranslationStateCore(object state)
+        {
+            var (center, resize, distance) = ((Point, Point, Point))state;
+            Center = center;
+            _resizeHandle.GeometryCenter = resize;
+            DistanceResizeHandle.GeometryCenter = distance;
+        }
+
         public void FromData(EllipseData data)
         {
             if (data == null)

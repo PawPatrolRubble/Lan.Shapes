@@ -362,8 +362,34 @@ namespace Lan.ImageViewer
             if (HandleTreeSelectionKey(e.Key, Keyboard.Modifiers)) e.Handled = true;
         }
 
+        protected override void OnPreviewKeyDown(KeyEventArgs e)
+        {
+            base.OnPreviewKeyDown(e);
+            // Text editors retain their own undo stack while the user is editing a field.
+            if (e.Handled || IsTextInput(e.OriginalSource as DependencyObject)) return;
+            if (HandleHistoryKey(e.Key, Keyboard.Modifiers)) e.Handled = true;
+        }
+
+        private static bool IsTextInput(DependencyObject source)
+            => FindAncestor<TextBoxBase>(source) != null || FindAncestor<PasswordBox>(source) != null;
+
+        protected bool HandleHistoryKey(Key key, ModifierKeys modifiers)
+        {
+            if (DataContext is not IImageViewerViewModel vm) return false;
+            ICommand command;
+            if (key == Key.Z && modifiers == ModifierKeys.Control) command = vm.UndoCommand;
+            else if ((key == Key.Y && modifiers == ModifierKeys.Control)
+                || (key == Key.Z && modifiers == (ModifierKeys.Control | ModifierKeys.Shift)))
+                command = vm.RedoCommand;
+            else return false;
+
+            if (command.CanExecute(null)) command.Execute(null);
+            return true;
+        }
+
         protected bool HandleTreeSelectionKey(Key key, ModifierKeys modifiers)
         {
+            if (HandleHistoryKey(key, modifiers)) return true;
             if (DataContext is not IImageViewerViewModel vm) return false;
             if (key == Key.G && (modifiers & ModifierKeys.Control) != 0 && (modifiers & ModifierKeys.Alt) == 0)
             {

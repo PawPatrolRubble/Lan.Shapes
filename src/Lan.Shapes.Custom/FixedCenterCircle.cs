@@ -123,6 +123,15 @@ namespace Lan.Shapes.Custom
             base.FindSelectedHandle(p);
         }
 
+        protected override object CaptureGeometryStateCore() => (Center, Radius);
+
+        protected override void RestoreGeometryStateCore(object state)
+        {
+            var (center, radius) = ((Point, double))state;
+            Center = center;
+            Radius = radius;
+        }
+
         protected override void HandleResizing(Point point)
         {
             if (MouseDownPoint != null && OldPointForTranslate != null)

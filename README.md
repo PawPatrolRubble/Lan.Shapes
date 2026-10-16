@@ -64,6 +64,8 @@ The current release is **2.0.0**.
   a base class for shapes with an adjustable stroke width
 - **Shape groups**: Group shapes on one layer for persistent selection and
   movement; ungroup to edit members separately
+- **Undo / redo**: Restore deleted shapes and undo moves, rotation, resizing, and geometry property edits;
+  each drag or bulk deletion counts as one step
 - **Geometry Properties**: Edit line endpoints/length, rectangle position/size, and circle center/radius in image coordinates
 - **CAD-style layers**: Layer tree with visibility, current-layer selection,
   per-state styling, and save/load of layer definitions
@@ -191,10 +193,16 @@ layer through code dissolves its group.
 
 Groups are board-local runtime relationships in this first version. Layer
 configuration saves do not save drawing geometry or group relationships.
-Nested groups, group rotation/scaling, movement snapping, and undo/redo are not
+Nested groups, group rotation/scaling, and movement snapping are not
 part of this version. Fixed-center circles and image-spanning ruler crosses
 cannot join movable groups. Fiber respects its `EnableTranslation` setting.
 Details and extension contracts: [`docs/shape-groups.md`](docs/shape-groups.md).
+
+Use **Ctrl+Z** to undo a deletion, move, rotation, resize, or geometry property
+edit, and **Ctrl+Y** or **Ctrl+Shift+Z** to redo. The toolbar buttons track available history. Each board retains up to 100
+steps; one drag or bulk deletion is one step. Text fields retain their own undo
+behavior. Other model edits, such as grouping or layer reassignment, clear history.
+Details and extension API: [`docs/undo-redo.md`](docs/undo-redo.md).
 
 Select one independent line, rectangle, or circle to edit its geometry in the
 property pane. Values use image coordinates in pixels and stay unchanged by

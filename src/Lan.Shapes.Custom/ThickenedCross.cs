@@ -399,6 +399,23 @@ namespace Lan.Shapes.Custom
             UpdateHandleLocation();
         }
 
+        protected override object CaptureTranslationStateCore()
+            => (VerticalTopLeft, VerticalBottomRight, HorizontalTopLeft, HorizontalBottomRight, _centerPoint);
+
+        protected override void RestoreTranslationStateCore(object state)
+        {
+            var (verticalTopLeft, verticalBottomRight, horizontalTopLeft, horizontalBottomRight, center) =
+                ((Point, Point, Point, Point, Point))state;
+            SetField(ref _verticalTopLeft, verticalTopLeft, nameof(VerticalTopLeft));
+            SetField(ref _verticalBottomRight, verticalBottomRight, nameof(VerticalBottomRight));
+            SetField(ref _horizontalTopLeft, horizontalTopLeft, nameof(HorizontalTopLeft));
+            SetField(ref _horizontalBottomRight, horizontalBottomRight, nameof(HorizontalBottomRight));
+            _centerPoint = center;
+            _vRectangleGeometry.Rect = new Rect(verticalTopLeft, verticalBottomRight);
+            _hRectangleGeometry.Rect = new Rect(horizontalTopLeft, horizontalBottomRight);
+            UpdateHandleLocation();
+        }
+
 
         /// <summary>
         ///     left mouse button down event

@@ -66,6 +66,8 @@ namespace Lan.SketchBoard
         private readonly List<ShapeVisualBase> _hoveredMembers = new();
         private readonly HashSet<ShapeVisualBase> _observedSelection = new();
         private bool _movingGroup;
+        private IDisposable? _dragHistoryScope;
+        private IDisposable? _dragGeometryScope;
 
 
         #endregion
@@ -113,6 +115,7 @@ namespace Lan.SketchBoard
         {
             AddVisualChild(_selectionVisual);
             AddVisualChild(_snapMarker);
+            Unloaded += (_, _) => StopHistoryDrag();
             // Stroke/handle sizing is driven solely by ImageViewer LocalScale →
             // SketchBoardDataManager.OnImageViewerPropertyChanged. Window resize
             // alone must not fight zoom-driven thickness (Phase 2 scale policy).
@@ -132,8 +135,19 @@ namespace Lan.SketchBoard
         {
             var manager = SketchBoardDataManager;
             if (manager == null) return false;
+            if (manager is IShapeHistory history &&
+                ((key == Key.Z && modifiers == ModifierKeys.Control)
+                || (key == Key.Y && modifiers == ModifierKeys.Control)
+                || (key == Key.Z && modifiers == (ModifierKeys.Control | ModifierKeys.Shift))))
+            {
+                StopHistoryDrag();
+                if (key == Key.Z && modifiers == ModifierKeys.Control) history.Undo();
+                else history.Redo();
+                return true;
+            }
             if (key == Key.Escape)
             {
+                StopHistoryDrag();
                 CancelGroupDrag();
                 _leftDragCancelled = true;
                 EndMarquee();
@@ -162,7 +176,10 @@ namespace Lan.SketchBoard
             {
                 var selected = manager.SelectedGeometries.ToList();
                 if (selected.All(x => !x.IsLocked))
-                    foreach (var shape in selected) manager.RemoveShape(shape);
+                {
+                    StopHistoryDrag();
+                    manager.RemoveShapes(selected.Contains);
+                }
                 return true;
             }
             return false;
@@ -202,6 +219,9 @@ namespace Lan.SketchBoard
             DependencyPropertyChangedEventArgs e)
         {
             if (d is not SketchBoard sketchBoard) return;
+            if (e.OldValue is ISketchBoardDataManager oldManager)
+                oldManager.SelectedGeometry?.CancelInteraction();
+            sketchBoard.StopHistoryDrag();
 
             sketchBoard.ClearSnapMarker();
             sketchBoard.UpdateHoveredShape(null);
@@ -284,6 +304,7 @@ namespace Lan.SketchBoard
         protected void HandleRightButtonUp(Point position)
         {
             if (SketchBoardDataManager == null) return;
+            StopHistoryDrag();
             CancelGroupDrag(cancelPointer: true);
 
             var wasDrawing = IsDrawing;
@@ -323,6 +344,7 @@ namespace Lan.SketchBoard
         protected void HandleLeftButtonDown(Point position, int clickCount, ModifierKeys modifiers)
         {
             if (SketchBoardDataManager == null) return;
+            StopHistoryDrag();
 
             EndMarquee();
             _leftDragCancelled = false;
@@ -440,7 +462,11 @@ namespace Lan.SketchBoard
 
             if (SketchBoardDataManager.GetGroup(hitShape) is { } group)
             {
-                if (CanMoveGroup(group)) _groupDrag = (group, position);
+                if (CanMoveGroup(group))
+                {
+                    _groupDrag = (group, position);
+                    BeginHistoryDrag();
+                }
                 UpdateHoveredShape(null);
                 Mouse.SetCursor(Cursors.SizeAll);
                 return;
@@ -458,6 +484,13 @@ namespace Lan.SketchBoard
                     && !geometry.HasDragHandleAt(localPoint))
                     dragPosition = localPoint;
                 geometry?.OnMouseLeftButtonDown(dragPosition);
+                if (geometry != null)
+                {
+                    BeginHistoryDrag();
+                    try { _dragGeometryScope = geometry.BeginGeometryEdit(); }
+                    catch (NotSupportedException) { }
+                    catch { EndHistoryDrag(); throw; }
+                }
                 if (SketchBoardDataManager.SelectedGeometry?.CanSnapDuringResize == true)
                 {
                     _lastDragPoint = position;
@@ -718,6 +751,12 @@ namespace Lan.SketchBoard
 
         protected void HandleLeftButtonUp(Point position, ModifierKeys modifiers)
         {
+            try { HandleLeftButtonUpCore(position, modifiers); }
+            finally { EndHistoryDrag(); }
+        }
+
+        private void HandleLeftButtonUpCore(Point position, ModifierKeys modifiers)
+        {
             if (_leftDragCancelled) return;
             if (_selectionStart is Point start)
             {
@@ -801,6 +840,7 @@ namespace Lan.SketchBoard
             base.OnLostMouseCapture(e);
             if (ReferenceEquals(e.OriginalSource, this))
             {
+                StopHistoryDrag();
                 SketchBoardDataManager?.CurrentGeometryInEdit?.CancelInteraction();
                 SketchBoardDataManager?.SelectedGeometry?.CancelInteraction();
                 _leftDragMouseCaptured = false;
@@ -922,7 +962,30 @@ namespace Lan.SketchBoard
         private void CancelGroupDrag(bool cancelPointer = false)
         {
             if (cancelPointer && _groupDrag != null) _leftDragCancelled = true;
+            if (_groupDrag != null) EndHistoryDrag();
             _groupDrag = null;
+        }
+
+        private void BeginHistoryDrag()
+            => _dragHistoryScope = (SketchBoardDataManager as IShapeHistory)?.BeginHistoryTransaction();
+
+        private void EndHistoryDrag()
+        {
+            var scope = _dragHistoryScope;
+            _dragHistoryScope = null;
+            var geometryScope = _dragGeometryScope;
+            _dragGeometryScope = null;
+            try { geometryScope?.Dispose(); }
+            finally { scope?.Dispose(); }
+        }
+
+        private void StopHistoryDrag()
+        {
+            if (_dragHistoryScope == null && _dragGeometryScope == null) return;
+            SketchBoardDataManager?.SelectedGeometry?.CancelInteraction();
+            _leftDragCancelled = true;
+            _groupDrag = null;
+            EndHistoryDrag();
         }
 
         private void UpdateSelectionVisual()
@@ -1054,6 +1117,7 @@ namespace Lan.SketchBoard
 
         private void OnDrawingToolChanged(object? sender, Type type)
         {
+            StopHistoryDrag();
             CancelGroupDrag(cancelPointer: true);
             EndMarquee();
             ClearSnapMarker();

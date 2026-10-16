@@ -56,6 +56,7 @@ namespace Lan.Shapes.DialogGeometry
         private DxfDocument? _originalDxfDoc;
         private Point _initialOffset;
         private Matrix _accumulatedWpfTransform = Matrix.Identity;
+        private Matrix? _mouseDownTransform;
         private double _boardWidth;
         private double _boardHeight;
 
@@ -300,6 +301,29 @@ namespace Lan.Shapes.DialogGeometry
             UpdateHandleLocation();
         }
 
+        protected override object CaptureGeometryStateCore() => CaptureTranslationStateCore();
+
+        protected override void RestoreGeometryStateCore(object state) => RestoreTranslationStateCore(state);
+
+        protected override object CaptureTranslationStateCore()
+        {
+            // Translation changes only the wrapper matrix. Baking replaces the geometry,
+            // so immutable geometry can be shared by every sample of a drag.
+            if (!_geometry!.IsFrozen) _geometry.Freeze();
+            return (_geometry, _dxfGeometryWrapper!.Transform?.Value ?? Matrix.Identity, _accumulatedWpfTransform);
+        }
+
+        protected override void RestoreTranslationStateCore(object state)
+        {
+            var (geometry, transform, accumulated) = ((Geometry, Matrix, Matrix))state;
+            _geometry = geometry;
+            _dxfGeometryWrapper!.Children.Clear();
+            _dxfGeometryWrapper.Children.Add(_geometry);
+            _dxfGeometryWrapper.Transform = new MatrixTransform(transform);
+            _accumulatedWpfTransform = accumulated;
+            UpdateHandleLocation();
+        }
+
         public override void OnDeselected()
         {
             base.OnDeselected();
@@ -413,6 +437,8 @@ namespace Lan.Shapes.DialogGeometry
                 {
                     IsBeingDraggedOrPanMoving = true;
                     HandleResizing(point);
+                    OnPropertyChanged(nameof(BoundsRect));
+                    OnPropertyChanged(nameof(SelectionBounds));
                     UpdateGeometryGroup();
                     RequestVisualUpdate();
                 }
@@ -433,9 +459,14 @@ namespace Lan.Shapes.DialogGeometry
         public override void OnMouseLeftButtonUp(Point newPoint)
         {
             if (IsLocked) return;
+            var transformChanged = !_mouseDownTransform.HasValue
+                || _mouseDownTransform.Value != (_dxfGeometryWrapper?.Transform?.Value ?? Matrix.Identity);
             base.OnMouseLeftButtonUp(newPoint);
 
-            BakeTransform();
+            // An unchanged click must not bake a transform left by an earlier edit:
+            // baking changes the snapshot representation and would discard redo.
+            if (transformChanged) BakeTransform();
+            _mouseDownTransform = null;
             OldPointForTranslate = null;
             SelectedDragHandle = null;
             IsBeingDraggedOrPanMoving = false;
@@ -526,6 +557,9 @@ namespace Lan.Shapes.DialogGeometry
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
             if (IsLocked) return;
+            _mouseDownTransform = IsGeometryRendered
+                ? _dxfGeometryWrapper?.Transform?.Value ?? Matrix.Identity
+                : null;
             base.OnMouseLeftButtonDown(mousePoint);
             if (!IsGeometryRendered)
             {

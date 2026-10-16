@@ -338,6 +338,18 @@ namespace Lan.Shapes.Shapes
         protected override void TranslateCore(Vector delta)
             => ApplyParameters(Center + delta, Phi, Length1, Length2, redraw: false);
 
+        protected override object CaptureGeometryStateCore() => (Center, Phi, Length1, Length2);
+
+        protected override void RestoreGeometryStateCore(object state)
+        {
+            var (center, phi, length1, length2) = ((Point, double, double, double))state;
+            ApplyParameters(center, phi, length1, length2, redraw: false);
+        }
+
+        protected override object CaptureTranslationStateCore() => Center;
+        protected override void RestoreTranslationStateCore(object state)
+            => ApplyParameters((Point)state, Phi, Length1, Length2, redraw: false);
+
         protected override void DrawShape(DrawingContext renderContext)
         {
             if (ShapeStyler == null)

@@ -125,6 +125,17 @@ namespace Lan.Shapes.Custom
             ResizeByCornerPoint(DragLocation.BottomRight, BottomRight);
         }
 
+        protected override object CaptureTranslationStateCore() => (TopLeft, BottomRight);
+
+        protected override void RestoreTranslationStateCore(object state)
+        {
+            var (topLeft, bottomRight) = ((Point, Point))state;
+            SetField(ref _topLeft, topLeft, nameof(TopLeft));
+            SetField(ref _bottomRight, bottomRight, nameof(BottomRight));
+            _middleRectangleGeometry.Rect = new Rect(topLeft, bottomRight);
+            ResizeByCornerPoint(DragLocation.BottomRight, bottomRight);
+        }
+
         #endregion
 
         #region others

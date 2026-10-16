@@ -96,6 +96,10 @@ namespace Lan.ImageViewer
         ICommand ScaleToOriginalSizeCommand { get; }
         ICommand ScaleToFitCommand { get; }
         ICommand DeleteShapeCommand { get; }
+        /// <summary>Restores the previous completed shape operation.</summary>
+        ICommand UndoCommand => DisabledHistoryCommand.Instance;
+        /// <summary>Reapplies the last undone shape operation.</summary>
+        ICommand RedoCommand => DisabledHistoryCommand.Instance;
         ICommand GroupShapesCommand { get; }
         ICommand UngroupShapesCommand { get; }
 

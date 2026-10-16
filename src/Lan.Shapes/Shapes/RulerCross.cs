@@ -90,6 +90,10 @@ namespace Lan.Shapes.Shapes
             _originHandle.GeometryCenter = Center;
         }
 
+        protected override object CaptureGeometryStateCore() => Center;
+
+        protected override void RestoreGeometryStateCore(object state) => Center = (Point)state;
+
         protected override void HandleResizing(Point point)
         {
             HandleTranslate(point);

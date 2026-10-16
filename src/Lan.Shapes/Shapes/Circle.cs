@@ -236,6 +236,18 @@ namespace Lan.Shapes.Shapes
             Center += delta;
         }
 
+        protected override object CaptureGeometryStateCore() => (Center, Radius);
+
+        protected override void RestoreGeometryStateCore(object state)
+        {
+            var (center, radius) = ((Point, double))state;
+            Center = center;
+            Radius = radius;
+        }
+
+        protected override object CaptureTranslationStateCore() => Center;
+        protected override void RestoreTranslationStateCore(object state) => Center = (Point)state;
+
         /// <summary>
         ///     left mouse button down event
         /// </summary>

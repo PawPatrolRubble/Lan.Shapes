@@ -88,6 +88,21 @@ namespace Lan.Shapes.DialogGeometry
             }
         }
 
+        protected override object CaptureGeometryStateCore() => CaptureTranslationStateCore();
+
+        protected override void RestoreGeometryStateCore(object state) => RestoreTranslationStateCore(state);
+
+        protected override object CaptureTranslationStateCore() => (TopLeft, BottomRight);
+
+        protected override void RestoreTranslationStateCore(object state)
+        {
+            var (topLeft, bottomRight) = ((Point, Point))state;
+            SetField(ref _topLeft, topLeft, nameof(TopLeft));
+            SetField(ref _bottomRight, bottomRight, nameof(BottomRight));
+            _boundGeometry.Rect = new Rect(topLeft, bottomRight);
+            RebuildLineGeometries();
+        }
+
         #endregion
 
         #region interface implementations

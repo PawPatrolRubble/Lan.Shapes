@@ -129,6 +129,19 @@ namespace Lan.Shapes.Shapes
 
         protected override void TranslateCore(Vector delta) => Center += delta;
 
+        protected override object CaptureGeometryStateCore() => (Center, RadiusX, RadiusY);
+
+        protected override void RestoreGeometryStateCore(object state)
+        {
+            var (center, radiusX, radiusY) = ((Point, double, double))state;
+            Center = center;
+            RadiusX = radiusX;
+            RadiusY = radiusY;
+        }
+
+        protected override object CaptureTranslationStateCore() => Center;
+        protected override void RestoreTranslationStateCore(object state) => Center = (Point)state;
+
         /// <summary>
         /// add geometries to group
         /// </summary>

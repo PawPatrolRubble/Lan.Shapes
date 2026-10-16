@@ -21,7 +21,7 @@ namespace Lan.SketchBoard
     /// The bindable shape collection is the source of truth; the visual collection mirrors it
     /// only while a visual host is attached.
     /// </summary>
-    public class SketchBoardDataManager : ISketchBoardDataManager, IVisualHost, INotifyPropertyChanged
+    public partial class SketchBoardDataManager : ISketchBoardDataManager, IVisualHost, INotifyPropertyChanged, IShapeHistory
     {
         private readonly Dictionary<string, Type> _drawingTools =
             new Dictionary<string, Type>(StringComparer.Ordinal);
@@ -136,6 +136,7 @@ namespace Lan.SketchBoard
             if (!CanGroupShapes(candidates))
                 throw new ArgumentException("Groups require at least two independent, completed, visible, unlocked, movable shapes on one board layer.", nameof(shapes));
             var group = new ShapeGroup(candidates, name);
+            InvalidateHistory();
             foreach (var member in group.Members) _groupsByShape.Add(member, group);
             _groups.Add(group);
             ApplySelection(ExpandGroups(_selection));
@@ -150,6 +151,7 @@ namespace Lan.SketchBoard
             if (candidates.Any(x => x == null || !Shapes.Contains(x)))
                 throw new ArgumentException("Only shapes on this board can be ungrouped.", nameof(shapes));
             var groups = candidates.Select(GetGroup).Where(x => x != null).Distinct().ToList();
+            if (groups.Count > 0) InvalidateHistory();
             foreach (var group in groups) RemoveGroup(group!);
             return groups.Count;
         }
@@ -176,7 +178,8 @@ namespace Lan.SketchBoard
                 displacements.Add(shape, localDelta);
             }
             if (delta.X == 0 && delta.Y == 0) return 0;
-            foreach (var shape in candidates) shape.Translate(displacements[shape]);
+            using (BeginHistoryTransaction())
+                foreach (var shape in candidates) shape.Translate(displacements[shape]);
             return candidates.Count;
         }
 
@@ -292,6 +295,7 @@ namespace Lan.SketchBoard
             _layerVisibilityRevision++;
             OnPropertyChanged(nameof(LayerVisibilityRevision));
             LayerAssignmentsChanged?.Invoke(this, EventArgs.Empty);
+            InvalidateHistory();
             return moved.Count;
         }
 
@@ -391,10 +395,8 @@ namespace Lan.SketchBoard
                 throw new ArgumentNullException(nameof(predicate));
             }
 
-            foreach (var shape in Shapes.Where(predicate).ToList())
-            {
-                RemoveShape(shape);
-            }
+            using (BeginHistoryTransaction())
+                foreach (var shape in Shapes.Where(predicate).ToList()) RemoveShape(shape);
         }
 
         public void RemoveAt(int index)
@@ -419,10 +421,8 @@ namespace Lan.SketchBoard
                 throw new ArgumentOutOfRangeException(nameof(count));
             }
 
-            foreach (var shape in Shapes.Skip(index).Take(count).ToList())
-            {
-                RemoveShape(shape);
-            }
+            using (BeginHistoryTransaction())
+                foreach (var shape in Shapes.Skip(index).Take(count).ToList()) RemoveShape(shape);
         }
 
         public void ClearAllShapes()
@@ -717,6 +717,7 @@ namespace Lan.SketchBoard
         private void OnManagedShapePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (sender is not ShapeVisualBase shape) return;
+            InvalidateHistoryForShapeChange(shape, e.PropertyName);
             if (e.PropertyName == nameof(ShapeVisualBase.IsGeometryRendered) && !shape.IsGeometryRendered)
             {
                 if (_groupsByShape.TryGetValue(shape, out var unfinishedGroup)) RemoveGroup(unfinishedGroup);
@@ -799,6 +800,11 @@ namespace Lan.SketchBoard
             }
             shape.ShapeCreationCancelled += OnShapeCreationCancelled;
             shape.PropertyChanged += OnManagedShapePropertyChanged;
+            shape.TranslationCompleted += OnShapeTranslationCompleted;
+            shape.GeometryEditCompleted += OnShapeGeometryEditCompleted;
+            shape.GeometryEditStarted += OnShapeGeometryEditStarted;
+            if (shape.IsEditingGeometry) _activeGeometryEdits.Add(shape);
+            InvalidateHistory();
             publish();
             ShapeCreated?.Invoke(this, shape);
         }
@@ -810,14 +816,20 @@ namespace Lan.SketchBoard
             if (ReferenceEquals(CurrentGeometryInEdit, shape)) CurrentGeometryInEdit = null;
             shape.ShapeCreationCancelled -= OnShapeCreationCancelled;
             shape.PropertyChanged -= OnManagedShapePropertyChanged;
+            shape.TranslationCompleted -= OnShapeTranslationCompleted;
+            shape.GeometryEditCompleted -= OnShapeGeometryEditCompleted;
+            shape.GeometryEditStarted -= OnShapeGeometryEditStarted;
+            _activeGeometryEdits.Remove(shape);
             _visualCollection?.Remove(shape);
         }
 
         private void RemoveShapeCore(int index, Action publish)
         {
             var shape = Shapes[index];
+            var deletion = CaptureDeletion(new[] { (shape, index) });
             DetachShape(shape);
             publish();
+            CompleteDeletion(deletion);
             ShapeRemoved?.Invoke(this, shape);
         }
 
@@ -843,6 +855,11 @@ namespace Lan.SketchBoard
             DetachShape(previous);
             shape.ShapeCreationCancelled += OnShapeCreationCancelled;
             shape.PropertyChanged += OnManagedShapePropertyChanged;
+            shape.TranslationCompleted += OnShapeTranslationCompleted;
+            shape.GeometryEditCompleted += OnShapeGeometryEditCompleted;
+            shape.GeometryEditStarted += OnShapeGeometryEditStarted;
+            if (shape.IsEditingGeometry) _activeGeometryEdits.Add(shape);
+            InvalidateHistory();
             publish();
             ShapeRemoved?.Invoke(this, previous);
             ShapeCreated?.Invoke(this, shape);
@@ -851,6 +868,7 @@ namespace Lan.SketchBoard
         private void ClearShapesCore(Action publish)
         {
             var removed = Shapes.ToList();
+            var deletion = CaptureDeletion(removed.Select((shape, index) => (shape, index)).ToArray());
             ApplySelection(new List<ShapeVisualBase>());
             if (_groups.Count > 0)
             {
@@ -863,9 +881,14 @@ namespace Lan.SketchBoard
             {
                 shape.ShapeCreationCancelled -= OnShapeCreationCancelled;
                 shape.PropertyChanged -= OnManagedShapePropertyChanged;
+                shape.TranslationCompleted -= OnShapeTranslationCompleted;
+                shape.GeometryEditCompleted -= OnShapeGeometryEditCompleted;
+                shape.GeometryEditStarted -= OnShapeGeometryEditStarted;
+                _activeGeometryEdits.Remove(shape);
             }
             _visualCollection?.Clear();
             publish();
+            CompleteDeletion(deletion);
             foreach (var shape in removed) ShapeRemoved?.Invoke(this, shape);
         }
 
@@ -876,6 +899,7 @@ namespace Lan.SketchBoard
             ordered.RemoveAt(oldIndex);
             ordered.Insert(newIndex, moved);
             RebuildVisualCollection(ordered);
+            InvalidateHistory();
             publish();
         }
 

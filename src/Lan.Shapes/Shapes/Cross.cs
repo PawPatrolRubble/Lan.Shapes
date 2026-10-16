@@ -165,6 +165,19 @@ namespace Lan.Shapes.Shapes
 
         protected override void TranslateCore(Vector delta) => Center += delta;
 
+        protected override object CaptureGeometryStateCore() => (Center, Width, Height);
+
+        protected override void RestoreGeometryStateCore(object state)
+        {
+            var (center, width, height) = ((Point, int, int))state;
+            Center = center;
+            Width = width;
+            Height = height;
+        }
+
+        protected override object CaptureTranslationStateCore() => Center;
+        protected override void RestoreTranslationStateCore(object state) => Center = (Point)state;
+
         public override void OnMouseLeftButtonDown(Point mousePoint)
         {
             if (IsLocked) return;

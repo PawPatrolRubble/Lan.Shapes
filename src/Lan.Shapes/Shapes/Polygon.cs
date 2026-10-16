@@ -134,6 +134,7 @@ namespace Lan.Shapes.Shapes
         {
             if (SelectedDragHandle != null)
             {
+                if (_points[SelectedDragHandle.Id] == point) return;
                 _points[SelectedDragHandle.Id] = point;
 
                 if (SelectedDragHandle.Id > 0)
@@ -142,6 +143,8 @@ namespace Lan.Shapes.Shapes
                     _pathFigure.StartPoint = point;
 
                 SelectedDragHandle.GeometryCenter = point;
+                OnPropertyChanged(nameof(BoundsRect));
+                OnPropertyChanged(nameof(SelectionBounds));
 
                 RequestVisualUpdate();
             }
@@ -166,6 +169,23 @@ namespace Lan.Shapes.Shapes
             _pathFigure.StartPoint += delta;
             foreach (var key in new List<int>(_points.Keys)) _points[key] += delta;
             foreach (var handle in Handles) handle.GeometryCenter += delta;
+        }
+
+        protected override object CaptureGeometryStateCore() => CaptureTranslationStateCore();
+
+        protected override void RestoreGeometryStateCore(object state) => RestoreTranslationStateCore(state);
+
+        protected override object CaptureTranslationStateCore() => new Dictionary<int, Point>(_points);
+
+        protected override void RestoreTranslationStateCore(object state)
+        {
+            var points = (Dictionary<int, Point>)state;
+            foreach (var pair in points) _points[pair.Key] = pair.Value;
+            _pathFigure.StartPoint = points[0];
+            for (var index = 0; index < _pathFigure.Segments.Count; index++)
+                if (_pathFigure.Segments[index] is LineSegment segment)
+                    segment.Point = points.TryGetValue(index + 1, out var point) ? point : points[0];
+            foreach (var handle in Handles) handle.GeometryCenter = points[handle.Id];
         }
 
 

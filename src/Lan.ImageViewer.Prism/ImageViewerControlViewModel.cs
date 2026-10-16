@@ -27,6 +27,7 @@ namespace Lan.ImageViewer.Prism
         private readonly IGeometryTypeManager _geometryTypeManager;
         private readonly IGeometryIconProvider _iconProvider;
         private readonly IShapeLayerManager _shapeLayerManager;
+        private readonly IShapeHistory? _shapeHistory;
 
         private double _scale;
         private GeometryType? _selectedGeometryType;
@@ -60,6 +61,7 @@ namespace Lan.ImageViewer.Prism
             SketchBoardDataManager = sketchBoardDataManager
                 ?? throw new ArgumentNullException(nameof(sketchBoardDataManager));
             ShapeRepository = sketchBoardDataManager;
+            _shapeHistory = sketchBoardDataManager as IShapeHistory;
             _shapeLayerManager = shapeLayerManager
                 ?? throw new ArgumentNullException(nameof(shapeLayerManager));
             _geometryTypeManager = geometryTypeManager
@@ -91,6 +93,8 @@ namespace Lan.ImageViewer.Prism
             ChooseGeometryTypeCommand = new DelegateCommand<GeometryType>(ChooseGeometryTypeCommandImpl);
             DeleteShapeCommand = new DelegateCommand(DeleteShapeCommandExecute,
                 () => SelectedShapes.Count > 0 && SelectedShapes.All(x => !x.IsLocked));
+            UndoCommand = new DelegateCommand(() => _shapeHistory?.Undo(), () => _shapeHistory?.CanUndo == true);
+            RedoCommand = new DelegateCommand(() => _shapeHistory?.Redo(), () => _shapeHistory?.CanRedo == true);
             GroupShapesCommand = new DelegateCommand(GroupShapesCommandExecute, () => CanGroupSelectedShapes);
             UngroupShapesCommand = new DelegateCommand(UngroupShapesCommandExecute, () => CanUngroupSelectedShapes);
             SelectionModeCommand = new DelegateCommand(() =>
@@ -108,6 +112,7 @@ namespace Lan.ImageViewer.Prism
             ShapeRepository.SelectionChanged += Repository_SelectionChanged;
             ShapeRepository.LayerAssignmentsChanged += Repository_LayerAssignmentsChanged;
             ShapeRepository.GroupsChanged += Repository_GroupsChanged;
+            if (_shapeHistory != null) _shapeHistory.HistoryChanged += Repository_HistoryChanged;
             _shapeLayerManager.LayerDefinitionChanged += Manager_LayerDefinitionChanged;
             _shapeLayerManager.ConfigurationChanged += Manager_ConfigurationChanged;
             if (_shapeLayerManager is INotifyPropertyChanged layerNotifications)
@@ -125,6 +130,12 @@ namespace Lan.ImageViewer.Prism
         private void Repository_SelectionChanged(object? sender, EventArgs e) => RefreshSelection();
 
         private void Repository_GroupsChanged(object? sender, EventArgs e) => RefreshSelection(syncTarget: false);
+
+        private void Repository_HistoryChanged(object? sender, EventArgs e)
+        {
+            ((DelegateCommand)UndoCommand).RaiseCanExecuteChanged();
+            ((DelegateCommand)RedoCommand).RaiseCanExecuteChanged();
+        }
 
         private void Repository_LayerAssignmentsChanged(object? sender, EventArgs e)
         {
@@ -182,6 +193,8 @@ namespace Lan.ImageViewer.Prism
         public ICommand ChooseGeometryTypeCommand { get; }
 
         public ICommand DeleteShapeCommand { get; }
+        public ICommand UndoCommand { get; }
+        public ICommand RedoCommand { get; }
         public ICommand GroupShapesCommand { get; }
         public ICommand UngroupShapesCommand { get; }
 
@@ -464,6 +477,7 @@ namespace Lan.ImageViewer.Prism
             ShapeRepository.SelectionChanged -= Repository_SelectionChanged;
             ShapeRepository.LayerAssignmentsChanged -= Repository_LayerAssignmentsChanged;
             ShapeRepository.GroupsChanged -= Repository_GroupsChanged;
+            if (_shapeHistory != null) _shapeHistory.HistoryChanged -= Repository_HistoryChanged;
             ShapeRepository.GeometryTypeUnselected -= ShapeRepository_GeometryTypeUnselected;
             _shapeLayerManager.LayerDefinitionChanged -= Manager_LayerDefinitionChanged;
             _shapeLayerManager.ConfigurationChanged -= Manager_ConfigurationChanged;
@@ -587,7 +601,7 @@ namespace Lan.ImageViewer.Prism
         {
             var selected = SelectedShapes.ToList();
             if (selected.Any(x => x.IsLocked)) return;
-            foreach (var shape in selected) ShapeRepository.RemoveShape(shape);
+            ShapeRepository.RemoveShapes(selected.Contains);
         }
 
         private void GroupShapesCommandExecute()

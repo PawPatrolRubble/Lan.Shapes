@@ -242,6 +242,37 @@
                             Stretch="Uniform" />
                     </Button>
 
+                    <Button
+                        x:Name="UndoButton"
+                        Margin="2,0"
+                        AutomationProperties.Name="撤销"
+                        Command="{Binding UndoCommand}"
+                        Style="{StaticResource DarkButtonStyle}"
+                        ToolTip="撤销 (Ctrl+Z)">
+                        <Path
+                            Width="16"
+                            Height="16"
+                            Data="M7,2 L2,6 L7,10 M2,6 H10 C14,6 15,9 15,13"
+                            Stretch="Uniform"
+                            Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                            StrokeThickness="1.6" />
+                    </Button>
+                    <Button
+                        x:Name="RedoButton"
+                        Margin="2,0,6,0"
+                        AutomationProperties.Name="重做"
+                        Command="{Binding RedoCommand}"
+                        Style="{StaticResource DarkButtonStyle}"
+                        ToolTip="重做 (Ctrl+Y / Ctrl+Shift+Z)">
+                        <Path
+                            Width="16"
+                            Height="16"
+                            Data="M10,2 L15,6 L10,10 M15,6 H7 C3,6 2,9 2,13"
+                            Stretch="Uniform"
+                            Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                            StrokeThickness="1.6" />
+                    </Button>
+
                     <!--  Geometry Drawing Tools  -->
                     <ItemsControl
                         x:Name="Tools"

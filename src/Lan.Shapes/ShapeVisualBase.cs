@@ -84,6 +84,127 @@ namespace Lan.Shapes
         /// </summary>
         public virtual bool CanTranslate => false;
 
+        /// <summary>True while model and annotation notifications belong to a rigid translation.</summary>
+        public bool IsTranslating { get; private set; }
+        /// <summary>True while refreshing viewport-dependent drawing details without editing the model.</summary>
+        public bool IsRefreshingScale { get; private set; }
+        public event EventHandler<ShapeTranslationEventArgs>? TranslationCompleted;
+        private int _geometryEditDepth;
+        private ShapeGeometryState? _geometryEditBefore;
+        public bool IsEditingGeometry => _geometryEditDepth > 0;
+        public event EventHandler<ShapeGeometryEventArgs>? GeometryEditCompleted;
+        public event EventHandler? GeometryEditStarted;
+
+        /// <summary>Captures all model parameters changed by the shape's geometry editing tools.</summary>
+        public ShapeGeometryState CaptureGeometryState()
+        {
+            VerifyAccess();
+            if (!IsGeometryRendered)
+                throw new InvalidOperationException("Only completed shapes have editable geometry state.");
+            return new ShapeGeometryState(this, CaptureGeometryStateCore(), _textGeometries.ToArray());
+        }
+
+        /// <summary>Restores a captured model without altering identity, styling, locking or visual transform.</summary>
+        public void RestoreGeometryState(ShapeGeometryState state)
+        {
+            VerifyAccess();
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (!ReferenceEquals(state.Owner, this))
+                throw new ArgumentException("Geometry state belongs to a different shape.", nameof(state));
+            using (DeferVisualUpdates())
+            {
+                CancelInteraction();
+                RestoreGeometryStateCore(state.Model);
+                _textGeometries.Clear();
+                _textGeometries.AddRange(state.Texts);
+                CreateHandles();
+                UpdateGeometryGroup();
+                RequestVisualUpdate();
+                OnPropertyChanged(nameof(BoundsRect));
+                OnPropertyChanged(nameof(SelectionBounds));
+            }
+        }
+
+        protected virtual object CaptureGeometryStateCore() => throw new NotSupportedException($"{GeometryType} does not support exact geometry snapshots.");
+        protected virtual void RestoreGeometryStateCore(object state) => throw new NotSupportedException($"{GeometryType} does not support exact geometry snapshots.");
+
+        /// <summary>Groups model changes into one completed geometry edit; nested scopes share the outer snapshot.</summary>
+        public IDisposable BeginGeometryEdit()
+        {
+            VerifyAccess();
+            if (_geometryEditDepth == 0) _geometryEditBefore = CaptureGeometryState();
+            _geometryEditDepth++;
+            if (_geometryEditDepth == 1) GeometryEditStarted?.Invoke(this, EventArgs.Empty);
+            return new GeometryEditScope(this);
+        }
+
+        private void EndGeometryEdit()
+        {
+            VerifyAccess();
+            if (--_geometryEditDepth != 0) return;
+            var before = _geometryEditBefore;
+            _geometryEditBefore = null;
+            ShapeGeometryState? after = null;
+            try { after = CaptureGeometryState(); }
+            finally { GeometryEditCompleted?.Invoke(this, new ShapeGeometryEventArgs(before, after)); }
+        }
+
+        private sealed class GeometryEditScope : IDisposable
+        {
+            private ShapeVisualBase? _owner;
+            public GeometryEditScope(ShapeVisualBase owner) => _owner = owner;
+            public void Dispose()
+            {
+                var owner = _owner;
+                _owner = null;
+                owner?.EndGeometryEdit();
+            }
+        }
+
+        /// <summary>Captures a completed shape position for an undoable rigid translation.</summary>
+        public ShapeTranslationState CaptureTranslationState()
+        {
+            VerifyAccess();
+            if (!CanTranslate || !IsGeometryRendered)
+                throw new InvalidOperationException("Only completed, movable shapes have translation state.");
+            return new ShapeTranslationState(this, CaptureTranslationStateCore(), _textGeometries.ToArray());
+        }
+
+        /// <summary>Restores a position captured from this instance, including attached text.</summary>
+        public void RestoreTranslationState(ShapeTranslationState state)
+        {
+            VerifyAccess();
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (!ReferenceEquals(state.Owner, this))
+                throw new ArgumentException("Translation state belongs to a different shape.", nameof(state));
+            using (DeferVisualUpdates())
+            {
+                CancelInteraction();
+                RestoreTranslationStateCore(state.Model);
+                _textGeometries.Clear();
+                _textGeometries.AddRange(state.Texts);
+                CreateHandles();
+                UpdateGeometryGroup();
+                RequestVisualUpdate();
+                OnPropertyChanged(nameof(BoundsRect));
+                OnPropertyChanged(nameof(SelectionBounds));
+            }
+        }
+
+        /// <summary>Override with exact model coordinates to avoid arithmetic drift during history replay.</summary>
+        protected virtual object CaptureTranslationStateCore()
+            => throw new NotSupportedException($"{GeometryType} does not support exact translation snapshots.");
+
+        /// <summary>Custom movable shapes may override to restore their exact captured model coordinates.</summary>
+        protected virtual void RestoreTranslationStateCore(object state)
+            => throw new NotSupportedException($"{GeometryType} does not support exact translation snapshots.");
+
+        private ShapeTranslationState? TryCaptureTranslationState()
+        {
+            try { return CaptureTranslationState(); }
+            catch (NotSupportedException) { return null; }
+        }
+
         /// <summary>
         /// Checks whether a local-space displacement can be applied without changing the shape.
         /// Validates translation support, edit state, model snap points and attached text locations.
@@ -120,20 +241,32 @@ namespace Lan.Shapes
         {
             ValidateTranslation(delta);
             if (delta.X == 0 && delta.Y == 0) return;
-
-            using (DeferVisualUpdates())
+            var observer = IsEditingGeometry ? null : TranslationCompleted;
+            var before = observer == null ? null : TryCaptureTranslationState();
+            ShapeTranslationState? after = null;
+            IsTranslating = true;
+            try
             {
-                TranslateCore(delta);
-                for (var i = 0; i < _textGeometries.Count; i++)
+                using (DeferVisualUpdates())
                 {
-                    var text = _textGeometries[i];
-                    _textGeometries[i] = (text.Location + delta, text.Content);
+                    TranslateCore(delta);
+                    for (var i = 0; i < _textGeometries.Count; i++)
+                    {
+                        var text = _textGeometries[i];
+                        _textGeometries[i] = (text.Location + delta, text.Content);
+                    }
+                    CreateHandles();
+                    UpdateGeometryGroup();
+                    RequestVisualUpdate();
+                    OnPropertyChanged(nameof(BoundsRect));
+                    OnPropertyChanged(nameof(SelectionBounds));
                 }
-                CreateHandles();
-                UpdateGeometryGroup();
-                RequestVisualUpdate();
-                OnPropertyChanged(nameof(BoundsRect));
-                OnPropertyChanged(nameof(SelectionBounds));
+                if (observer != null) after = TryCaptureTranslationState();
+            }
+            finally
+            {
+                IsTranslating = false;
+                observer?.Invoke(this, new ShapeTranslationEventArgs(before, after));
             }
         }
 
@@ -561,14 +694,19 @@ namespace Lan.Shapes
 
         public void RefreshScaleDependentVisuals(double viewportScale)
         {
-            using (DeferVisualUpdates())
+            IsRefreshingScale = true;
+            try
             {
-                ViewportScale = double.IsFinite(viewportScale) && viewportScale > 0 ? viewportScale : 1.0;
-                DragHandleSize = ShapeStyler?.DragHandleSize ?? DefaultDragHandleSize;
-                OnDragHandleSizeChanges(DragHandleSize);
-                OnViewportScaleChanged(ViewportScale);
-                RequestVisualUpdate();
+                using (DeferVisualUpdates())
+                {
+                    ViewportScale = double.IsFinite(viewportScale) && viewportScale > 0 ? viewportScale : 1.0;
+                    DragHandleSize = ShapeStyler?.DragHandleSize ?? DefaultDragHandleSize;
+                    OnDragHandleSizeChanges(DragHandleSize);
+                    OnViewportScaleChanged(ViewportScale);
+                    RequestVisualUpdate();
+                }
             }
+            finally { IsRefreshingScale = false; }
         }
 
 
@@ -1012,6 +1150,7 @@ namespace Lan.Shapes
             }
 
             _textGeometries.Add((location.Value, content));
+            OnPropertyChanged(nameof(TextGeometries));
             RequestVisualUpdate();
         }
 
@@ -1021,7 +1160,9 @@ namespace Lan.Shapes
         /// </summary>
         public virtual void ClearText()
         {
+            if (_textGeometries.Count == 0) return;
             _textGeometries.Clear();
+            OnPropertyChanged(nameof(TextGeometries));
             RequestVisualUpdate();
         }
 

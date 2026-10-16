@@ -108,6 +108,17 @@ namespace Lan.Shapes.Custom
             OnEndPointsChanges();
         }
 
+        protected override object CaptureTranslationStateCore() => (Start, End);
+
+        protected override void RestoreTranslationStateCore(object state)
+        {
+            var (start, end) = ((Point, Point))state;
+            SetField(ref _start, start, nameof(Start));
+            SetField(ref _end, end, nameof(End));
+            OnStartPointChanges();
+            OnEndPointsChanges();
+        }
+
         private void OnEndPointsChanges()
         {
             _lineGeometry.EndPoint = End;

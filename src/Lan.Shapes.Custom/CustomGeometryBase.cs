@@ -1,4 +1,4 @@
-﻿#region
+#region
 
 using System;
 using System.Windows;
@@ -44,6 +44,7 @@ namespace Lan.Shapes.Custom
             get => _strokeThickness;
             set
             {
+                var previous = _strokeThickness;
                 _strokeThickness = value;
                 _strokeThickness = Math.Min(MaxStrokeThickness, _strokeThickness);
                 _strokeThickness = Math.Max(0, _strokeThickness);
@@ -55,6 +56,7 @@ namespace Lan.Shapes.Custom
 
                 //update handle position, when stroke thickness changes
                 OnStrokeThicknessChanges(_strokeThickness);
+                if (!previous.Equals(_strokeThickness)) OnPropertyChanged(nameof(StrokeThickness));
             }
         }
 
@@ -75,6 +77,15 @@ namespace Lan.Shapes.Custom
 
         protected override void CreateHandles()
         {
+        }
+
+        protected override object CaptureGeometryStateCore() => (CaptureTranslationStateCore(), StrokeThickness);
+
+        protected override void RestoreGeometryStateCore(object state)
+        {
+            var (geometry, thickness) = ((object, double))state;
+            StrokeThickness = thickness;
+            RestoreTranslationStateCore(geometry);
         }
 
         protected override void HandleResizing(Point point)

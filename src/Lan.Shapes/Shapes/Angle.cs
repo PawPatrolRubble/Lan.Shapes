@@ -249,6 +249,21 @@ namespace Lan.Shapes.Shapes
             UpdateGeometry();
         }
 
+        protected override object CaptureGeometryStateCore() => CaptureTranslationStateCore();
+
+        protected override void RestoreGeometryStateCore(object state) => RestoreTranslationStateCore(state);
+
+        protected override object CaptureTranslationStateCore() => (FirstPoint, Vertex, SecondPoint);
+
+        protected override void RestoreTranslationStateCore(object state)
+        {
+            (_firstPoint, _vertex, _secondPoint) = ((Point, Point, Point))state;
+            OnPropertyChanged(nameof(FirstPoint));
+            OnPropertyChanged(nameof(Vertex));
+            OnPropertyChanged(nameof(SecondPoint));
+            UpdateGeometry();
+        }
+
         public override void OnMouseLeftButtonDown(Point point)
         {
             if (IsLocked)

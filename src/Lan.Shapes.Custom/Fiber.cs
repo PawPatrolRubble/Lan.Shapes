@@ -268,6 +268,32 @@ namespace Lan.Shapes.Custom
             OnPropertyChanged(nameof(RectBottomRight));
         }
 
+        protected override object CaptureGeometryStateCore()
+            => (CaptureTranslationStateCore(), FilletRadius, TriangleBottomEdgeAngleInDeg, StrokeThickness);
+
+        protected override void RestoreGeometryStateCore(object state)
+        {
+            var (corners, radius, triangleAngle, thickness) = ((object, double, double, double))state;
+            SetField(ref _filletRadius, radius, nameof(FilletRadius));
+            SetField(ref _triangleAngleInDeg, triangleAngle, nameof(TriangleBottomEdgeAngleInDeg));
+            StrokeThickness = thickness;
+            RestoreTranslationStateCore(corners);
+            OnPropertyChanged(nameof(Radius));
+        }
+
+        protected override object CaptureTranslationStateCore()
+            => (_rectTopLeft, _rectTopRight, _rectBottomLeft, _rectBottomRight);
+
+        protected override void RestoreTranslationStateCore(object state)
+        {
+            (_rectTopLeft, _rectTopRight, _rectBottomLeft, _rectBottomRight) = ((Point, Point, Point, Point))state;
+            UpdateGeometry();
+            OnPropertyChanged(nameof(RectTopLeft));
+            OnPropertyChanged(nameof(RectTopRight));
+            OnPropertyChanged(nameof(RectBottomLeft));
+            OnPropertyChanged(nameof(RectBottomRight));
+        }
+
         public void FromData(FiberData data)
         {
             if (data == null)

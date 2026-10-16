@@ -98,7 +98,11 @@ public abstract class ShapeGeometryEditor : INotifyPropertyChanged, IDisposable
         try
         {
             _applying = true;
-            if (!group.TryApply()) return false;
+            IDisposable? geometryScope = null;
+            try { geometryScope = TargetShape.BeginGeometryEdit(); }
+            catch (NotSupportedException) { }
+            using (geometryScope)
+                if (!group.TryApply()) return false;
             _snapshot = ReadSnapshot();
             foreach (var other in Groups)
                 if (ReferenceEquals(other, group) || !other.IsDirty) other.Load();

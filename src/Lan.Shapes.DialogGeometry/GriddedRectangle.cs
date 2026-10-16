@@ -94,6 +94,12 @@ namespace Lan.Shapes.DialogGeometry
             if (_lines != null) UpdateOrAddLineGeometries();
         }
 
+        protected override void RestoreTranslationStateCore(object state)
+        {
+            base.RestoreTranslationStateCore(state);
+            if (_lines != null) UpdateOrAddLineGeometries();
+        }
+
         #endregion
 
         #region local methods

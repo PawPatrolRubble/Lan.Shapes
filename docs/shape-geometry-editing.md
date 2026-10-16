@@ -41,7 +41,7 @@ circle.SetCircle(center, radius);
 
 纯位置修改通过 `IShapeRepository.TranslateShapes`。`ShapeVisualBase.ValidateTranslation` 允许仓库在移动任何成员之前验证锚点和附加文字不会产生非有限坐标。新增数值预验证不提供第三方 `TranslateCore` 抛异常后的完整快照回滚。
 
-图形导出读取修改后的真实模型。“保存图层”仍只保存图层配置，不会保存图形几何；未新增通用 Undo/Redo 或图形文件格式。
+图形导出读取修改后的真实模型。“保存图层”仍只保存图层配置，不会保存图形几何。属性面板的一次有效几何提交支持[撤销／重做](undo-redo.md)，端点、位置、尺寸和长度修改均按一次提交记录；未修改和无效输入不产生步骤。外部代码直接编辑模型时，可用 BeginGeometryEdit 将多个参数修改合并成一步。未新增图形文件格式。
 
 ## 验证
 
