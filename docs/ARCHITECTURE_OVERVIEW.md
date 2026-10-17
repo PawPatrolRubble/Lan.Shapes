@@ -23,11 +23,14 @@ Host application (Prism/DryIoc or Microsoft DI)
             +-- Lan.Shapes : core geometry/rendering/contracts
             +-- Lan.Shapes.Custom : extended geometries
 
-Lan.ImageViewer.Halcon : optional HALCON-specific adapter/host
+Lan.ImageViewer.Halcon : legacy optional adapter (source retained;
+                          excluded from Lan.Shapes.sln, CI and NuGet release)
 ```
 
 This is a conceptual map; see the actual `.csproj` ProjectReferences for
-packaging inputs. The two consumer NuGet packages contain different sets of
+packaging inputs. The legacy HALCON adapter needs a separate private
+`visiondotnet` restore and is intentionally not a dependency of the main
+solution. The two consumer NuGet packages contain different sets of
 assemblies; [maintainer guide](MAINTAINER_GUIDE.md) has the exact declared
 versions and package boundaries.
 
