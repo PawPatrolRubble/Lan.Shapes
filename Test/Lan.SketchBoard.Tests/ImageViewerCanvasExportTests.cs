@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Lan.ImageViewer;
@@ -122,6 +123,105 @@ public class ImageViewerCanvasExportTests
         });
     }
 
+
+    [Fact]
+    public void FitButton_RestoresCenteredViewportAfterManualZoom_WithoutViewModelScale()
+    {
+        RunOnSta(() =>
+        {
+            var (control, viewer, _, _) = CreateControl();
+            var (fit, border, viewport) = FindFitControls(viewer);
+            var viewModel = Assert.IsType<ImageViewerControlViewModel>(control.DataContext);
+
+            // The wheel path modifies this matrix and LocalScale, not the VM Scale.
+            viewport.Matrix = new Matrix(2.5, 0, 0, 2.5, 35, -12);
+            viewer.LocalScale = 2.5;
+            var previousViewModelScale = viewModel.Scale;
+
+            fit.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, fit));
+
+            AssertFitted(viewer, border, viewport, ImageWidth, ImageHeight);
+            Assert.Equal(previousViewModelScale, viewModel.Scale);
+        });
+    }
+
+    [Fact]
+    public void FitButton_UsesCurrentImageSizeAfterReplacement()
+    {
+        RunOnSta(() =>
+        {
+            var (_, viewer, _, _) = CreateControl();
+            var (fit, border, viewport) = FindFitControls(viewer);
+
+            viewer.ImageSource = CreateWhiteImage(80, 200);
+            viewport.Matrix = new Matrix(3, 0, 0, 3, 20, 30);
+            viewer.LocalScale = 3;
+            fit.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, fit));
+
+            Assert.Equal(80, viewer.PixelWidth);
+            Assert.Equal(200, viewer.PixelHeight);
+            AssertFitted(viewer, border, viewport, 80, 200);
+        });
+    }
+
+    [Fact]
+    public void FitButton_DoesNotCorruptTransformForMissingImage()
+    {
+        RunOnSta(() =>
+        {
+            var (_, viewer, _, _) = CreateControl(withImage: false);
+            var (fit, border, viewport) = FindFitControls(viewer);
+            var before = viewport.Matrix;
+
+            fit.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, fit));
+            Assert.Equal(before, viewport.Matrix);
+            Assert.True(double.IsFinite(viewer.LocalScale));
+
+            viewer.ImageSource = CreateWhiteImage();
+            fit.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, fit));
+            AssertFitted(viewer, border, viewport, ImageWidth, ImageHeight);
+
+            viewer.ImageSource = null!;
+            Assert.True(double.IsFinite(viewport.Matrix.M11));
+            Assert.True(double.IsFinite(viewport.Matrix.M22));
+            Assert.True(double.IsFinite(viewer.LocalScale));
+
+            before = viewport.Matrix;
+            fit.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, fit));
+            Assert.Equal(before, viewport.Matrix);
+
+            viewer.ImageSource = CreateWhiteImage(100, 160);
+            fit.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, fit));
+            AssertFitted(viewer, border, viewport, 100, 160);
+        });
+    }
+
+    private static (Button FitButton, Border Border, MatrixTransform Viewport) FindFitControls(Lan.ImageViewer.ImageViewer viewer)
+    {
+        var fit = Assert.IsType<Button>(viewer.Template.FindName("BtnFit", viewer));
+        var border = Assert.IsType<Border>(viewer.Template.FindName("BorderContainer", viewer));
+        var grid = Assert.IsType<Grid>(viewer.Template.FindName("GridContainer", viewer));
+        var group = Assert.IsType<TransformGroup>(grid.RenderTransform);
+        var viewport = Assert.IsType<MatrixTransform>(group.Children[0]);
+        Assert.True(border.ActualWidth > 0 && border.ActualHeight > 0, "Fit needs a measured viewport.");
+        return (fit, border, viewport);
+    }
+
+    private static void AssertFitted(Lan.ImageViewer.ImageViewer viewer, Border border, MatrixTransform viewport,
+        int pixelWidth, int pixelHeight)
+    {
+        var expectedScale = Math.Min(border.ActualWidth / pixelWidth, border.ActualHeight / pixelHeight);
+        Assert.True(double.IsFinite(expectedScale) && expectedScale > 0);
+        var matrix = viewport.Matrix;
+        Assert.Equal(expectedScale, matrix.M11, 6);
+        Assert.Equal(expectedScale, matrix.M22, 6);
+        Assert.Equal(0, matrix.M12, 6);
+        Assert.Equal(0, matrix.M21, 6);
+        Assert.Equal((border.ActualWidth - pixelWidth * expectedScale) / 2, matrix.OffsetX, 6);
+        Assert.Equal((border.ActualHeight - pixelHeight * expectedScale) / 2, matrix.OffsetY, 6);
+        Assert.Equal(expectedScale, viewer.LocalScale, 6);
+    }
+
     private static void AddHorizontalLine(SketchBoardDataManager manager, ShapeLayer layer)
         => manager.AddShape(new Line(layer) { Start = new Point(20, ShapeY), End = new Point(180, ShapeY) });
 
@@ -152,16 +252,16 @@ public class ImageViewerCanvasExportTests
         element.UpdateLayout();
     }
 
-    private static BitmapSource CreateWhiteImage()
+    private static BitmapSource CreateWhiteImage(int width = ImageWidth, int height = ImageHeight)
     {
-        var stride = ImageWidth * 4;
-        var pixels = new byte[stride * ImageHeight];
+        var stride = width * 4;
+        var pixels = new byte[stride * height];
         for (var i = 0; i < pixels.Length; i++)
         {
             pixels[i] = 0xFF;
         }
 
-        var bitmap = BitmapSource.Create(ImageWidth, ImageHeight, 96, 96, PixelFormats.Bgra32, null, pixels, stride);
+        var bitmap = BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgra32, null, pixels, stride);
         bitmap.Freeze();
         return bitmap;
     }
