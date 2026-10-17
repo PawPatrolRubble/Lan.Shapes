@@ -352,7 +352,11 @@ dotnet test    Lan.Shapes.sln --configuration Release
 ```
 
 `Lan.Shapes.sln` covers the two shippable packages, the sample hosts, and the
-test projects. To exercise the control, run either host:
+test projects. The legacy `Lan.ImageViewer.Halcon` adapter remains in the
+repository but is **excluded from this solution, the default CI build, and
+the release packaging**: its `visiondotnet` dependency is not available from
+public NuGet sources. Build it separately only if a host still requires it
+and has the private dependency configured. To exercise the control, run either host:
 
 ```powershell
 dotnet run --project Lan.Shapes.SimpleApp
@@ -381,7 +385,7 @@ The project is a **Windows-only WPF** image viewer and geometry sketcher. Shapes
 | **Lan.Shapes.Custom** | Extended shape implementations |
 | **Lan.Shapes.DialogGeometry** | Dialog-based geometry types (grid rectangles, DXF) |
 | **Lan.ImageViewer.Prism** | Prism composition root (DI module, default VM, registrations) |
-| **Lan.ImageViewer.Halcon** | Halcon-backed viewer host; not part of the shipped packages |
+| **Lan.ImageViewer.Halcon** | Legacy optional HALCON adapter; retained as source only, excluded from `Lan.Shapes.sln`, CI and shipped packages |
 | **Lan.Shapes.SimpleApp** | Canonical Prism + DryIoc sample host |
 | **Test/Lan.Shapes.TestApp** | Microsoft.Extensions.DependencyInjection sample host |
 | **Test/Lan.SketchBoard.Tests**, **src/Lan.Shapes.Tests** | xUnit and MSTest suites |
@@ -649,7 +653,7 @@ target `net8.0-windows` and use WPF, so there is no non-Windows target.
 | Prism host | Prism.Wpf 8.1.97, HandyControls 3.4.5, netDxf 2023.11.10 |
 | Serialization | Newtonsoft.Json 13.0.3 |
 | Sample host (`Lan.Shapes.SimpleApp`) | Prism.DryIoc 8.1.97, Prism.Container.Extensions 8.0.62, Microsoft.Extensions.* 8.0.0, Serilog |
-| Halcon host (`Lan.ImageViewer.Halcon`) | visiondotnet 1.0.3, System.Drawing.Common 9.0.9 |
+| Legacy HALCON adapter (outside main solution) | `visiondotnet` 1.0.3 (private source), System.Drawing.Common 9.0.9; not required for core builds |
 | Tests | xUnit 2.9.2 (`Test/Lan.SketchBoard.Tests`), MSTest 2.2.8 (`src/Lan.Shapes.Tests`) |
 
 ## Releasing
