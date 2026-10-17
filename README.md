@@ -43,16 +43,19 @@ dotnet nuget add source <nexus-feed-url> --name Nexus
 
 ```xml
 <!-- Viewer only -->
-<PackageReference Include="Lan.ImageViewer" Version="2.0.0" />
+<PackageReference Include="Lan.ImageViewer" Version="2.1.4" />
 
 <!-- Prism hosts: one package brings the whole viewer stack -->
-<PackageReference Include="Lan.ImageViewer.Prism" Version="2.0.0" />
+<PackageReference Include="Lan.ImageViewer.Prism" Version="2.1.5" />
 ```
 
-Both are *fat* packages — they embed `Lan.Shapes`, `Lan.Shapes.Custom`,
-`Lan.Shapes.DialogGeometry`, and `Lan.SketchBoard`, so hosts do not reference
-those projects directly. See the [packaging note](#packaging-note-fat-packages).
-The current release is **2.0.0**.
+`Lan.ImageViewer` embeds `Lan.Shapes`, `Lan.Shapes.Custom`, and
+`Lan.SketchBoard`. `Lan.ImageViewer.Prism` adds `Lan.Shapes.DialogGeometry`
+and the Prism integration. Hosts normally reference only the package matching
+their application setup. See the [packaging note](#packaging-note-fat-packages).
+The project files currently declare versions **2.1.4** (`Lan.ImageViewer`) and
+**2.1.5** (`Lan.ImageViewer.Prism`); check the private Nexus feed before assuming
+these versions have already been published.
 
 ## Features
 
@@ -360,7 +363,9 @@ dotnet run --project Test/Lan.Shapes.TestApp
 `Test/Lan.Shapes.TestApp` is the Microsoft.Extensions.DependencyInjection host.
 `Test/Lan.Shapes.InteractionProbe` holds interactive checks that need an HWND and
 a real desktop input stream, so it is deliberately kept out of `Lan.Shapes.sln`
-and out of CI.
+and out of CI. For CI scope, local verification, package versions, and known
+functional limits, see the [maintainer guide](docs/MAINTAINER_GUIDE.md) and
+[feature status](docs/FEATURE_STATUS.md).
 
 ## Architecture
 
@@ -383,6 +388,7 @@ The project is a **Windows-only WPF** image viewer and geometry sketcher. Shapes
 
 ### Design docs
 
+- [Documentation index](docs/README.md) — curated developer, architecture, feature-status and maintenance guides
 - [`docs/adr/0001-wpf-native-sketch-architecture.md`](docs/adr/0001-wpf-native-sketch-architecture.md) — target ownership model, lifecycle, scale policy
 - [`docs/refactor-checklist.md`](docs/refactor-checklist.md) — phased refactor plan mapped to concrete files
 - [`docs/architecture-issues.md`](docs/architecture-issues.md) — issue log (status table kept in sync with phases)
@@ -392,7 +398,11 @@ The project is a **Windows-only WPF** image viewer and geometry sketcher. Shapes
 
 ### Packaging note (fat packages)
 
-`Lan.ImageViewer` and `Lan.ImageViewer.Prism` ship as **fat packages**:
+`Lan.ImageViewer` and `Lan.ImageViewer.Prism` ship as **fat packages**, but
+with different embedded assemblies: the viewer package bundles the core,
+custom shapes, and sketch board; the Prism package additionally bundles
+DXF/dialog geometry and its integration layer.
+
 
 - Project references use `PrivateAssets="All"` so NuGet restore does **not** emit separate dependency packages for core projects.
 - `CopyProjectReferencesToPackage` embeds those project (and selected third-party) DLLs into the nupkg.
