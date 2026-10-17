@@ -272,7 +272,15 @@ namespace Lan.ImageViewer
 
         private void AutoScaleImageToFit(double width, double height, double pixelWidth, double pixelHeight)
         {
+            // A missing image or a not-yet-measured viewport must not corrupt the
+            // live transform with zero, infinity, or NaN. Fit is a no-op until valid.
+            if (!double.IsFinite(width) || !double.IsFinite(height)
+                || !double.IsFinite(pixelWidth) || !double.IsFinite(pixelHeight)
+                || width <= 0 || height <= 0 || pixelWidth <= 0 || pixelHeight <= 0)
+                return;
+
             var ratio = CalculateAutoFitRatio(width, height, pixelWidth, pixelHeight);
+            if (!double.IsFinite(ratio) || ratio <= 0) return;
             LocalScale = ratio;
             var matrix = new Matrix();
             matrix.ScaleAt(
