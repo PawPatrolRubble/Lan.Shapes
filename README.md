@@ -43,16 +43,19 @@ dotnet nuget add source <nexus-feed-url> --name Nexus
 
 ```xml
 <!-- Viewer only -->
-<PackageReference Include="Lan.ImageViewer" Version="2.0.0" />
+<PackageReference Include="Lan.ImageViewer" Version="2.1.4" />
 
 <!-- Prism hosts: one package brings the whole viewer stack -->
-<PackageReference Include="Lan.ImageViewer.Prism" Version="2.0.0" />
+<PackageReference Include="Lan.ImageViewer.Prism" Version="2.1.5" />
 ```
 
-Both are *fat* packages — they embed `Lan.Shapes`, `Lan.Shapes.Custom`,
-`Lan.Shapes.DialogGeometry`, and `Lan.SketchBoard`, so hosts do not reference
-those projects directly. See the [packaging note](#packaging-note-fat-packages).
-The current release is **2.0.0**.
+`Lan.ImageViewer` embeds `Lan.Shapes`, `Lan.Shapes.Custom`, and
+`Lan.SketchBoard`. `Lan.ImageViewer.Prism` adds `Lan.Shapes.DialogGeometry`
+and the Prism integration. Hosts normally reference only the package matching
+their application setup. See the [packaging note](#packaging-note-fat-packages).
+The project files currently declare versions **2.1.4** (`Lan.ImageViewer`) and
+**2.1.5** (`Lan.ImageViewer.Prism`); check the private Nexus feed before assuming
+these versions have already been published.
 
 ## Features
 
@@ -349,7 +352,11 @@ dotnet test    Lan.Shapes.sln --configuration Release
 ```
 
 `Lan.Shapes.sln` covers the two shippable packages, the sample hosts, and the
-test projects. To exercise the control, run either host:
+test projects. The legacy `Lan.ImageViewer.Halcon` adapter remains in the
+repository but is **excluded from this solution, the default CI build, and
+the release packaging**: its `visiondotnet` dependency is not available from
+public NuGet sources. Build it separately only if a host still requires it
+and has the private dependency configured. To exercise the control, run either host:
 
 ```powershell
 dotnet run --project Lan.Shapes.SimpleApp
@@ -360,7 +367,9 @@ dotnet run --project Test/Lan.Shapes.TestApp
 `Test/Lan.Shapes.TestApp` is the Microsoft.Extensions.DependencyInjection host.
 `Test/Lan.Shapes.InteractionProbe` holds interactive checks that need an HWND and
 a real desktop input stream, so it is deliberately kept out of `Lan.Shapes.sln`
-and out of CI.
+and out of CI. For CI scope, local verification, package versions, and known
+functional limits, see the [maintainer guide](docs/MAINTAINER_GUIDE.md) and
+[feature status](docs/FEATURE_STATUS.md).
 
 ## Architecture
 
@@ -376,13 +385,14 @@ The project is a **Windows-only WPF** image viewer and geometry sketcher. Shapes
 | **Lan.Shapes.Custom** | Extended shape implementations |
 | **Lan.Shapes.DialogGeometry** | Dialog-based geometry types (grid rectangles, DXF) |
 | **Lan.ImageViewer.Prism** | Prism composition root (DI module, default VM, registrations) |
-| **Lan.ImageViewer.Halcon** | Halcon-backed viewer host; not part of the shipped packages |
+| **Lan.ImageViewer.Halcon** | Legacy optional HALCON adapter; retained as source only, excluded from `Lan.Shapes.sln`, CI and shipped packages |
 | **Lan.Shapes.SimpleApp** | Canonical Prism + DryIoc sample host |
 | **Test/Lan.Shapes.TestApp** | Microsoft.Extensions.DependencyInjection sample host |
 | **Test/Lan.SketchBoard.Tests**, **src/Lan.Shapes.Tests** | xUnit and MSTest suites |
 
 ### Design docs
 
+- [Documentation index](docs/README.md) — curated developer, architecture, feature-status and maintenance guides
 - [`docs/adr/0001-wpf-native-sketch-architecture.md`](docs/adr/0001-wpf-native-sketch-architecture.md) — target ownership model, lifecycle, scale policy
 - [`docs/refactor-checklist.md`](docs/refactor-checklist.md) — phased refactor plan mapped to concrete files
 - [`docs/architecture-issues.md`](docs/architecture-issues.md) — issue log (status table kept in sync with phases)
@@ -392,7 +402,11 @@ The project is a **Windows-only WPF** image viewer and geometry sketcher. Shapes
 
 ### Packaging note (fat packages)
 
-`Lan.ImageViewer` and `Lan.ImageViewer.Prism` ship as **fat packages**:
+`Lan.ImageViewer` and `Lan.ImageViewer.Prism` ship as **fat packages**, but
+with different embedded assemblies: the viewer package bundles the core,
+custom shapes, and sketch board; the Prism package additionally bundles
+DXF/dialog geometry and its integration layer.
+
 
 - Project references use `PrivateAssets="All"` so NuGet restore does **not** emit separate dependency packages for core projects.
 - `CopyProjectReferencesToPackage` embeds those project (and selected third-party) DLLs into the nupkg.
@@ -639,7 +653,7 @@ target `net8.0-windows` and use WPF, so there is no non-Windows target.
 | Prism host | Prism.Wpf 8.1.97, HandyControls 3.4.5, netDxf 2023.11.10 |
 | Serialization | Newtonsoft.Json 13.0.3 |
 | Sample host (`Lan.Shapes.SimpleApp`) | Prism.DryIoc 8.1.97, Prism.Container.Extensions 8.0.62, Microsoft.Extensions.* 8.0.0, Serilog |
-| Halcon host (`Lan.ImageViewer.Halcon`) | visiondotnet 1.0.3, System.Drawing.Common 9.0.9 |
+| Legacy HALCON adapter (outside main solution) | `visiondotnet` 1.0.3 (private source), System.Drawing.Common 9.0.9; not required for core builds |
 | Tests | xUnit 2.9.2 (`Test/Lan.SketchBoard.Tests`), MSTest 2.2.8 (`src/Lan.Shapes.Tests`) |
 
 ## Releasing
