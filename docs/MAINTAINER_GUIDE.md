@@ -6,14 +6,16 @@
 - Target framework: `net8.0-windows` for the main projects.
 - Windows is required to run WPF UI and input integration tests. No cross-platform
   target is planned (see [ADR 0001](adr/0001-wpf-native-sketch-architecture.md)).
-- Dependency restore requires access to the configured NuGet sources; some hosts
-  may additionally require HALCON/visiondotnet runtime dependencies.
+- The main solution depends on packages available to the configured NuGet sources.
+  The legacy `Lan.ImageViewer.Halcon` project has a private `visiondotnet` dependency
+  and is **not** part of the default solution, CI, or NuGet release. It is only
+  needed if an external host explicitly builds the legacy adapter.
 
 ## Repository entry points
 
 | Location | Responsibility |
 | --- | --- |
-| `Lan.Shapes.sln` | Main source solution, sample applications and unit/integration test projects |
+| `Lan.Shapes.sln` | Main source solution, sample applications and unit/integration test projects (excluding legacy HALCON adapter) |
 | `Lan.Shapes.SimpleApp/` | Canonical Prism + DryIoc sample |
 | `Test/Lan.Shapes.TestApp/` | Alternate Microsoft DI sample |
 | `Test/Lan.Shapes.InteractionProbe/` | Real HWND/desktop-input probes, intentionally outside main solution and CI |
@@ -21,6 +23,7 @@
 | `src/Lan.SketchBoard/` | Repository, board host and interaction history |
 | `src/Lan.ImageViewer/` | Image viewer and WPF UI |
 | `src/Lan.ImageViewer.Prism/` | Prism registration and default view-model |
+| `Lan.ImageViewer.Halcon/` | Optional legacy adapter retained for reference; requires a private NuGet source and must be built separately |
 
 Read the [architecture overview](ARCHITECTURE_OVERVIEW.md) before editing the
 public shape lifecycle or dependency registrations.
@@ -60,17 +63,20 @@ Workflow: [`.github/workflows/dotnet-desktop.yml`](../.github/workflows/dotnet-d
 - Triggers: push to `master`, pull requests targeting `master`, and manual
   `workflow_dispatch`. The repository's default branch is `master`.
 - Environment: `windows-latest`, .NET SDK 8, Debug and Release configurations.
-- Pipeline: restore, build, then test `Lan.Shapes.sln`.
+- Pipeline: restore, build, then test `Lan.Shapes.sln` (without private HALCON dependencies).
 - This pipeline does **not** drive real desktop mouse/keyboard input. Use a
   manual interactive smoke test before shipping UI input changes.
 - A green CI result must be checked on the actual commit/PR; changing the
   trigger configuration is not evidence of a passing build. Old failures
   should not be treated as the status of the current head.
 
-If CI fails, check the specific step and package restore sources first. The
-solution includes the HALCON adapter and sample hosts, so failures may originate
-outside the two packaged viewer assemblies. Document the actual error before
-excluding a project or disabling tests.
+The HALCON adapter was removed from `Lan.Shapes.sln` after the October 17, 2026
+CI run failed at restore with `NU1101` for `visiondotnet` 1.0.3.
+The original adapter source is retained under `Lan.ImageViewer.Halcon/`; run
+`dotnet build Lan.ImageViewer.Halcon/Lan.ImageViewer.Halcon.csproj` **only** in
+an authorized environment with the private feed configured. If CI fails again,
+check the actual failing project, step, package sources and error before
+changing exclusions or disabling tests.
 
 ## NuGet package boundaries
 
